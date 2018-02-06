@@ -1,0 +1,65 @@
+@import '../../stylesheets/variables';
+
+
+.TrackList {
+  margin: 0.5em 0;
+
+  &.page-context {
+    & > * {
+      margin: 0.5em 0;
+    }
+  }
+
+  &.inline-context {
+    & > * {
+      margin: 0 1em;
+    }
+  }
+
+  /* TODO Inline layout and remove some details on small screens */
+  .tracks {
+    display: table;
+    table-layout:fixed;
+    width: 100%;
+    margin-top: 1em;
+    @include seperator-top;
+
+    .Track, .header-row {
+      display: table-row;
+
+      & > * {
+        display: table-cell;
+        margin: 0;
+
+        @include seperator-bottom;
+        padding: 0.5em 1em;
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        &.inline-list > * {
+          display: inline-block;
+          white-space: nowrap;
+          margin-right: 0.5em;
+
+          &:after {
+            content: ',';
+          }
+          &:last-child:after {
+            content: '';
+          }
+
+          & > * {
+            display: inline-block;
+            margin-right: 0;
+          }
+        }
+
+        &.duration, &.header-Length {
+          width: 5.5em;
+        }
+      }
+    }
+  }
+}

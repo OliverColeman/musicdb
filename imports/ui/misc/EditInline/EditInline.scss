@@ -1,0 +1,46 @@
+@import '../../stylesheets/variables';
+
+textarea.riek {
+  width: 90%;
+  min-height: 5em;
+}
+
+input.riek[type=color] {
+  display: none;
+}
+
+.edit-inline-color-container {
+  line-height: 0;
+}
+
+.edit-inline-color {
+  width: 2em;
+  height: 2em;
+  border-radius: 50% 50%;
+  display: inline-block;
+  margin-right: 0.5em;
+}
+
+.EditInline {
+  display: flex;
+
+  .edit-icon {
+    margin: 0;
+    width: 20px;
+    text-align: center;
+    font-size: 10px;
+    line-height: 10px;
+    font-weight: normal;
+    cursor: pointer;
+
+    &:hover {
+      font-weight: bold;
+      color: $success;
+    }
+  }
+
+  &:hover .edit-icon {
+    font-size: 18px;
+    line-height: 18px;
+  }
+}

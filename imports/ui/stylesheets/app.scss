@@ -1,0 +1,51 @@
+@import './variables';
+@import './forms';
+@import './bootstrap-overrides';
+
+body {
+  font-size: 16px;
+}
+
+a, a:hover, a:visited, a:active, a:focus {
+  color: #fff;
+}
+
+.item-header, .item-header a, .header-cell, h1, h2, h3, h4, h5, h6 {
+  color: $cb-blue;
+  font-weight: bold;
+}
+
+.inline-list {
+  display: flex;
+  flex-wrap: wrap;
+
+  &> * {
+    margin-right: 1em;
+  }
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  @include seperator-bottom;
+
+  &> * {
+    margin-right: 0.5em;
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
+.link {
+  display: inline-block;
+
+  &.spotify {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    background: url('/spotify.png') no-repeat center center;
+    background-size: contain;
+  }
+}

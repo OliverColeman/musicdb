@@ -1,0 +1,57 @@
+$primary: #337ab7;
+$success: #5cb85c;
+$info:    #5bc0de;
+$warning: #f0ad4e;
+$danger:  #d9534f;
+
+$gray-darker: #222;
+$gray-dark: #333;
+$gray: #555;
+$gray-light: #777;
+$gray-lighter: #eee;
+
+$facebook: #3b5998;
+$google: #ea4335;
+$github: $gray-dark;
+
+$cb-blue: #03a9f4;
+$cb-green: #00D490;
+$cb-yellow: #FFCF50;
+$cb-red: #DA5847;
+
+
+$default-border-radius: 4px;
+
+
+@mixin breakpoint($point) {
+  @if $point == desktop-large {
+    @media (min-width: 1200px) { @content; }
+  } @else if $point == desktop {
+    @media (min-width: 1024px) { @content; }
+  } @else if $point == tablet {
+    @media (min-width: 768px) { @content; }
+  } @else if $point == handheld-large {
+    @media (min-width: 480px) { @content; }
+  } @else {
+    @media (min-width: $point) { @content; }
+  }
+}
+
+@mixin ie {
+  @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+    @content;
+  }
+
+  @supports (-ms-accelerator:true) {
+    @content;
+  }
+}
+
+@mixin seperator-bottom {
+  border-bottom: 1px solid #777;
+  padding-bottom: 0.5em;
+}
+@mixin seperator-top {
+  padding-top: 0.5em;
+  border-top: 1px solid #777;
+}

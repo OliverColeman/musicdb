@@ -1,0 +1,71 @@
+@import './variables';
+
+.navbar {
+  border-style: none;
+
+  &.navbar-default {
+    .navbar-nav {
+      &> li > a {
+        color: #fff;
+      }
+
+      .active a,
+      &> .open > a,
+      &> .open > a:hover,
+      &> .open > a:focus {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      }
+    }
+  }
+
+  .navbar-brand {
+      color: #fff;
+  }
+}
+
+.page-header {
+  margin-top: 0;
+}
+
+.dropdown-menu {
+  background-color: rgba(0,0,0,0.9);
+
+  &> li > a {
+    background-color: transparent;
+    color: #fff;
+    border-style: none;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+  }
+}
+
+input, textarea, .form-control {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 1px solid #aaa;
+  border-radius: $default-border-radius;
+}
+
+.label.label-default {
+  background-color: transparent;
+  font-size: inherit;
+  font-weight: bold;
+  padding: 0;
+  margin: 0 0.25em 0 0;
+  line-height: inherit;
+  vertical-align: inherit;
+}
+
+*:focus {
+  outline: none;
+}
+
+@include breakpoint(tablet) {
+  .page-header {
+    margin-top: 20px;
+  }
+}

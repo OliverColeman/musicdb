@@ -1,0 +1,50 @@
+@import '../../stylesheets/variables';
+
+body {
+  background-color: #4b4543;
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  background: url('/bg.jpg') no-repeat center center fixed;
+  -webkit-background-size: 100%; /* For WebKit*/
+  -moz-background-size: 100%;    /* Mozilla*/
+  -o-background-size: 100%;      /* Opera*/
+  background-size: 100%;         /* Generic*/
+  height: 100vh;
+  overflow: auto;
+
+  > * {
+    background-color: rgba(0,0,0,0.85);
+    color: #fff;
+
+    > * {
+      background-color: transparent;
+    }
+  }
+
+  > .container {
+    margin-bottom: 20px;
+    padding: 10px 10px 15px;
+    border-radius: $default-border-radius;
+  }
+
+ .verify-email {
+    margin-bottom: 0;
+    padding: 0;
+    border-top: none;
+    border-bottom: 1px solid #e7e7e7;
+    background: #fff;
+    color: $gray-dark;
+    border-radius: 0;
+
+    p {
+      padding: 19px;
+    }
+
+    .btn {
+      padding: 0;
+    }
+  }
+}

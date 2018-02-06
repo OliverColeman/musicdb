@@ -1,0 +1,14 @@
+.ExpandControl {
+  font-weight: bold;
+  font-size: 20px;
+  text-align: center;
+  cursor: pointer;
+  font-family: FontAwesome;
+
+  &.expanded:before {
+    content: "\f0d7";
+  }
+  &.collapsed:before {
+    content: "\f0d8";
+  }
+}

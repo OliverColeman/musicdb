@@ -1,0 +1,44 @@
+Collections
+
+- Track
+  - _id
+  - name
+  - artistIds
+  - albumId
+  - duration
+  - spotifyId
+  - features
+
+- Artist
+  - _id
+  - name
+  - imageURL
+  - spotifyId
+
+- Album
+  - _id
+  - name
+  - spotifyId
+  - imageURL
+
+- TrackList
+  - _id
+  - name
+  - compilerIds
+  - trackIds
+  - duration
+  - spotifyUserId
+  - spotifyListId
+  - trackListListId
+  - number
+  - date
+
+- Compiler
+ - _id
+  - name
+  - spotifyId
+  - imageURL
+
+- TrackListList
+  - _id
+  - name
