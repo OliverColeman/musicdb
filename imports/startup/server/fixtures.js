@@ -2,47 +2,49 @@ import moment from 'moment';
 
 import { getCompiler, getArtist, getAlbum, getTrack, getTrackList } from '../../modules/server/music_service';
 import TrackListList from '../../api/TrackListList/TrackListList';
+import TrackList from '../../api/TrackList/TrackList';
 
 
 // Add JD track list list if necessary.
-console.log(TrackListList.findOne({name: "JD"}));
-if (!TrackListList.findOne({name: "JD"})) {
+let jdList = TrackListList.findOne({name: "JD"});
+if (!jdList) {
   const trackListListId = TrackListList.insert({name: "JD"});
-
-  if (Meteor.isDevelopment) {
-    // Get some example lists.
-
-    // This one contains a song not on Spotify.
-    getTrackList(
-      {
-        spotifyUserId: "petapieinthesky", spotifyListId: "67YquHJyGJabxbFnB9Yn4Y"
-      },
-      {
-        trackListListId,
-        name: "JD 1",
-        number: 1,
-        date: moment().startOf('day').unix(),
-      }
-    )
-    .then(data => console.log("Added list 1:", data))
-    .catch(err => console.log(err));
+  jdList = TrackListList.findOne(trackListListId);
+}
 
 
-    getTrackList(
-      {
-        spotifyUserId: "1270621250", spotifyListId: "38VMSVnvuwhS6xLRNrc3DX"
-      },
-      {
-        trackListListId,
-        name: "JD 2",
-        number: 2,
-        date: moment().startOf('day').subtract('1 weeks').unix(),
-      }
-    )
-    .then(data => console.log("Added list 2:", data))
-    .catch(err => console.log(err));
+if (Meteor.isDevelopment && TrackList.find().count() == 0) {
+  // Get some example lists.
 
-  }
+  // This one contains a song not on Spotify.
+  getTrackList(
+    {
+      spotifyUserId: "petapieinthesky", spotifyListId: "67YquHJyGJabxbFnB9Yn4Y"
+    },
+    {
+      trackListListId: jdList._id,
+      name: "JD 1",
+      number: 1,
+      date: moment().startOf('day').unix(),
+    }
+  )
+  .then(data => console.log("Added list 1:", data))
+  .catch(err => console.log(err));
+
+
+  getTrackList(
+    {
+      spotifyUserId: "1270621250", spotifyListId: "38VMSVnvuwhS6xLRNrc3DX"
+    },
+    {
+      trackListListId: jdList._id,
+      name: "JD 2",
+      number: 2,
+      date: moment().startOf('day').subtract('1 weeks').unix(),
+    }
+  )
+  .then(data => console.log("Added list 2:", data))
+  .catch(err => console.log(err));
 
 }
 
