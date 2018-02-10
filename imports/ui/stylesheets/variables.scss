@@ -15,12 +15,25 @@ $google: #ea4335;
 $github: $gray-dark;
 
 $cb-blue: #03a9f4;
+$cb-aqua: #21ADC2;
 $cb-green: #00D490;
 $cb-yellow: #FFCF50;
 $cb-red: #DA5847;
 
+@mixin button-green {
+  color: #fff;
+  background-color: #5cb85c;
+  border-color: #4cae4c;
+}
 
 $default-border-radius: 4px;
+
+
+@mixin clearfix {
+  content: "";
+  display: table;
+  clear: both;
+}
 
 
 @mixin breakpoint($point) {

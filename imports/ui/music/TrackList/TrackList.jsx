@@ -27,7 +27,8 @@ class TrackList extends React.Component {
     const { loading, loadingTracks, trackList, viewContext, showDate } = this.props;
 
     if (loading) return (<Loading />);
-    if (!trackList) return (<NotFound />);
+    if (!trackList && viewContext == 'page') return (  <NotFound /> );
+    if (!trackList) return ( <div className="TrackList not-found" /> );
 
     if (viewContext == 'inline') return (
       <Link to={`/list/${trackList._id}`} title={trackList.name} className={"TrackList inline-context name"}>
@@ -79,15 +80,19 @@ class TrackList extends React.Component {
 }
 
 
-export default withTracker(({match, trackList, trackListId, viewContext, showDate}) => {
+export default withTracker(({match, trackList, trackListId, spotifyListId, viewContext, showDate}) => {
   viewContext = viewContext || "page";
-  const subList = trackList ? null : Meteor.subscribe('TrackList.withId', trackListId || match.params.trackListId);
-  const subTracks = viewContext == 'page' && Meteor.subscribe('TrackList.tracks', trackListId || (trackList && trackList._id) || match.params.trackListId);
+  trackListId = trackListId || (trackList && trackList._id) || (match && match.params && match.params.trackListId);
+
+  const subList = trackList ? null : Meteor.subscribe('TrackList.withId', trackListId, spotifyListId);
+  const subTracks = viewContext == 'page' && Meteor.subscribe('TrackList.tracks', trackListId, spotifyListId);
+
+  const listSelector = spotifyListId ? { spotifyListId } : { _id: trackListId };
 
   return {
     loading: subList && !subList.ready(),
     loadingTracks: subTracks && !subTracks.ready(),
-    trackList: trackList || TrackListCollection.findOne(trackListId || match.params.trackListId),
+    trackList: trackList || TrackListCollection.findOne(listSelector),
     viewContext,
     showDate,
   };

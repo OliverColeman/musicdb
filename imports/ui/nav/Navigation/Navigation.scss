@@ -1,6 +1,8 @@
-.navbar {
+@import '../../stylesheets/variables';
+
+.App .navbar {
   border-radius: 0;
-  border-left: none;
-  border-right: none;
-  border-top: none;
+  border-style: none;
+  @include seperator-bottom;
+  padding-bottom: 0;
 }

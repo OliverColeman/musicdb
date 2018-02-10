@@ -30,6 +30,7 @@ import TrackListList from '../../music/TrackListList/TrackListList';
 import Artist from '../../music/Artist/Artist';
 import Album from '../../music/Album/Album';
 import Compiler from '../../music/Compiler/Compiler';
+import Import from '../../music/Import/Import';
 
 import './App.scss';
 
@@ -56,6 +57,8 @@ const App = props => (
             <Route exact path="/artist/:artistId" component={Artist} {...props} />
             <Route exact path="/album/:albumId" component={Album} {...props} />
             <Route exact path="/compiler/:compilerId" component={Compiler} {...props} />
+
+            <Authenticated exact path="/import" component={Import} {...props} />
 
             <Authenticated exact path="/profile" component={Profile} {...props} />
             <Public path="/signup" component={Signup} {...props} />

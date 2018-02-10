@@ -7,9 +7,10 @@ import { Nav, NavItem, NavDropdown, MenuItem } from 'react-bootstrap';
 const AuthenticatedNavigation = ({ name, history }) => (
   <div>
     <Nav>
-      <LinkContainer to="/Track">
-        <NavItem eventKey={1} href="/Track">Track</NavItem>
+      <LinkContainer to="/import">
+        <NavItem eventKey={1} href="/import">Import</NavItem>
       </LinkContainer>
+
     </Nav>
     <Nav pullRight>
       <NavDropdown eventKey={2} title={name} id="user-nav-dropdown">

@@ -1,0 +1,79 @@
+@import '../../stylesheets/variables';
+
+.Import {
+
+  .import-spec {
+    &> * {
+      @include seperator-bottom;
+      &:after { @include clearfix }
+      margin-bottom: 1em;
+
+      &> * {
+        margin: 0 1em 0.9em 0;
+        max-width: 99%;
+      }
+
+      &> button {
+        float: right;
+        margin-right: 0;
+        @include button-green;
+      }
+    }
+
+    .import-spec-tracklistlist {
+      display: flex;
+      align-items:center;
+      flex-wrap: wrap;
+      .tracklistlist {
+        width: 20em;
+      }
+    }
+
+    .import-spec-single, .import-spec-file {
+      &> * {
+        float: left;
+      }
+      h4 {
+        float: none;
+      }
+
+      .listname {
+        width: 20em;
+      }
+      .listnumber {
+        width: 5em;
+      }
+      .listdate {
+        width: 10em;
+      }
+      .listcompilers {
+        width: 20em;
+      }
+      .listurl {
+        width: 40em;
+      }
+      .listfile {
+        padding: 0.25em;
+      }
+    }
+  }
+
+  .import-results {
+    .import-item {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+
+      &> * {
+        margin: 0 1em 0.9em 0;
+      }
+
+      .ProgressMonitor {
+        width: 15em;
+      }
+      .TrackList {
+        font-weight: bold;
+      }
+    }
+  }
+}

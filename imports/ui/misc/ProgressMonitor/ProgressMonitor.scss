@@ -1,0 +1,28 @@
+@import '../../stylesheets/variables';
+
+.ProgressMonitor {
+  position: relative;
+  width: 100%;
+  height: 32px;
+  background-color: $gray-light;
+  border-radius: 16px;
+
+  .progress-monitor-background {
+    position: absolute;
+    height: 100%;
+    font-size: 14px;
+    border-radius: inherit;
+    background-color: $cb-aqua;
+  }
+
+  .progress-monitor-foreground {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    padding: 6px 0;
+    text-align: center;
+    border-radius: inherit;
+    color: #fff;
+    font-weight: bold;
+  }
+}
