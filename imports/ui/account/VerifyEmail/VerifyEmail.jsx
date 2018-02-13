@@ -19,7 +19,7 @@ class VerifyEmail extends React.Component {
       } else {
         setTimeout(() => {
           Bert.alert('All set, thanks!', 'success');
-          history.push('/Track');
+          history.push('/');
         }, 1500);
       }
     });

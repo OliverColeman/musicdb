@@ -36,7 +36,14 @@ const getSpotifyAPI = async () => {
     try {
       let data = await spotifyApi.clientCredentialsGrant();
 
-      Meteor.defer(() => spotifyApi.resetAccessToken(), data.body['expires_in'] * 1000);
+      // Reset the stored access token when it expires.
+      Meteor.setTimeout(
+        () => {
+          console.log("Resetting Spotify access token.");
+          spotifyApi.resetAccessToken();
+        },
+        data.body['expires_in'] * 1000
+      );
 
       spotifyApi.setAccessToken(data.body['access_token']);
     }
@@ -71,6 +78,7 @@ const getCompiler = async (ids, name) => {
   if (!!compiler) return compiler;
 
   if (ids.spotifyId) {
+    console.log("loading compiler data from spotify by id");
     try {
       const spotifyAPI = await getSpotifyAPI();
       const { body } = await spotifyApi.getUser(ids.spotifyId);
@@ -95,21 +103,34 @@ const getCompiler = async (ids, name) => {
 /**
  * @summary Get/create an Artist.
  * @param {Object} ids One or more id fields, such as _id or spotifyId.
+ * @param {Object} details Artist details (not implemented yet, see TODO in getTrack),
+    or a full artist description from a music service, eg {spotifyArtist}. May be empty.
  */
-const getArtist = async (ids) => {
+const getArtist = async (ids, details) => {
   let artist = ids && Object.keys(ids).length && Artist.findOne(ids)
   if (!!artist) return artist;
 
-  if (ids.spotifyId) {
+  if (ids.spotifyId || details && details.spotifyArtist) {
     try {
-      const spotifyAPI = await getSpotifyAPI();
-      const { body } = await spotifyApi.getArtist(ids.spotifyId);
+      let spotifyArtist;
+      if (details && details.spotifyArtist) {
+        console.log("using preloaded artist data");
+        spotifyArtist = details.spotifyArtist;
+      }
+      else {
+        console.log("loading artist data from spotify by id");
+
+        const spotifyAPI = await getSpotifyAPI();
+        const response = await spotifyApi.getArtist(ids.spotifyId);
+        spotifyArtist = response.body;
+      }
+
       artist = {
-        name: body.name,
-        spotifyId: body.id,
+        name: spotifyArtist.name,
+        spotifyId: spotifyArtist.id,
       };
-      if (body.images && body.images.length) {
-        artist.imageURL = body.images[0].url;
+      if (spotifyArtist.images && spotifyArtist.images.length) {
+        artist.imageURL = spotifyArtist.images[0].url;
       }
       const id = Artist.insert(artist);
       return Artist.findOne(id);
@@ -125,26 +146,34 @@ const getArtist = async (ids) => {
 /**
  * @summary Get/create an Album. Either by ids or by artist (ids) and name.
  * @param {Object} ids One or more id fields, such as _id or spotifyId. May be empty.
- * @param {Array} artistIds One or more artist Ids (native/internal _id only). Optional.
- * @param {String} name Album name. Optional.
+ * @param {Object} details Album details including {artistIds (internal), name},
+    or a full album description from a music service, eg {spotifyAlbum}. May be empty.
  */
-const getAlbum = async (ids, artistIds, name) => {
+const getAlbum = async (ids, details) => {
   let album = ids && Object.keys(ids).length && Album.findOne(ids);
   if (!!album) return album;
 
-  if (ids.spotifyId || artistIds && name) {
+  if (ids.spotifyId || details && (details.artistIds && details.name || details.spotifyAlbum)) {
     try {
       const spotifyAPI = await getSpotifyAPI();
 
       let spotifyAlbum;
-      if (ids.spotifyId) {
+      if (details.spotifyAlbum) {
+        console.log("using preloaded album data");
+        spotifyAlbum = details.spotifyAlbum;
+      }
+      else if (ids.spotifyId) {
+        console.log("loading album data from spotify by id");
+
         const { body } = await spotifyApi.getAlbum(ids.spotifyId);
         spotifyAlbum = body;
       }
       else {
+        console.log("searching for album data from spotify");
+
         // Get (first/one of the) artists spotify id.
         let artistSpotifyId;
-        for (let i = 0; i < artistIds.length && !artistSpotifyId; i++)
+        for (let i = 0; i < details.artistIds.length && !artistSpotifyId; i++)
           artistSpotifyId = Artist.findOne(aid).spotifyId;
 
         if (artistSpotifyId) {
@@ -152,7 +181,7 @@ const getAlbum = async (ids, artistIds, name) => {
           for (let albumType of ['album', 'compilation', 'appears_on', 'single']) {
             const { body } = await spotifyApi.getArtistAlbums(artistSpotifyId, {album_type: albumType, limit:50});
             // Only consider exact (but case insensitive) match against album name.
-            const nameLC = name.toLowerCase();
+            const nameLC = details.name.toLowerCase();
             spotifyAlbum = body.items.find(album => album.name.toLowerCase() == nameLC);
             if (spotifyAlbum) {
               break;
@@ -188,23 +217,32 @@ const getAlbum = async (ids, artistIds, name) => {
 /**
  * @summary Get/create a Track. Either by ids or with the given track details.
  * @param {Object} ids One or more id fields, such as _id or spotifyId. May be empty.
- * @param {Object} details Track details {trackName, artistNames (array), albumName, duration}. May be empty.
+ * @param {Object} details Basic track details {trackName, artistNames (array), albumName, duration},
+    or a full track description from a music service, eg {spotifyTrack}. May be empty.
  * TODO Handle adding tracks (and associated artists and album) when can't find on Spotify.
  */
 const getTrack = async (ids, details) => {
+  // First see if we already have this track in our DB.
   let track = ids && Object.keys(ids).length && Track.findOne(ids);
   if (!!track) return track;
 
-  if (ids.spotifyId || details.trackName && details.artistNames && details.albumName && details.duration) {
+  // If this is a spotify track or we can search for it on spotify.
+  if (ids.spotifyId || details.spotifyTrack || details.trackName && details.artistNames && details.albumName && details.duration) {
     try {
       const spotifyAPI = await getSpotifyAPI();
       let spotifyTrack;
 
-      if (ids.spotifyId) {
+      if (details.spotifyTrack) {
+        console.log("using preloaded spotify track data");
+        spotifyTrack = details.spotifyTrack;
+      }
+      else if (ids.spotifyId) {
+        console.log("loading track data from spotify by id");
         const { body } = await spotifyApi.getTrack(ids.spotifyId);
         spotifyTrack = body;
       }
       else {
+        console.log("searching for track data from spotify", ids, details);
         const query = `track:"${normalise(details.trackName)}" artist:"${normalise(details.artistNames[0])}" album:"${normalise(details.albumName)}"`;
         const { body } = await spotifyApi.search(query, ['track'], { limit: 50 });
 
@@ -230,16 +268,18 @@ const getTrack = async (ids, details) => {
           spotifyId: spotifyTrack.id,
         };
 
-        try {
-          const featuresResult = await spotifyApi.getAudioFeaturesForTrack(spotifyTrack.id);
-          console.log(featuresResult);
-          if (featuresResult.body.id) {
-            track.features = featuresResult.body;
-          }
-        }
-        catch (err) {
-          console.warn("Could not retrieve audio features for " + spotifyTrack.id);
-        }
+        // TODO a lot of spotify tracks don't seem to have audio features?
+        // TODO should run this as a background job.
+        // try {
+        //   const featuresResult = await spotifyApi.getAudioFeaturesForTrack(spotifyTrack.id);
+        //   console.log(featuresResult);
+        //   if (featuresResult.body.id) {
+        //     track.features = featuresResult.body;
+        //   }
+        // }
+        // catch (err) {
+        //   console.warn("Could not retrieve audio features for " + spotifyTrack.id);
+        // }
 
         const id = Track.insert(track);
         return Track.findOne(id);
@@ -271,10 +311,8 @@ const getTrack = async (ids, details) => {
  * @summary Get/create a TrackList.
  * @param {Object} ids One or more id fields, such as _id or spotifyUserId and spotifyListId.
  * @param {Object} insertMetadata If inserting the TrackList, additional metadata to add.
- * @param {String} progressId A ProgressMonitor id, if given the associated ProgressMonitor
- *   will be updated as each track is added to the list when importing via a music service.
  */
-const getTrackList = async (ids, insertMetadata, progressId) => {
+const getTrackList = async (ids, insertMetadata) => {
   let list = ids && Object.keys(ids).length && TrackList.findOne(ids);
   let tracksNotFound = [];
 
@@ -283,37 +321,85 @@ const getTrackList = async (ids, insertMetadata, progressId) => {
   if (!list) {
     if (ids.spotifyListId) {
       try {
-        const spotifyAPI = await getSpotifyAPI();
-        const { body } = await spotifyApi.getPlaylist(ids.spotifyUserId, ids.spotifyListId);
+        let spotifyAPI = await getSpotifyAPI();
+        let response = await spotifyApi.getPlaylist(ids.spotifyUserId, ids.spotifyListId);
 
-        const owner = await getCompiler({spotifyId: body.owner.id});
+        //console.log(response.statusCode, response.headers);
+
+        const listDetails = response.body;
+
+        response = await spotifyApi.getPlaylistTracks(ids.spotifyUserId, ids.spotifyListId);
+        const listTracks = response.body.items;
+
+        const owner = await getCompiler({spotifyId: listDetails.owner.id});
         const compilerIds = [owner._id];
 
-        console.log('getTrackList', 'a');
 
+        // First get all the artists and albums for all tracks in one spotify request
+        // per type. Avoids requesting many single artists and albums during track loading.
+        let artistSpotifyIds = [];
+        let albumSpotifyIds = [];
+        // Collate ids.
+        for (spotifyTrack of listTracks) {
+          if (!spotifyTrack.track.id) continue; // If not a spotify track.
+          for (artist of spotifyTrack.track.artists) artistSpotifyIds.push(artist.id);
+          for (artist of spotifyTrack.track.album.artists) artistSpotifyIds.push(artist.id);
+          albumSpotifyIds.push(spotifyTrack.track.album.id);
+        }
+        // Remove duplicates.
+        artistSpotifyIds = [ ...new Set(artistSpotifyIds) ];
+        albumSpotifyIds = [ ...new Set(albumSpotifyIds) ];
+        // Filter out those for which we already have a record.
+        artistSpotifyIds = artistSpotifyIds.filter(spotifyId => !Artist.findOne({spotifyId}));
+        albumSpotifyIds = albumSpotifyIds.filter(spotifyId => !Album.findOne({spotifyId}))
+
+        // Limit of 50 artists per request.
+        while (artistSpotifyIds.length) {
+          response = await spotifyApi.getArtists(artistSpotifyIds.splice(0, 50));
+          for (artist of response.body.artists) {
+            await getArtist(
+              {spotifyId: artist.id},
+              {spotifyArtist: artist}
+            );
+          }
+        }
+
+        // Limit of 20 albums per request.
+        while (albumSpotifyIds.length) {
+          response = await spotifyApi.getAlbums(albumSpotifyIds.splice(0, 20));
+          for (album of response.body.albums) {
+            await getAlbum(
+              {spotifyId: album.id},
+              {spotifyAlbum: album}
+            );
+          }
+        }
+
+        // Then create track documents.
         const trackIds = [];
         let duration = 0;
-        // TODO we should use the get-playlists-tracks endpoint here
-        // (and the multiple track version of the audio-features endpoint),
-        // would save a lot of requests.
-        for (let spotifyTrack of body.tracks.items) {
-          console.log('getTrackList', 'b');
-
+        for (let spotifyTrack of listTracks) {
           if (spotifyTrack.added_by && spotifyTrack.added_by.id != owner.spotifyId) {
             let comp = await getCompiler({spotifyId: spotifyTrack.added_by.id});
             // We remove duplicates below, don't worry about it here.
             if (comp) compilerIds.push(comp._id);
           }
 
-          let track = await getTrack({
-            spotifyId: spotifyTrack.track.id,
-          }, {
-            // For local tracks.
-            trackName: spotifyTrack.track.name,
-            artistNames:  spotifyTrack.track.artists.map(a=>a.name),
-            albumName: spotifyTrack.track.album.name,
-            duration: spotifyTrack.track.duration_ms / 1000,
-          });
+          let track;
+          if (spotifyTrack.track.id) {
+            track = await getTrack({spotifyId: spotifyTrack.track.id}, {spotifyTrack: spotifyTrack.track});
+          }
+          else {
+            // For local (non-spotify) tracks.
+            track = await getTrack(
+              {},
+              {
+                trackName: spotifyTrack.track.name,
+                artistNames:  spotifyTrack.track.artists.map(a=>a.name),
+                albumName: spotifyTrack.track.album.name,
+                duration: spotifyTrack.track.duration_ms / 1000,
+              });
+          }
 
           if (track) {
             trackIds.push(track._id);
@@ -326,21 +412,20 @@ const getTrackList = async (ids, insertMetadata, progressId) => {
               album: spotifyTrack.track.album.name,
             });
           }
-
-          progressId && ProgressMonitor.setPercent(progressId, (trackIds.length / body.tracks.items.length) * 100);
         }
 
-        insertMetadata = insertMetadata || { compilerIds: [] };
+        insertMetadata = insertMetadata || {};
 
         // Get all compilerIds, with duplicates removed.
-        insertMetadata.compilerIds = [ ...new Set(insertMetadata.compilerIds.concat(compilerIds)) ]
-        if (!insertMetadata.name) insertMetadata.name = body.name;
+        const allCompilerIds = insertMetadata.compilerIds ? insertMetadata.compilerIds.concat(compilerIds) : compilerIds;
+        insertMetadata.compilerIds = [ ...new Set(allCompilerIds) ]
+        if (!insertMetadata.name) insertMetadata.name = listDetails.name;
 
         const id = TrackList.insert({
           trackIds,
           duration,
-          spotifyUserId: body.owner.id,
-          spotifyListId: body.id,
+          spotifyUserId: listDetails.owner.id,
+          spotifyListId: listDetails.id,
           ...insertMetadata,
         });
         list = TrackList.findOne(id);
@@ -348,13 +433,10 @@ const getTrackList = async (ids, insertMetadata, progressId) => {
       catch (err) {
         const message = "Error retrieving list info from Spotify.";
         console.error(message, err);
-        progressId && ProgressMonitor.setError(progressId, message);
         throw message;
       }
     }
   }
-
-  progressId && ProgressMonitor.setComplete(progressId);
 
   return { list, tracksNotFound };
 }

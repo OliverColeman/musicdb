@@ -1,16 +1,13 @@
 import { Jobs } from 'meteor/msavin:sjobs';
 
-import ProgressMonitor from '../../../api/ProgressMonitor/ProgressMonitor';
-
 import { getCompiler, getArtist, getAlbum, getTrack, getTrackList } from '../../../modules/server/music_service';
 
 Jobs.register({
-  "TrackList.import": function (ids, insertMetadata, progressId) {
-    console.log('job import', ids, insertMetadata, progressId)
+  "TrackList.import": function (ids, insertMetadata) {
+    console.log('job import', ids, insertMetadata)
 
     const errHandler = (err) => {
       console.error("Import list job error", err.message);
-      ProgressMonitor.setError(progressId, err.message);
     }
 
     try {

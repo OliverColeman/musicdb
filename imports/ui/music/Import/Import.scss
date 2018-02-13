@@ -68,9 +68,15 @@
         margin: 0 1em 0.9em 0;
       }
 
-      .ProgressMonitor {
-        width: 15em;
+      .import-pending {
+        display: flex;
+        align-items: center;
+        font-style: italic;
+        &> * {
+          margin-right: 1em;
+        }
       }
+
       .TrackList {
         font-weight: bold;
       }

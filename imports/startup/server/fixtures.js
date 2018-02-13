@@ -16,36 +16,40 @@ if (!jdList) {
 if (Meteor.isDevelopment && TrackList.find().count() == 0) {
   // Get some example lists.
 
-  // This one contains a song not on Spotify.
-  getTrackList(
-    {
-      spotifyUserId: "petapieinthesky", spotifyListId: "67YquHJyGJabxbFnB9Yn4Y"
-    },
-    {
-      trackListListId: jdList._id,
-      name: "JD 1",
-      number: 1,
-      date: moment().startOf('day').unix(),
-    }
-  )
-  .then(data => console.log("Added list 1:", data))
-  .catch(err => console.log(err));
+  const getSampleLists = async function() {
+
+    // This one contains a song not on Spotify.
+    await getTrackList(
+      {
+        spotifyUserId: "petapieinthesky", spotifyListId: "67YquHJyGJabxbFnB9Yn4Y"
+      },
+      {
+        trackListListId: jdList._id,
+        name: "JD 1",
+        number: 1,
+        date: moment().startOf('day').unix(),
+      }
+    )
+    .then(data => console.log("Added list 1:", data))
+    .catch(err => console.log(err));
 
 
-  getTrackList(
-    {
-      spotifyUserId: "1270621250", spotifyListId: "38VMSVnvuwhS6xLRNrc3DX"
-    },
-    {
-      trackListListId: jdList._id,
-      name: "JD 2",
-      number: 2,
-      date: moment().startOf('day').subtract('1 weeks').unix(),
-    }
-  )
-  .then(data => console.log("Added list 2:", data))
-  .catch(err => console.log(err));
+    await getTrackList(
+      {
+        spotifyUserId: "1270621250", spotifyListId: "38VMSVnvuwhS6xLRNrc3DX"
+      },
+      {
+        trackListListId: jdList._id,
+        name: "JD 2",
+        number: 2,
+        date: moment().startOf('day').subtract('1 weeks').unix(),
+      }
+    )
+    .then(data => console.log("Added list 2:", data))
+    .catch(err => console.log(err));
+  }
 
+  getSampleLists();
 }
 
   //const list = getTrackList({spotifyUserId: "1270621250", spotifyListId: "6oeIWKU7T6MctsNlYLHUat"});

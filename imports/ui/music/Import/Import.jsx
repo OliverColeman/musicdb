@@ -51,6 +51,7 @@ class Import extends React.Component {
     };
 
     this.importFromSingle = this.importFromSingle.bind(this);
+    this.getIdsForImport = this.getIdsForImport.bind(this);
     this.doImport = this.doImport.bind(this);
   }
 
@@ -72,7 +73,7 @@ class Import extends React.Component {
             <h4 title="Optionally select a track list list to add the imported list(s) into.">Import lists into:</h4>
 
             <Select className="tracklistlist"
-              value={trackListListId} onChange={ v => this.setState({trackListListId: v}) }
+              value={trackListListId} onChange={ v => this.setState({trackListListId: v._id}) }
               options={trackListLists} valueKey={"_id"} labelKey={"name"} />
           </div>
 
@@ -85,7 +86,7 @@ class Import extends React.Component {
 
             <FormControl componentClass="input" type="number" className="listnumber"
               placeholder="List number" title="List number"
-              value={singleNumber} onChange={ e => this.setState({singleNumber: e.target.value}) } min={0} />
+              value={singleNumber} onChange={ e => this.setState({singleNumber: parseInt(e.target.value)}) } min={0} />
 
             <FormControl componentClass="input" type="date" className="listdate"
               placeholder="List date" title="List date"
@@ -133,17 +134,14 @@ class Import extends React.Component {
         <div className="import-results">
           {toImport.map(ti => (
             <div className="import-item" key={ti.url}>
-              <div className="name">{ti.insertMetadata.name || (ti.ids && ti.ids.spotifyListId)}</div>
-              {ti.progressId ?
-                <ProgressMonitor
-                  progressId={ti.progressId}
-                />
+              { ti.listId ?
+                <TrackList trackListId={ti.listId} viewContext="inline" />
                 :
-                <div>
-                  {ti.error || "Please wait..."}
+                <div className="import-pending">
+                  <div className="name">{ti.insertMetadata.name || (ti.ids && ti.ids.spotifyListId)}</div>
+                  <Loading />
                 </div>
               }
-              { ti.ids ? <TrackList spotifyListId={ti.ids.spotifyListId} viewContext="inline" /> : <Loading /> }
             </div>
           ))}
         </div>
@@ -167,12 +165,15 @@ class Import extends React.Component {
     if (singleDate) insertMetadata.date = moment(singleDate).unix();
     if (singleCompilers) insertMetadata.compilerIds = singleCompilers;
 
-    toImport.push({
+    const importData = {
       insertMetadata,
       url: singleURL,
-    });
+    }
+    this.getIdsForImport(importData);
 
-    console.log('importFromSingle', toImport.length-1, toImport[toImport.length-1]);
+    toImport.push(importData);
+
+    console.log('importFromSingle', toImport.length-1, importData);
 
     Session.set("Import_toImport", toImport);
 
@@ -180,37 +181,38 @@ class Import extends React.Component {
   }
 
 
-  doImport(index) {
-    console.log('doImport', index);
-    const { toImport } = this.props;
+  getIdsForImport(importData) {
+    importData.ids = {};
 
-    const urlParts = toImport[index].url.match(urlRE);
-
+    const urlParts = importData.url.match(urlRE);
     if (!urlParts) {
       console.log("url error", urlParts);
-      toImport[index].error = "URL is malformed.";
-      Session.set("Import_toImport", toImport);
+      importData.error = "URL is malformed.";
       return;
     }
 
-    let ids = {};
     // Spotify url (only supported type so far).
     if (urlParts[1]) {
-      ids.spotifyUserId = urlParts[1];
-      ids.spotifyListId = urlParts[2];
+      importData.ids.spotifyUserId = urlParts[1];
+      importData.ids.spotifyListId = urlParts[2];
     }
+  }
 
-    console.log(ids, toImport[index]);
 
-    Meteor.call('TrackList.import', ids, toImport[index].insertMetadata, (error, progressId) => {
-      console.log(error, progressId);
+  doImport(index) {
+    const { toImport } = this.props;
+
+    console.log('doImport', index, toImport[index]);
+
+    Meteor.call('TrackList.import', toImport[index].ids, toImport[index].insertMetadata, (error, results) => {
+      console.log('mc results', error, results);
 
       if (error) {
         toImport[index].error = error.message;
       }
       else {
-        toImport[index].progressId = progressId;
-        toImport[index].ids = ids;
+        toImport[index].listId = results.list._id;
+        // TODO show results.tracksNotFound
       }
 
       Session.set("Import_toImport", toImport);

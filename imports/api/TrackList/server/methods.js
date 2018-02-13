@@ -3,8 +3,8 @@ import { check, Match } from 'meteor/check';
 import { Jobs } from 'meteor/msavin:sjobs';
 
 import rateLimit from '../../../modules/rate-limit';
-import ProgressMonitor from '../../ProgressMonitor/ProgressMonitor';
 import TrackList from '../TrackList';
+import { getCompiler, getArtist, getAlbum, getTrack, getTrackList } from '../../../modules/server/music_service';
 import { getSchemaFieldTypes, throwMethodException } from '../../Utility/methodutils';
 
 
@@ -25,9 +25,13 @@ Meteor.methods({
     console.log('method import', ids, insertMetadata)
 
     try {
-      const progressId = ProgressMonitor.makeNew("Import track  list");
-      Jobs.run("TrackList.import", ids, insertMetadata, progressId);
-      return progressId;
+      const promise = getTrackList(ids, insertMetadata);
+      const results = promise.await();
+      console.log('method import results', results);
+
+      if (results && results.list && results.list._id) return results;
+
+      throw "Unable to import list, unknown error.";
     } catch (exception) {
       throwMethodException(exception);
     }

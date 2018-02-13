@@ -1,3 +1,12 @@
+### Design goals
+- Discuss use cases for the software. This will inform stuff around accounts, the notion of "groups", etc below.
+
+
+### Music service integration
+- Spotify: if receive 429 "rate limit...: on API request then wait specified time and try again https://developer.spotify.com/web-api/user-guide/#rate-limiting
+- Add other services.
+
+
 ### Accounts ###
 - Add captcha
 - Add admin role (and 'group admin' role)?
@@ -28,3 +37,7 @@
   - list of Tracks (and corresponding TrackLists?)
 - Compiler
   - list of TrackLists
+
+
+### Images
+Show images stored for Album, Artist and Compiler in imageURL field.
