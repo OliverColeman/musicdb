@@ -50,6 +50,10 @@ class Track extends React.Component {
           </div>
         }
 
+        <div className="album album-image image">
+          <Album albumId={track.albumId} viewContext="track" viewContext="image" />
+        </div>
+
         <div className="artists inline-list">
           { track.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewContext="inline" />)) }
         </div>

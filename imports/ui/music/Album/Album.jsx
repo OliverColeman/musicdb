@@ -27,6 +27,11 @@ class Album extends React.Component {
         {album.name}
       </Link>);
 
+    if (viewContext == 'image') return (
+      <Link to={`/album/${album._id}`} title={album.name} className={"Album inline-context name"}>
+        <img src={album.imageURL} className={"Album image-context image"}/>
+      </Link>);
+
     return (
       <div className={"Album " + viewContext + "-context"}>
         {loading ? <Loading /> :
