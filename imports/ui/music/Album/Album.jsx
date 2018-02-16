@@ -10,6 +10,8 @@ import AlbumCollection from '../../../api/Album/Album';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 
+import './Album.scss';
+
 
 class Album extends React.Component {
   constructor(props) {
