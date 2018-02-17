@@ -24,8 +24,8 @@ Album.schema = {
     type: String,
     optional: true,
   },
-  imageURL: {
-    type: String,
+  imageURLs: {
+    type: Array,
     optional: true,
   },
 };
