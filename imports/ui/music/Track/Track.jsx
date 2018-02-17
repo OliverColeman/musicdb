@@ -36,6 +36,12 @@ class Track extends React.Component {
 
     return (
       <div className={"Track " + viewContext + "-context"}>
+        {viewContext == "page" ? "" :
+          <div className="album album-image image">
+            <Album albumId={track.albumId} viewContext="track" viewContext="image-small" />
+          </div>
+        }
+
         { viewContext == 'list' ?
           <Link to={`/track/${track._id}`} title={track.name} className={"Track inline-context name"}>
             {track.name}
@@ -50,9 +56,11 @@ class Track extends React.Component {
           </div>
         }
 
-        <div className="album album-image image">
-          <Album albumId={track.albumId} viewContext="track" viewContext="image" />
-        </div>
+        {viewContext != "page" ? "" :
+          <div className="album album-image image">
+            <Album albumId={track.albumId} viewContext="track" viewContext="image-medium" />
+          </div>
+        }
 
         <div className="artists inline-list">
           { track.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewContext="inline" />)) }
