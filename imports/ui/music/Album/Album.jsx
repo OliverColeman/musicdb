@@ -7,6 +7,7 @@ import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 
 import AlbumCollection from '../../../api/Album/Album';
+import Artist from '../Artist/Artist';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 
@@ -52,6 +53,16 @@ class Album extends React.Component {
                 <a className="link spotify" title="Show in Spotify" target="_blank" href={`https://open.spotify.com/album/${album.spotifyId}`} />
               }
             </div>
+
+            <div className="artists inline-list">
+              { album.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewContext="inline" />)) }
+            </div>
+
+            {viewContext != "page" ? "" :
+            <div className="album album-image image">
+              <img src={album.imageURL} className={"Album image-context image"} />
+            </div>
+            }
           </div>
         }
       </div>
