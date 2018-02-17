@@ -33,6 +33,12 @@ class Artist extends React.Component {
 
     return (
       <div className={"Artist " + viewContext + "-context"}>
+        {viewContext != "page" ? "" :
+        <div className="artist artist-image image">
+          <img src={artist.imageURL} className={"Artist image-context image"} />
+        </div>
+        }
+
         <div className="item-header">
           <Link className="name" to={`/artist/${artist._id}`}>{artist.name}</Link>
           

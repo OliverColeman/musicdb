@@ -1,3 +1,13 @@
 .Artist {
   
 }
+
+.Artist.page-context .artist-image {
+  float: right;
+  margin-left: 1em;
+
+  & img {
+    // TODO: remove when correct images are loaded
+    height: 300px;
+  }
+}
