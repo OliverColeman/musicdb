@@ -40,4 +40,4 @@
 
 
 ### Images
-Show images stored for Album, Artist and Compiler in imageURL field.
+- Store and use all three image URLs (640, 300, 64px)
