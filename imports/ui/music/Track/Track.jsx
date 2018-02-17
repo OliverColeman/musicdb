@@ -36,7 +36,11 @@ class Track extends React.Component {
 
     return (
       <div className={"Track " + viewContext + "-context"}>
-        {viewContext == "page" ? "" :
+        {viewContext == "page" ?
+          <div className="album album-image image">
+            <Album albumId={track.albumId} viewContext="track" viewContext="image-medium" />
+          </div>
+          :
           <div className="album album-image image">
             <Album albumId={track.albumId} viewContext="track" viewContext="image-small" />
           </div>
@@ -53,12 +57,6 @@ class Track extends React.Component {
             {viewContext != 'page' || !track.spotifyId ? '' :
               <a className="link spotify" title="Show in Spotify" target="_blank" href={"https://open.spotify.com/track/" + track.spotifyId} />
             }
-          </div>
-        }
-
-        {viewContext != "page" ? "" :
-          <div className="album album-image image">
-            <Album albumId={track.albumId} viewContext="track" viewContext="image-medium" />
           </div>
         }
 
