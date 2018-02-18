@@ -77,7 +77,7 @@ class Track extends React.Component {
           </div>
 
           { loadingTrackLists ? (<Loading />) : trackLists.map(tracklist => (
-            <TrackList trackList={tracklist} viewContext="list" key={tracklist._id} />
+            <TrackList trackList={tracklist} viewContext="list" key={tracklist._id} showDate={true} />
           ))}
         </div>
       }
