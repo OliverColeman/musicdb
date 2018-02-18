@@ -3,21 +3,21 @@
 import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
 
-const TrackList = new Mongo.Collection('TrackList');
+const PlayList = new Mongo.Collection('PlayList');
 
-TrackList.allow({
+PlayList.allow({
   insert: () => false,
   update: () => false,
   remove: () => false,
 });
 
-TrackList.deny({
+PlayList.deny({
   insert: () => true,
   update: () => true,
   remove: () => true,
 });
 
-TrackList.schema = {
+PlayList.schema = {
   name: String,
   compilerIds: [String],
   trackIds: [String],
@@ -37,6 +37,6 @@ TrackList.schema = {
   date: { type: Number, optional: true }, //unix timestamp
 };
 
-TrackList.attachSchema(new SimpleSchema(TrackList.schema));
+PlayList.attachSchema(new SimpleSchema(PlayList.schema));
 
-export default TrackList;
+export default PlayList;

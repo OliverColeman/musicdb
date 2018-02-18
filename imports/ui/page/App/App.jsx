@@ -25,7 +25,7 @@ import Footer from '../Footer/Footer';
 import VerifyEmailAlert from '../../account/VerifyEmailAlert/VerifyEmailAlert';
 import getUserName from '../../../modules/get-user-name';
 import Track from '../../music/Track/Track';
-import TrackList from '../../music/TrackList/TrackList';
+import PlayList from '../../music/PlayList/PlayList';
 import Tag from '../../music/Tag/Tag';
 import Artist from '../../music/Artist/Artist';
 import Album from '../../music/Album/Album';
@@ -52,7 +52,7 @@ const App = props => (
 
             {/*<Route exact path="/lists/:tagId" component={Tag} {...props} />*/}
             <Route exact path="/listlist/:tagId" component={Tag} {...props} />
-            <Route exact path="/list/:trackListId" component={TrackList} {...props} />
+            <Route exact path="/list/:playListId" component={PlayList} {...props} />
             <Route exact path="/track/:trackId" component={Track} {...props} />
             <Route exact path="/artist/:artistId" component={Artist} {...props} />
             <Route exact path="/album/:albumId" component={Album} {...props} />

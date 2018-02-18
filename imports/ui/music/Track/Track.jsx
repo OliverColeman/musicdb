@@ -32,7 +32,7 @@ class Track extends React.Component {
         {track.name}
       </Link>);
 
-    // TODO If viewContext is 'page' then show info such as a list of TrackLists that the track has been included in.
+    // TODO If viewContext is 'page' then show info such as a list of PlayLists that the track has been included in.
 
     return (
       <div className={"Track " + viewContext + "-context"}>

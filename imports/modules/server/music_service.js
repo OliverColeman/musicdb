@@ -6,7 +6,7 @@ import _ from 'lodash';
 import Compiler from '../../api/Compiler/Compiler';
 import Artist from '../../api/Artist/Artist';
 import Album from '../../api/Album/Album';
-import TrackList from '../../api/TrackList/TrackList';
+import PlayList from '../../api/PlayList/PlayList';
 import Track from '../../api/Track/Track';
 import ProgressMonitor from '../../api/ProgressMonitor/ProgressMonitor';
 
@@ -395,12 +395,12 @@ const getTrack = async (ids, details) => {
 
 
 /**
- * @summary Get/create a TrackList.
+ * @summary Get/create a PlayList.
  * @param {Object} ids One or more id fields, such as _id or spotifyUserId and spotifyListId.
- * @param {Object} insertMetadata If inserting the TrackList, additional metadata to add.
+ * @param {Object} insertMetadata If inserting the PlayList, additional metadata to add.
  */
-const getTrackList = async (ids, insertMetadata) => {
-  let list = ids && Object.keys(ids).length && TrackList.findOne(ids);
+const getPlayList = async (ids, insertMetadata) => {
+  let list = ids && Object.keys(ids).length && PlayList.findOne(ids);
 
   if (!list) {
     if (ids.spotifyListId) {
@@ -482,9 +482,9 @@ const getTrackList = async (ids, insertMetadata) => {
 
         console.log('tl', tl);
 
-        const id = TrackList.insert(tl);
+        const id = PlayList.insert(tl);
 
-        list = TrackList.findOne(id);
+        list = PlayList.findOne(id);
       }
       catch (err) {
         const message = "Error retrieving list info from Spotify.";
@@ -537,4 +537,4 @@ const ensureAlbumsBySpotifyId = async (spotifyAlbumIds) => {
 };
 
 
-export { getSpotifyAPI, getCompiler, getArtist, getAlbum, getTrack, getTrackList };
+export { getSpotifyAPI, getCompiler, getArtist, getAlbum, getTrack, getPlayList };

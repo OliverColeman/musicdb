@@ -20,11 +20,11 @@
       }
     }
 
-    .import-spec-tracklistlist {
+    .import-spec-playlistlist {
       display: flex;
       align-items:center;
       flex-wrap: wrap;
-      .tracklistlist {
+      .playlistlist {
         width: 20em;
       }
     }
@@ -77,7 +77,7 @@
         }
       }
 
-      .TrackList {
+      .PlayList {
         font-weight: bold;
       }
     }

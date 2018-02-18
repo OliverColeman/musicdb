@@ -12,7 +12,7 @@ import moment from 'moment';
 
 import CompilerCollection from '../../../api/Compiler/Compiler';
 import TagCollection from '../../../api/Tag/Tag';
-import TrackList from '../TrackList/TrackList';
+import PlayList from '../PlayList/PlayList';
 import Tag from '../Tag/Tag';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
@@ -63,16 +63,16 @@ class Import extends React.Component {
 
     console.log('render', toImport);
 
-    const { inProgress, tagId, importedTrackLists, singleName,
+    const { inProgress, tagId, importedPlayLists, singleName,
       singleNumber, singleDate, singleCompilers, singleURL, importFile, massImportText } = this.state;
 
     return (
       <div className="Import">
         <div className="import-spec">
-          <div className="import-spec-tracklistlist">
+          <div className="import-spec-playlistlist">
             <h4 title="Optionally select a track list list to add the imported list(s) into.">Import lists into:</h4>
 
-            <Select className="tracklistlist"
+            <Select className="playlistlist"
               value={tagId} onChange={ v => this.setState({tagId: v._id}) }
               options={tags} valueKey={"_id"} labelKey={"name"} />
           </div>
@@ -135,7 +135,7 @@ class Import extends React.Component {
           {toImport.map(ti => (
             <div className="import-item" key={ti.url}>
               { ti.listId ?
-                <TrackList trackListId={ti.listId} viewContext="inline" />
+                <PlayList playListId={ti.listId} viewContext="inline" />
                 :
                 <div className="import-pending">
                   <div className="name">{ti.insertMetadata.name || (ti.ids && ti.ids.spotifyListId)}</div>
@@ -204,7 +204,7 @@ class Import extends React.Component {
 
     console.log('doImport', index, toImport[index]);
 
-    Meteor.call('TrackList.import', toImport[index].ids, toImport[index].insertMetadata, (error, results) => {
+    Meteor.call('PlayList.import', toImport[index].ids, toImport[index].insertMetadata, (error, results) => {
       console.log('mc results', error, results);
 
       if (error) {

@@ -7,9 +7,9 @@ import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 
 import TagCollection from '../../../api/Tag/Tag';
-import TrackListCollection from '../../../api/TrackList/TrackList';
+import PlayListCollection from '../../../api/PlayList/PlayList';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
-import TrackList from '../TrackList/TrackList';
+import PlayList from '../PlayList/PlayList';
 import Compiler from '../Compiler/Compiler';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
@@ -23,9 +23,9 @@ class Tag extends React.Component {
   }
 
   render() {
-    const { loading, loadingLists, tag, trackLists, viewContext } = this.props;
+    const { loading, loadingLists, tag, playLists, viewContext } = this.props;
 
-    console.log(trackLists);
+    console.log(playLists);
 
     if (loading) return (<Loading />);
     if (!tag) return (<NotFound />);
@@ -36,7 +36,7 @@ class Tag extends React.Component {
       </Link>);
 
     const showLists = viewContext == "page";
-    const hasDates = trackLists && trackLists.find(tl => !!tl.date);
+    const hasDates = playLists && playLists.find(tl => !!tl.date);
 
     const headers = hasDates ? ["Name", "Date", "Compiler(s)", "Length"] : ["Name", "Compiler(s)", "Length"];
 
@@ -47,15 +47,15 @@ class Tag extends React.Component {
         </div>
 
         { !showLists ? '' :
-          <div className="tracklists">
+          <div className="playlists">
             <div className="header-row">
               { headers.map(h => (
                 <div className={"header-cell header-" + h} key={h}>{h}</div>
               ))}
             </div>
 
-            { loadingLists ? (<Loading />) : trackLists.map(trackList => (
-              <TrackList trackList={trackList} viewContext="list" showDate={hasDates} key={trackList._id} />
+            { loadingLists ? (<Loading />) : playLists.map(playList => (
+              <PlayList playList={playList} viewContext="list" showDate={hasDates} key={playList._id} />
             ))}
           </div>
         }
@@ -70,7 +70,7 @@ export default withTracker(({match, tag, tagId, viewContext}) => {
   const id = tagId || (tag && tag._id) || match.params.tagId;
 
   const sub = tag ? false : Meteor.subscribe('Tag.withId', id);
-  const subLists = viewContext == 'page' && Meteor.subscribe('TrackList.withTagId', id);
+  const subLists = viewContext == 'page' && Meteor.subscribe('PlayList.withTagId', id);
 
   const sortOptions = {
     number: -1,
@@ -84,7 +84,7 @@ export default withTracker(({match, tag, tagId, viewContext}) => {
     loading: sub && !sub.ready(),
     loadingLists: subLists && !subLists.ready(),
     tag: tag || TagCollection.findOne(id),
-    trackLists: subLists && TrackListCollection.find({tagIds: id}, {sort: sortOptions}).fetch(),
+    playLists: subLists && PlayListCollection.find({tagIds: id}, {sort: sortOptions}).fetch(),
     viewContext,
   };
 })(Tag);

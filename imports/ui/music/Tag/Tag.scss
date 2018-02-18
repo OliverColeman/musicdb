@@ -17,12 +17,12 @@
   }
 
   /* TODO Inline layout and remove some details on small screens */
-  .tracklists {
+  .playlists {
     display: table;
     table-layout:fixed;
     width: 100%;
 
-    .TrackList, .header-row {
+    .PlayList, .header-row {
       display: table-row;
 
       & > * {

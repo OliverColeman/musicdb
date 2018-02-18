@@ -1,9 +1,9 @@
 import { Jobs } from 'meteor/msavin:sjobs';
 
-import { getCompiler, getArtist, getAlbum, getTrack, getTrackList } from '../../../modules/server/music_service';
+import { getCompiler, getArtist, getAlbum, getTrack, getPlayList } from '../../../modules/server/music_service';
 
 Jobs.register({
-  "TrackList.import": function (ids, insertMetadata) {
+  "PlayList.import": function (ids, insertMetadata) {
     console.log('job import', ids, insertMetadata)
 
     const errHandler = (err) => {
@@ -11,7 +11,7 @@ Jobs.register({
     }
 
     try {
-        getTrackList(ids, insertMetadata, progressId)
+        getPlayList(ids, insertMetadata, progressId)
         .then(null, errHandler);
     }
     catch (err) {

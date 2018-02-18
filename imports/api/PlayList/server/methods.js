@@ -3,13 +3,13 @@ import { check, Match } from 'meteor/check';
 import { Jobs } from 'meteor/msavin:sjobs';
 
 import rateLimit from '../../../modules/rate-limit';
-import TrackList from '../TrackList';
-import { getCompiler, getArtist, getAlbum, getTrack, getTrackList } from '../../../modules/server/music_service';
+import PlayList from '../PlayList';
+import { getCompiler, getArtist, getAlbum, getTrack, getPlayList } from '../../../modules/server/music_service';
 import { getSchemaFieldTypes, throwMethodException } from '../../Utility/methodutils';
 
 
 Meteor.methods({
-  'TrackList.import': function TrackListImport(ids, insertMetadata) {
+  'PlayList.import': function PlayListImport(ids, insertMetadata) {
     check(ids, {
       spotifyUserId: String,
       spotifyListId: String,
@@ -25,7 +25,7 @@ Meteor.methods({
     console.log('method import', ids, insertMetadata)
 
     try {
-      const promise = getTrackList(ids, insertMetadata);
+      const promise = getPlayList(ids, insertMetadata);
       const list = promise.await();
       console.log('method import results', list);
 
@@ -41,7 +41,7 @@ Meteor.methods({
 
 rateLimit({
   methods: [
-    'TrackList.import',
+    'PlayList.import',
   ],
   limit: 5,
   timeRange: 1000,
