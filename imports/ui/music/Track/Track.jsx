@@ -8,6 +8,8 @@ import { Bert } from 'meteor/themeteorchef:bert';
 
 import { convertSecondsToHHMMSS } from '../../../modules/util';
 import TrackCollection from '../../../api/Track/Track';
+import TrackList from '../TrackList/TrackList';
+import TrackListCollection from '../../../api/TrackList/TrackList';
 import Album from '../Album/Album';
 import Artist from '../Artist/Artist';
 import NotFound from '../../nav/NotFound/NotFound';
@@ -22,7 +24,7 @@ class Track extends React.Component {
   }
 
   render() {
-    const { loading, track, viewContext } = this.props;
+    const { loading, loadingTrackLists, trackLists, track, viewContext } = this.props;
 
     if (loading) return (<Loading />);
     if (!track) return (<NotFound />);
@@ -31,8 +33,6 @@ class Track extends React.Component {
       <Link to={`/track/${track._id}`} title={track.name} className={"Track inline-context name"}>
         {track.name}
       </Link>);
-
-    // TODO If viewContext is 'page' then show info such as a list of TrackLists that the track has been included in.
 
     return (
       <div className={"Track " + viewContext + "-context"}>
@@ -67,6 +67,21 @@ class Track extends React.Component {
         <Album albumId={track.albumId} viewContext="track" viewContext="inline" />
 
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
+
+      { viewContext != "page" ? "" :
+        <div className="trackLists">
+          <div className="header-row">
+            { ["Name", "Date", "Compiler", "Length"].map(h => (
+              <div className={"header-cell header-" + h} key={h}>{h}</div>
+            ))}
+          </div>
+
+          { loadingTrackLists ? (<Loading />) : trackLists.map(tracklist => (
+            <TrackList trackList={tracklist} viewContext="list" key={tracklist._id} />
+          ))}
+        </div>
+      }
+
       </div>
     );
   }
@@ -74,12 +89,18 @@ class Track extends React.Component {
 
 
 export default withTracker(({ match, trackId, track, viewContext }) => {
+  trackId = trackId || track && track._id || match.params.trackId
+
   viewContext = viewContext || "page";
-  const subscription = track ? null : Meteor.subscribe('Track.withId', trackId || match.params.trackId);
+  const subscription = track ? null : Meteor.subscribe('Track.withId', trackId);
+
+    const subTrackLists = viewContext == 'page' && Meteor.subscribe('Track.trackLists', trackId);
 
   return {
     loading: subscription && !subscription.ready(),
-    track: track || TrackCollection.findOne(trackId || match.params.trackId),
+    track: track || TrackCollection.findOne(trackId),
+    loadingTrackLists: subTrackLists && !subTrackLists.ready(),
+    trackLists: subTrackLists && TrackListCollection.find({ trackIds: trackId}).fetch(),
     viewContext,
   };
 })(Track);
