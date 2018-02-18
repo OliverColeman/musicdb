@@ -1,0 +1,28 @@
+.Album {
+
+  &.page-context {
+    & > * {
+    }
+  }
+
+  &.inline-context {
+    & > * {
+    }
+  }
+
+  &.image-context {
+    & > * {
+    }
+  }
+}
+
+.Album.page-context .album-image,
+.Track.page-context .album-image {
+  float: right;
+  margin-left: 1em;
+
+  & img {
+    // TODO: remove when correct images are loaded
+    height: 300px;
+  }
+}

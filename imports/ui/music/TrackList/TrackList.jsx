@@ -64,7 +64,7 @@ class TrackList extends React.Component {
         { !showTracks ? '' :
           <div className="tracks">
             <div className="header-row">
-              { ["Title", "Artist", "Album", "Length"].map(h => (
+              { ["Cover", "Title", "Artist", "Album", "Length"].map(h => (
                 <div className={"header-cell header-" + h} key={h}>{h}</div>
               ))}
             </div>

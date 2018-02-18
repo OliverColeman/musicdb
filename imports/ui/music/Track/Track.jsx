@@ -36,6 +36,16 @@ class Track extends React.Component {
 
     return (
       <div className={"Track " + viewContext + "-context"}>
+        {viewContext == "page" ?
+          <div className="album album-image image">
+            <Album albumId={track.albumId} viewContext="track" viewContext="image-medium" />
+          </div>
+          :
+          <div className="album album-image image">
+            <Album albumId={track.albumId} viewContext="track" viewContext="image-small" />
+          </div>
+        }
+
         { viewContext == 'list' ?
           <Link to={`/track/${track._id}`} title={track.name} className={"Track inline-context name"}>
             {track.name}
