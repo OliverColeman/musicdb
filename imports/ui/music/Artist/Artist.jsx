@@ -35,7 +35,7 @@ class Artist extends React.Component {
       <div className={"Artist " + viewContext + "-context"}>
         {viewContext != "page" ? "" :
         <div className="artist artist-image image">
-          <img src={artist.imageURL} className={"Artist image-context image"} />
+          <img src={artist.imageURLs.medium} className={"Artist image-context image"} />
         </div>
         }
 

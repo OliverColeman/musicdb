@@ -25,9 +25,12 @@ Album.schema = {
     optional: true,
   },
   imageURLs: {
-    type: Array,
+    type: Object,
     optional: true,
   },
+  "imageURLs.small": { type: String, optional: true },
+  "imageURLs.medium": { type: String, optional: true },
+  "imageURLs.large": { type: String, optional: true },
 };
 Album.attachSchema(new SimpleSchema(Album.schema));
 

@@ -27,10 +27,13 @@ Artist.schema = {
     type: String,
     optional: true,
   },
-  imageURL: {
-    type: String,
+  imageURLs: {
+    type: Object,
     optional: true,
   },
+  "imageURLs.small": { type: String, optional: true },
+  "imageURLs.medium": { type: String, optional: true },
+  "imageURLs.large": { type: String, optional: true },
 };
 Artist.attachSchema(new SimpleSchema(Artist.schema));
 

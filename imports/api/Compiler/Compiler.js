@@ -23,10 +23,7 @@ Compiler.schema = {
     type: String,
     optional: true,
   },
-  imageURL: {
-    type: String,
-    optional: true,
-  },
+  imageURL: { type: String, optional: true },
 };
 Compiler.attachSchema(new SimpleSchema(Compiler.schema));
 

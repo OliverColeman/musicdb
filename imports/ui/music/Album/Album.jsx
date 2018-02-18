@@ -30,16 +30,14 @@ class Album extends React.Component {
         {album.name}
       </Link>);
 
-    // TODO: Should be grabbing the 300px image from spotify instead of resizing
     if (viewContext == 'image-medium') return (
       <Link to={`/album/${album._id}`} title={album.name} className={"Album inline-context name"}>
-        <img src={album.imageURL} className={"Album image-context image"} height={"300"} width={"300"} />
+        <img src={album.imageURLs.medium} className={"Album image-context image"} height={"300"} width={"300"} />
       </Link>);
 
-    // TODO: Should be grabbing the 64px image from spotify instead of resizing
     if (viewContext == 'image-small') return (
       <Link to={`/album/${album._id}`} title={album.name} className={"Album inline-context name"}>
-        <img src={album.imageURL} className={"Album image-context image"} height={"64"} width={"64"} />
+        <img src={album.imageURLs.small} className={"Album image-context image"} />
       </Link>);
 
     return (
@@ -48,7 +46,7 @@ class Album extends React.Component {
           <div>
             {viewContext != "page" ? "" :
             <div className="album album-image image">
-              <img src={album.imageURL} className={"Album image-context image"} />
+              <img src={album.imageURLs.medium} className={"Album image-context image"} />
             </div>
             }
 

@@ -87,11 +87,8 @@ const getCompiler = async (ids, name) => {
         spotifyId: body.id,
       };
       if (body.images && body.images.length) {
-        // default images sizes seem to be 640, 300, and 64, in that order.
-        compiler.imageURLs = [];
-        for (var i in body.images) {
-          compiler.imageURLs.push(body.images[i].url);
-        }
+        // Users only have one image, it seems
+        compiler.imageURL = body.images[0].url;
       }
       const id = Compiler.insert(compiler);
       return Compiler.findOne(id);
@@ -134,11 +131,16 @@ const getArtist = async (ids, details) => {
         spotifyId: spotifyArtist.id,
       };
       if (spotifyArtist.images && spotifyArtist.images.length) {
-        artist.imageURL = spotifyArtist.images[0].url;
         // default images sizes seem to be 640, 300, and 64, in that order.
-        artist.imageURLs = [];
-        for (var i in spotifyArtist.images) {
-          artist.imageURLs.push(spotifyArtist.images[i].url);
+        artist.imageURLs = {};
+        for (let image of spotifyArtist.images) {
+          if (image.height == 640) {
+            artist.imageURLs.large = image.url;
+          } else if (image.height == 320) {
+            artist.imageURLs.medium = image.url;
+          } else if (image.height == 160) {
+            artist.imageURLs.small = image.url;
+          }
         }
       }
       const id = Artist.insert(artist);
@@ -209,9 +211,15 @@ const getAlbum = async (ids, details) => {
           }))).filter(id=>!!id),
         };
         if (spotifyAlbum.images && spotifyAlbum.images.length) {
-          album.imageURLs = [];
-          for (var i in spotifyAlbum.images) {
-            album.imageURLs.push(spotifyAlbum.images[i].url);
+          album.imageURLs = {};
+          for (let image of spotifyAlbum.images) {
+            if (image.height == 640) {
+              album.imageURLs.large = image.url;
+            } else if (image.height == 300) {
+              album.imageURLs.medium = image.url;
+            } else if (image.height == 64) {
+              album.imageURLs.small = image.url;
+            }
           }
         }
         const id = Album.insert(album);
