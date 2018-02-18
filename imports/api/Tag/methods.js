@@ -2,38 +2,38 @@ import { Meteor } from 'meteor/meteor';
 import { check } from 'meteor/check';
 import rateLimit from '../../modules/rate-limit';
 
-import TrackListList from './TrackListList';
+import Tag from './Tag';
 import { getSchemaFieldTypes, throwMethodException } from '../Utility/methodutils';
 
 
 Meteor.methods({
-  'TrackListList.insert': function TrackListListInsert(doc) {
-    check(doc, getSchemaFieldTypes(TrackListList.schema, doc));
+  'Tag.insert': function TagInsert(doc) {
+    check(doc, getSchemaFieldTypes(Tag.schema, doc));
 
     try {
-      return TrackListList.insert(doc);
+      return Tag.insert(doc);
     } catch (exception) {
       throwMethodException(exception);
     }
   },
 
-  'TrackListList.update': function TrackListListUpdate(doc) {
-    check(doc, getSchemaFieldTypes(TrackListList.schema, doc, true));
+  'Tag.update': function TagUpdate(doc) {
+    check(doc, getSchemaFieldTypes(Tag.schema, doc, true));
 
     try {
       const id = doc._id;
-      TrackListList.update(id, { $set: doc });
+      Tag.update(id, { $set: doc });
       return id; // Return _id so we can redirect to document after update.
     } catch (exception) {
       throwMethodException(exception);
     }
   },
 
-  'TrackListList.remove': function TrackListListRemove(id) {
+  'Tag.remove': function TagRemove(id) {
     check(id, String);
 
     try {
-      return TrackListList.remove(id);
+      return Tag.remove(id);
     } catch (exception) {
       throwMethodException(exception);
     }
@@ -43,9 +43,9 @@ Meteor.methods({
 
 rateLimit({
   methods: [
-    'TrackListList.insert',
-    'TrackListList.update',
-    'TrackListList.remove',
+    'Tag.insert',
+    'Tag.update',
+    'Tag.remove',
   ],
   limit: 5,
   timeRange: 1000,

@@ -3,23 +3,23 @@
 import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
 
-const TrackListList = new Mongo.Collection('TrackListList');
+const Tag = new Mongo.Collection('Tag');
 
-TrackListList.allow({
+Tag.allow({
   insert: () => false,
   update: () => false,
   remove: () => false,
 });
 
-TrackListList.deny({
+Tag.deny({
   insert: () => true,
   update: () => true,
   remove: () => true,
 });
 
-TrackListList.schema = {
+Tag.schema = {
   name: String,
 };
-TrackListList.attachSchema(new SimpleSchema(TrackListList.schema));
+Tag.attachSchema(new SimpleSchema(Tag.schema));
 
-export default TrackListList;
+export default Tag;

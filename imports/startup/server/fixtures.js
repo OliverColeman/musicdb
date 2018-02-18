@@ -1,15 +1,15 @@
 import moment from 'moment';
 
 import { getCompiler, getArtist, getAlbum, getTrack, getTrackList } from '../../modules/server/music_service';
-import TrackListList from '../../api/TrackListList/TrackListList';
+import Tag from '../../api/Tag/Tag';
 import TrackList from '../../api/TrackList/TrackList';
 
 
 // Add JD track list list if necessary.
-let jdList = TrackListList.findOne({name: "JD"});
+let jdList = Tag.findOne({name: "JD"});
 if (!jdList) {
-  const trackListListId = TrackListList.insert({name: "JD"});
-  jdList = TrackListList.findOne(trackListListId);
+  const tagId = Tag.insert({name: "JD"});
+  jdList = Tag.findOne(tagId);
 }
 
 
@@ -24,7 +24,7 @@ if (Meteor.isDevelopment && TrackList.find().count() == 0) {
         spotifyUserId: "petapieinthesky", spotifyListId: "67YquHJyGJabxbFnB9Yn4Y"
       },
       {
-        trackListListId: jdList._id,
+        tagIds: [jdList._id],
         name: "JD 1",
         number: 1,
         date: moment().startOf('day').unix(),
@@ -33,20 +33,20 @@ if (Meteor.isDevelopment && TrackList.find().count() == 0) {
     .then(data => console.log("Added list 1:", data))
     .catch(err => console.log(err));
 
-
-    await getTrackList(
-      {
-        spotifyUserId: "1270621250", spotifyListId: "38VMSVnvuwhS6xLRNrc3DX"
-      },
-      {
-        trackListListId: jdList._id,
-        name: "JD 2",
-        number: 2,
-        date: moment().startOf('day').subtract('1 weeks').unix(),
-      }
-    )
-    .then(data => console.log("Added list 2:", data))
-    .catch(err => console.log(err));
+    //
+    // await getTrackList(
+    //   {
+    //     spotifyUserId: "1270621250", spotifyListId: "38VMSVnvuwhS6xLRNrc3DX"
+    //   },
+    //   {
+    //     tagId: jdList._id,
+    //     name: "JD 2",
+    //     number: 2,
+    //     date: moment().startOf('day').subtract('1 weeks').unix(),
+    //   }
+    // )
+    // .then(data => console.log("Added list 2:", data))
+    // .catch(err => console.log(err));
   }
 
   getSampleLists();

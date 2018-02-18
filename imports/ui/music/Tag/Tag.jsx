@@ -6,7 +6,7 @@ import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 
-import TrackListListCollection from '../../../api/TrackListList/TrackListList';
+import TagCollection from '../../../api/Tag/Tag';
 import TrackListCollection from '../../../api/TrackList/TrackList';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
 import TrackList from '../TrackList/TrackList';
@@ -14,23 +14,23 @@ import Compiler from '../Compiler/Compiler';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 
-import './TrackListList.scss';
+import './Tag.scss';
 
 
-class TrackListList extends React.Component {
+class Tag extends React.Component {
   constructor(props) {
     super(props);
   }
 
   render() {
-    const { loading, loadingLists, trackListList, trackLists, viewContext } = this.props;
+    const { loading, loadingLists, tag, trackLists, viewContext } = this.props;
 
     if (loading) return (<Loading />);
-    if (!trackListList) return (<NotFound />);
+    if (!tag) return (<NotFound />);
 
     if (viewContext == 'inline') return (
-      <Link to={`/listlist/${trackListList._id}`} title={trackListList.name} className={"TrackListList inline-context name"}>
-        {trackListList.name}
+      <Link to={`/listlist/${tag._id}`} title={tag.name} className={"Tag inline-context name"}>
+        {tag.name}
       </Link>);
 
     const showLists = viewContext == "page";
@@ -39,9 +39,9 @@ class TrackListList extends React.Component {
     const headers = hasDates ? ["Name", "Date", "Compiler(s)", "Length"] : ["Name", "Compiler(s)", "Length"];
 
     return (
-      <div className={"TrackListList " + viewContext + "-context"}>
+      <div className={"Tag " + viewContext + "-context"}>
         <div className="item-header">
-          <Link className="name" to={`/listlist/${trackListList._id}`}>{trackListList.name}</Link>
+          <Link className="name" to={`/listlist/${tag._id}`}>{tag.name}</Link>
         </div>
 
         { !showLists ? '' :
@@ -63,12 +63,12 @@ class TrackListList extends React.Component {
 }
 
 
-export default withTracker(({match, trackListList, trackListListId, viewContext}) => {
+export default withTracker(({match, tag, tagId, viewContext}) => {
   viewContext = viewContext || "page";
-  const id = trackListListId || (trackListList && trackListList._id) || match.params.trackListListId;
+  const id = tagId || (tag && tag._id) || match.params.tagId;
 
-  const sub = trackListList ? null : Meteor.subscribe('TrackListList.withId', id);
-  const subLists = viewContext == 'page' && Meteor.subscribe('TrackList.withTrackListListId', id);
+  const sub = tag ? null : Meteor.subscribe('Tag.withId', id);
+  const subLists = viewContext == 'page' && Meteor.subscribe('TrackList.withTagId', id);
 
   const sortOptions = {
     number: -1,
@@ -79,8 +79,8 @@ export default withTracker(({match, trackListList, trackListListId, viewContext}
   return {
     loading: sub && !sub.ready(),
     loadingLists: subLists && !subLists.ready(),
-    trackListList: trackListList || TrackListListCollection.findOne(id),
-    trackLists: subLists && TrackListCollection.find({trackListListId: id}, {sort: sortOptions}).fetch(),
+    tag: tag || TagCollection.findOne(id),
+    trackLists: subLists && TrackListCollection.find({tagId: id}, {sort: sortOptions}).fetch(),
     viewContext,
   };
-})(TrackListList);
+})(Tag);

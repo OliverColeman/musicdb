@@ -2,7 +2,7 @@ import '../../api/Track/server/publications';
 import '../../api/TrackList/server/publications';
 import '../../api/TrackList/server/methods';
 import '../../api/TrackList/server/jobs';
-import '../../api/TrackListList/server/publications';
+import '../../api/Tag/server/publications';
 import '../../api/Artist/server/publications';
 import '../../api/Album/server/publications';
 import '../../api/Compiler/server/publications';

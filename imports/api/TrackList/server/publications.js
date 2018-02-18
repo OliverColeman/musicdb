@@ -24,7 +24,7 @@ Meteor.publish('TrackList.tracks', function withId(documentId, spotifyListId) {
   }
 });
 
-Meteor.publish('TrackList.withTrackListListId', function withId(trackListListId) {
-  check(trackListListId, String);
-  return TrackList.find({trackListListId});
+Meteor.publish('TrackList.withTagId', function withId(tagId) {
+  check(tagId, String);
+  return TrackList.find({tagIds: tagId});
 });

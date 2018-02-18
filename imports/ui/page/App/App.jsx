@@ -26,7 +26,7 @@ import VerifyEmailAlert from '../../account/VerifyEmailAlert/VerifyEmailAlert';
 import getUserName from '../../../modules/get-user-name';
 import Track from '../../music/Track/Track';
 import TrackList from '../../music/TrackList/TrackList';
-import TrackListList from '../../music/TrackListList/TrackListList';
+import Tag from '../../music/Tag/Tag';
 import Artist from '../../music/Artist/Artist';
 import Album from '../../music/Album/Album';
 import Compiler from '../../music/Compiler/Compiler';
@@ -50,8 +50,8 @@ const App = props => (
           <Switch>
             <Route exact name="index" path="/" component={Index} />
 
-            {/*<Route exact path="/lists/:trackListListId" component={TrackListList} {...props} />*/}
-            <Route exact path="/listlist/:trackListListId" component={TrackListList} {...props} />
+            {/*<Route exact path="/lists/:tagId" component={Tag} {...props} />*/}
+            <Route exact path="/listlist/:tagId" component={Tag} {...props} />
             <Route exact path="/list/:trackListId" component={TrackList} {...props} />
             <Route exact path="/track/:trackId" component={Track} {...props} />
             <Route exact path="/artist/:artistId" component={Artist} {...props} />
@@ -94,10 +94,10 @@ export default withTracker(() => {
   const name = user && user.profile && user.profile.name && getUserName(user.profile.name);
   const emailAddress = user && user.emails && user.emails[0].address;
 
-  const trackListListSub = Meteor.subscribe('TrackListList.all');
+  const tagSub = Meteor.subscribe('Tag.all');
 
   return {
-    loading: loadingRoles || !trackListListSub.ready(),
+    loading: loadingRoles || !tagSub.ready(),
     loggingIn,
     authenticated: !loggingIn && !!userId,
     name: name || emailAddress,

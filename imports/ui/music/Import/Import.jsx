@@ -11,9 +11,9 @@ import { Bert } from 'meteor/themeteorchef:bert';
 import moment from 'moment';
 
 import CompilerCollection from '../../../api/Compiler/Compiler';
-import TrackListListCollection from '../../../api/TrackListList/TrackListList';
+import TagCollection from '../../../api/Tag/Tag';
 import TrackList from '../TrackList/TrackList';
-import TrackListList from '../TrackListList/TrackListList';
+import Tag from '../Tag/Tag';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import ProgressMonitor from '../../misc/ProgressMonitor/ProgressMonitor';
@@ -40,7 +40,7 @@ class Import extends React.Component {
     super(props);
 
     this.state = {
-      trackListListId: null,
+      tagId: null,
       singleName: '',
       singleNumber: 1,
       singleDate: moment().format('YYYY-MM-DD'),
@@ -57,13 +57,13 @@ class Import extends React.Component {
 
 
   render() {
-    const { loading, compilers, trackListLists, toImport } = this.props;
+    const { loading, compilers, tags, toImport } = this.props;
 
     if (loading) return ( <div className="Import"><Loading /></div> );
 
     console.log('render', toImport);
 
-    const { inProgress, trackListListId, importedTrackLists, singleName,
+    const { inProgress, tagId, importedTrackLists, singleName,
       singleNumber, singleDate, singleCompilers, singleURL, importFile, massImportText } = this.state;
 
     return (
@@ -73,8 +73,8 @@ class Import extends React.Component {
             <h4 title="Optionally select a track list list to add the imported list(s) into.">Import lists into:</h4>
 
             <Select className="tracklistlist"
-              value={trackListListId} onChange={ v => this.setState({trackListListId: v._id}) }
-              options={trackListLists} valueKey={"_id"} labelKey={"name"} />
+              value={tagId} onChange={ v => this.setState({tagId: v._id}) }
+              options={tags} valueKey={"_id"} labelKey={"name"} />
           </div>
 
           <div className="import-spec-single">
@@ -153,13 +153,13 @@ class Import extends React.Component {
   importFromSingle() {
     const { toImport } = this.props;
 
-    const { trackListListId, singleName, singleNumber, singleDate, singleCompilers, singleURL } = this.state;
+    const { tagId, singleName, singleNumber, singleDate, singleCompilers, singleURL } = this.state;
 
     // Ignore if already processed.
     if (toImport.find(ti => ti.url == singleURL)) return;
 
     const insertMetadata = {};
-    if (trackListListId) insertMetadata.trackListListId = trackListListId;
+    if (tagId) insertMetadata.tagId = tagId;
     if (singleName) insertMetadata.name = singleName;
     if (singleNumber) insertMetadata.number = singleNumber;
     if (singleDate) insertMetadata.date = moment(singleDate).unix();
@@ -224,14 +224,14 @@ class Import extends React.Component {
 
 export default withTracker(({match}) => {
   const subCompilers = Meteor.subscribe('Compiler.all');
-  const subTrackListLists = Meteor.subscribe('TrackListList.all');
+  const subTags = Meteor.subscribe('Tag.all');
 
   Session.setDefault("Import_toImport", []);
 
   return {
-    loading: !subCompilers.ready() || !subTrackListLists.ready(),
+    loading: !subCompilers.ready() || !subTags.ready(),
     compilers: CompilerCollection.find().fetch(),
-    trackListLists: TrackListListCollection.find().fetch(),
+    tags: TagCollection.find().fetch(),
     toImport: Session.get("Import_toImport"),
   };
 })(Import);

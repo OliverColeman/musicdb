@@ -31,8 +31,8 @@ TrackList.schema = {
     type: String,
     optional: true,
   },
-
-  trackListListId: { type: String, optional: true },
+  tagIds: { type: Array, optional: true },
+  'tagIds.$': { type: String },
   number: { type: Number, optional: true },
   date: { type: Number, optional: true }, //unix timestamp
 };

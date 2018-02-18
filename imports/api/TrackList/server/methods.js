@@ -17,7 +17,7 @@ Meteor.methods({
     check(insertMetadata, {
       name: Match.Maybe(String),
       compilerIds: Match.Maybe([String]),
-      trackListListId: Match.Maybe(String),
+      tagId: Match.Maybe(String),
       number: Match.Maybe(Number),
       date: Match.Maybe(Number),
     });
@@ -26,10 +26,10 @@ Meteor.methods({
 
     try {
       const promise = getTrackList(ids, insertMetadata);
-      const results = promise.await();
-      console.log('method import results', results);
+      const list = promise.await();
+      console.log('method import results', list);
 
-      if (results && results.list && results.list._id) return results;
+      if (list && list._id) return list;
 
       throw "Unable to import list, unknown error.";
     } catch (exception) {

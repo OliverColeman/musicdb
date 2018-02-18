@@ -1,5 +1,5 @@
 {
-  "name": "pup",
+  "name": "musicdb",
   "private": true,
   "scripts": {
     "start": "meteor --settings settings-development.json",

@@ -21,7 +21,10 @@ Track.schema = {
   name: String,
   artistIds: [String],
   albumId: String,
-  duration: Number,
+  duration: {
+    type: Number,
+    optional: true,
+  },
   spotifyId: {
     type: String,
     optional: true,
@@ -30,7 +33,20 @@ Track.schema = {
     type: Object,
     optional: true,
   },
-};
+  dataMaybeMissing: {
+    type: Array,
+    optional: true,
+  },
+  'dataMaybeMissing.$': {
+    type: String, // A field name from above.
+  },
+  potentialDuplicate: {
+    type: Boolean,
+    optional: true,
+  },
+}
+
 Track.attachSchema(new SimpleSchema(Track.schema));
+
 
 export default Track;
