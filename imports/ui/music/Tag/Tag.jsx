@@ -25,6 +25,8 @@ class Tag extends React.Component {
   render() {
     const { loading, loadingLists, tag, trackLists, viewContext } = this.props;
 
+    console.log(trackLists);
+
     if (loading) return (<Loading />);
     if (!tag) return (<NotFound />);
 
@@ -67,7 +69,7 @@ export default withTracker(({match, tag, tagId, viewContext}) => {
   viewContext = viewContext || "page";
   const id = tagId || (tag && tag._id) || match.params.tagId;
 
-  const sub = tag ? null : Meteor.subscribe('Tag.withId', id);
+  const sub = tag ? false : Meteor.subscribe('Tag.withId', id);
   const subLists = viewContext == 'page' && Meteor.subscribe('TrackList.withTagId', id);
 
   const sortOptions = {
@@ -76,11 +78,13 @@ export default withTracker(({match, tag, tagId, viewContext}) => {
     name: 1,
   };
 
+  console.log(id);
+
   return {
     loading: sub && !sub.ready(),
     loadingLists: subLists && !subLists.ready(),
     tag: tag || TagCollection.findOne(id),
-    trackLists: subLists && TrackListCollection.find({tagId: id}, {sort: sortOptions}).fetch(),
+    trackLists: subLists && TrackListCollection.find({tagIds: id}, {sort: sortOptions}).fetch(),
     viewContext,
   };
 })(Tag);

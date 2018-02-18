@@ -33,20 +33,20 @@ if (Meteor.isDevelopment && TrackList.find().count() == 0) {
     .then(data => console.log("Added list 1:", data))
     .catch(err => console.log(err));
 
-    //
-    // await getTrackList(
-    //   {
-    //     spotifyUserId: "1270621250", spotifyListId: "38VMSVnvuwhS6xLRNrc3DX"
-    //   },
-    //   {
-    //     tagId: jdList._id,
-    //     name: "JD 2",
-    //     number: 2,
-    //     date: moment().startOf('day').subtract('1 weeks').unix(),
-    //   }
-    // )
-    // .then(data => console.log("Added list 2:", data))
-    // .catch(err => console.log(err));
+
+    await getTrackList(
+      {
+        spotifyUserId: "1270621250", spotifyListId: "38VMSVnvuwhS6xLRNrc3DX"
+      },
+      {
+        tagIds: [jdList._id],
+        name: "JD 2",
+        number: 2,
+        date: moment().startOf('day').subtract('1 weeks').unix(),
+      }
+    )
+    .then(data => console.log("Added list 2:", data))
+    .catch(err => console.log(err));
   }
 
   getSampleLists();
