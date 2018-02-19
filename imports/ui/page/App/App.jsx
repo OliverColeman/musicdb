@@ -51,7 +51,7 @@ const App = props => (
             <Route exact name="index" path="/" component={Index} />
 
             {/*<Route exact path="/lists/:tagId" component={Tag} {...props} />*/}
-            <Route exact path="/listlist/:tagId" component={Tag} {...props} />
+            <Route exact path="/tag/:tagId" component={Tag} {...props} />
             <Route exact path="/list/:playListId" component={PlayList} {...props} />
             <Route exact path="/track/:trackId" component={Track} {...props} />
             <Route exact path="/artist/:artistId" component={Artist} {...props} />

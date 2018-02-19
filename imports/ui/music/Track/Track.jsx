@@ -8,8 +8,8 @@ import { Bert } from 'meteor/themeteorchef:bert';
 
 import { convertSecondsToHHMMSS } from '../../../modules/util';
 import TrackCollection from '../../../api/Track/Track';
-import TrackList from '../TrackList/TrackList';
-import TrackListCollection from '../../../api/TrackList/TrackList';
+import PlayList from '../PlayList/PlayList';
+import PlayListCollection from '../../../api/PlayList/PlayList';
 import Album from '../Album/Album';
 import Artist from '../Artist/Artist';
 import NotFound from '../../nav/NotFound/NotFound';
@@ -24,7 +24,7 @@ class Track extends React.Component {
   }
 
   render() {
-    const { loading, loadingTrackLists, trackLists, track, viewContext } = this.props;
+    const { loading, loadingPlayLists, playLists, track, viewContext } = this.props;
 
     if (loading) return (<Loading />);
     if (!track) return (<NotFound />);
@@ -69,15 +69,15 @@ class Track extends React.Component {
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
 
       { viewContext != "page" ? "" :
-        <div className="trackLists">
+        <div className="playLists">
           <div className="header-row">
             { ["Name", "Date", "Compiler", "Length"].map(h => (
               <div className={"header-cell header-" + h} key={h}>{h}</div>
             ))}
           </div>
 
-          { loadingTrackLists ? (<Loading />) : trackLists.map(tracklist => (
-            <TrackList trackList={tracklist} viewContext="list" key={tracklist._id} showDate={true} />
+          { loadingPlayLists ? (<Loading />) : playLists.map(playlist => (
+            <PlayList playList={playlist} viewContext="list" key={playlist._id} showDate={true} />
           ))}
         </div>
       }
@@ -94,13 +94,13 @@ export default withTracker(({ match, trackId, track, viewContext }) => {
   viewContext = viewContext || "page";
   const subscription = track ? null : Meteor.subscribe('Track.withId', trackId);
 
-    const subTrackLists = viewContext == 'page' && Meteor.subscribe('Track.trackLists', trackId);
+    const subPlayLists = viewContext == 'page' && Meteor.subscribe('Track.playLists', trackId);
 
   return {
     loading: subscription && !subscription.ready(),
     track: track || TrackCollection.findOne(trackId),
-    loadingTrackLists: subTrackLists && !subTrackLists.ready(),
-    trackLists: subTrackLists && TrackListCollection.find({ trackIds: trackId}).fetch(),
+    loadingPlayLists: subPlayLists && !subPlayLists.ready(),
+    playLists: subPlayLists && PlayListCollection.find({ trackIds: trackId}).fetch(),
     viewContext,
   };
 })(Track);

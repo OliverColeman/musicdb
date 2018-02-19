@@ -17,14 +17,14 @@
   }
 
   /* TODO Inline layout and remove some details on small screens */
-  .trackLists {
+  .playLists {
     display: table;
     table-layout:fixed;
     width: 100%;
     margin-top: 1em;
     @include seperator-top;
 
-    .TrackList, .header-row {
+    .PlayList, .header-row {
       display: table-row;
 
       & > * {

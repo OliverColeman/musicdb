@@ -69,10 +69,10 @@ class Import extends React.Component {
     return (
       <div className="Import">
         <div className="import-spec">
-          <div className="import-spec-playlistlist">
+          <div className="import-spec-tag">
             <h4 title="Optionally select a track list list to add the imported list(s) into.">Import lists into:</h4>
 
-            <Select className="playlistlist"
+            <Select className="tag"
               value={tagId} onChange={ v => this.setState({tagId: v._id}) }
               options={tags} valueKey={"_id"} labelKey={"name"} />
           </div>

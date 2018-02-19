@@ -31,7 +31,7 @@ class Tag extends React.Component {
     if (!tag) return (<NotFound />);
 
     if (viewContext == 'inline') return (
-      <Link to={`/listlist/${tag._id}`} title={tag.name} className={"Tag inline-context name"}>
+      <Link to={`/tag/${tag._id}`} title={tag.name} className={"Tag inline-context name"}>
         {tag.name}
       </Link>);
 
@@ -43,7 +43,7 @@ class Tag extends React.Component {
     return (
       <div className={"Tag " + viewContext + "-context"}>
         <div className="item-header">
-          <Link className="name" to={`/listlist/${tag._id}`}>{tag.name}</Link>
+          <Link className="name" to={`/tag/${tag._id}`}>{tag.name}</Link>
         </div>
 
         { !showLists ? '' :
