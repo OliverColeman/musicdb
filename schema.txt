@@ -21,7 +21,7 @@ Collections
   - spotifyId
   - imageURL
 
-- TrackList
+- PlayList
   - _id
   - name
   - compilerIds
@@ -29,7 +29,7 @@ Collections
   - duration
   - spotifyUserId
   - spotifyListId
-  - trackListListId
+  - tagId
   - number
   - date
 
@@ -39,6 +39,6 @@ Collections
   - spotifyId
   - imageURL
 
-- TrackListList
+- Tag
   - _id
   - name
