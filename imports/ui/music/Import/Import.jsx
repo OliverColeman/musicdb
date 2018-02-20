@@ -40,7 +40,7 @@ class Import extends React.Component {
     super(props);
 
     this.state = {
-      tagId: null,
+      tagIds: [],
       singleName: '',
       singleNumber: 1,
       singleDate: moment().format('YYYY-MM-DD'),
@@ -63,18 +63,18 @@ class Import extends React.Component {
 
     console.log('render', toImport);
 
-    const { inProgress, tagId, importedPlayLists, singleName,
+    const { inProgress, tagIds, importedPlayLists, singleName,
       singleNumber, singleDate, singleCompilers, singleURL, importFile, massImportText } = this.state;
 
     return (
       <div className="Import">
         <div className="import-spec">
-          <div className="import-spec-playlistlist">
-            <h4 title="Optionally select a track list list to add the imported list(s) into.">Import lists into:</h4>
+          <div className="import-spec-tag">
+            <h4 title="Optionally select a tag to add to the imported list(s).">Add tag:</h4>
 
-            <Select className="playlistlist"
-              value={tagId} onChange={ v => this.setState({tagId: v._id}) }
-              options={tags} valueKey={"_id"} labelKey={"name"} />
+            <Select className="tag"
+              value={tagIds} onChange={ values => this.setState({tagIds: values.map(v => v._id)}) }
+              options={tags} valueKey={"_id"} labelKey={"name"} multi={true} />
           </div>
 
           <div className="import-spec-single">
@@ -153,13 +153,13 @@ class Import extends React.Component {
   importFromSingle() {
     const { toImport } = this.props;
 
-    const { tagId, singleName, singleNumber, singleDate, singleCompilers, singleURL } = this.state;
+    const { tagIds, singleName, singleNumber, singleDate, singleCompilers, singleURL } = this.state;
 
     // Ignore if already processed.
     if (toImport.find(ti => ti.url == singleURL)) return;
 
     const insertMetadata = {};
-    if (tagId) insertMetadata.tagId = tagId;
+    if (tagIds) insertMetadata.tagIds = tagIds;
     if (singleName) insertMetadata.name = singleName;
     if (singleNumber) insertMetadata.number = singleNumber;
     if (singleDate) insertMetadata.date = moment(singleDate).unix();
@@ -204,15 +204,16 @@ class Import extends React.Component {
 
     console.log('doImport', index, toImport[index]);
 
-    Meteor.call('PlayList.import', toImport[index].ids, toImport[index].insertMetadata, (error, results) => {
-      console.log('mc results', error, results);
+    Meteor.call('PlayList.import', toImport[index].ids, toImport[index].insertMetadata, (error, list) => {
+      console.log('mc results', error, list);
 
       if (error) {
         toImport[index].error = error.message;
       }
       else {
-        toImport[index].listId = results.list._id;
-        // TODO show results.tracksNotFound
+        toImport[index].listId = list._id;
+        // TODO if the list contains tracks that need review then show a symbol or similar
+        // to indicate this, which perhaps when clicked on opens the list in a modal window.
       }
 
       Session.set("Import_toImport", toImport);

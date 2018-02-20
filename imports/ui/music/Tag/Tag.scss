@@ -2,9 +2,9 @@
 
 
 .Tag {
-  margin: 0.5em 0;
-
   &.page-context {
+    margin: 0.5em 0;
+    
     & > * {
       margin: 0.5em 0;
     }

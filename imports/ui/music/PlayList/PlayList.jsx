@@ -12,6 +12,7 @@ import TrackCollection from '../../../api/Track/Track';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
 import Track from '../Track/Track';
 import Compiler from '../Compiler/Compiler';
+import Tag from '../Tag/Tag';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 
@@ -60,6 +61,11 @@ class PlayList extends React.Component {
           { viewContext == 'page' ? <Label>Duration:</Label> : '' }
           {convertSecondsToHHMMSS(playList.duration)}, {playList.trackIds.length} tracks
         </div>
+
+        { viewContext != 'page' ? '' : <div className="tags inline-list">
+          <Label>Tags:</Label>
+          { playList.tagIds.map(tagId => (<Tag tagId={tagId} viewContext="inline" key={tagId} />)) }
+        </div>}
 
         { !showTracks ? '' :
           <div className="tracks">

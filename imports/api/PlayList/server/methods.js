@@ -17,7 +17,7 @@ Meteor.methods({
     check(insertMetadata, {
       name: Match.Maybe(String),
       compilerIds: Match.Maybe([String]),
-      tagId: Match.Maybe(String),
+      tagIds: Match.Maybe([String]),
       number: Match.Maybe(Number),
       date: Match.Maybe(Number),
     });

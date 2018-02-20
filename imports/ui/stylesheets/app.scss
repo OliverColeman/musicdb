@@ -20,7 +20,14 @@ a, a:hover, a:visited, a:active, a:focus {
   flex-wrap: wrap;
 
   &> * {
-    margin-right: 1em;
+    margin-right: 0.4em;
+    padding-right: 0.4em;
+    border-right: 1px solid rgba(255, 255, 255, 0.5);
+
+    &.label,
+    &:last-child {
+      border-right: none;
+    }
   }
 }
 
