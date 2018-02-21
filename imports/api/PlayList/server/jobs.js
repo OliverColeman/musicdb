@@ -1,6 +1,6 @@
 import { Jobs } from 'meteor/msavin:sjobs';
 
-import { getCompiler, getArtist, getAlbum, getTrack, getPlayList } from '../../../modules/server/music_service';
+import { getCompiler, getArtist, getAlbum, getTrack, getPlayList } from '../../../modules/server/music/music_service';
 
 Jobs.register({
   "PlayList.import": function (ids, insertMetadata) {

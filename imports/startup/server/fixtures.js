@@ -1,6 +1,6 @@
 import moment from 'moment';
 
-import { getCompiler, getArtist, getAlbum, getTrack, getPlayList } from '../../modules/server/music_service';
+import { getCompiler, getArtist, getAlbum, getTrack, getPlayList } from '../../modules/server/music/music_service';
 import Tag from '../../api/Tag/Tag';
 import PlayList from '../../api/PlayList/PlayList';
 
@@ -21,7 +21,7 @@ if (Meteor.isDevelopment && PlayList.find().count() == 0) {
     // This one contains a song not on Spotify.
     await getPlayList(
       {
-        spotifyUserId: "petapieinthesky", spotifyListId: "67YquHJyGJabxbFnB9Yn4Y"
+        spotifyUserId: "petapieinthesky", spotifyId: "67YquHJyGJabxbFnB9Yn4Y"
       },
       {
         tagIds: [jdList._id],
@@ -36,7 +36,7 @@ if (Meteor.isDevelopment && PlayList.find().count() == 0) {
 
     await getPlayList(
       {
-        spotifyUserId: "1270621250", spotifyListId: "38VMSVnvuwhS6xLRNrc3DX"
+        spotifyUserId: "1270621250", spotifyId: "38VMSVnvuwhS6xLRNrc3DX"
       },
       {
         tagIds: [jdList._id],
@@ -52,13 +52,13 @@ if (Meteor.isDevelopment && PlayList.find().count() == 0) {
   getSampleLists();
 }
 
-  //const list = getPlayList({spotifyUserId: "1270621250", spotifyListId: "6oeIWKU7T6MctsNlYLHUat"});
+  //const list = getPlayList({spotifyUserId: "1270621250", spotifyId: "6oeIWKU7T6MctsNlYLHUat"});
 //track 6jj5kO7tFT3ir8WbbVO0iU
 //track 0Cj0jv3L1L2wIPqhTZqbSN
 //list petapieinthesky 67YquHJyGJabxbFnB9Yn4Y (local file)
 // list spotify:user:1270621250:playlist:3BCIWgDY0aOCMg6HIVye1a
 
-// getPlayList({spotifyUserId: "petapieinthesky", spotifyListId: "67YquHJyGJabxbFnB9Yn4Y"})
+// getPlayList({spotifyUserId: "petapieinthesky", spotifyId: "67YquHJyGJabxbFnB9Yn4Y"})
 //   .then(data => console.log(data))
 //   .catch(err => console.log(err));
 

@@ -138,7 +138,7 @@ class Import extends React.Component {
                 <PlayList playListId={ti.listId} viewContext="inline" />
                 :
                 <div className="import-pending">
-                  <div className="name">{ti.insertMetadata.name || (ti.ids && ti.ids.spotifyListId)}</div>
+                  <div className="name">{ti.insertMetadata.name || (ti.ids && ti.ids.spotifyId)}</div>
                   <Loading />
                 </div>
               }
@@ -194,7 +194,7 @@ class Import extends React.Component {
     // Spotify url (only supported type so far).
     if (urlParts[1]) {
       importData.ids.spotifyUserId = urlParts[1];
-      importData.ids.spotifyListId = urlParts[2];
+      importData.ids.spotifyId = urlParts[2];
     }
   }
 

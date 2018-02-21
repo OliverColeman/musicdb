@@ -2,6 +2,8 @@
 
 import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
+import { commonMusicItemFields } from '../Utility/music';
+import { normaliseString, normaliseStringMatch } from '../../modules/util';
 
 const PlayList = new Mongo.Collection('PlayList');
 
@@ -18,23 +20,20 @@ PlayList.deny({
 });
 
 PlayList.schema = {
-  name: String,
+  ...commonMusicItemFields,
+
   compilerIds: [String],
   trackIds: [String],
   duration: Number,
+  tagIds: { type: Array, optional: true },
+  'tagIds.$': { type: String },
+  number: { type: Number, optional: true },
+  date: { type: Number, optional: true }, //unix timestamp
 
   spotifyUserId: {
     type: String,
     optional: true,
   },
-  spotifyListId: {
-    type: String,
-    optional: true,
-  },
-  tagIds: { type: Array, optional: true },
-  'tagIds.$': { type: String },
-  number: { type: Number, optional: true },
-  date: { type: Number, optional: true }, //unix timestamp
 };
 
 PlayList.attachSchema(new SimpleSchema(PlayList.schema));

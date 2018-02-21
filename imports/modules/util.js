@@ -10,4 +10,20 @@ const convertSecondsToHHMMSS = (time, omitHoursIfZero) => {
   return `${padTime(h)}:${padTime(m)}:${padTime(s)}`;
 }
 
-export { convertSecondsToHHMMSS }
+// For matching names ignoring case, punctuation, multiple and start/end white space characters.
+const normaliseString = s => s.trim().toLowerCase().replace(/[^a-z0-9\s]*/g, '').replace(/\s+/g, ' ');
+const normaliseStringMatch = (s1, s2) => normaliseString(s1) == normaliseString(s2);
+
+
+// Find and return document in given collection with the specified field matching
+// given string (case insensitive but otherwise exact).
+const textSearchCollection = (collection, name) => {
+  if (name) {
+    item = collection.findOne({ $text: { $search: name } });
+    if (item && item.name.toLowerCase() == name.toLowerCase()) {
+      return item;
+    }
+  }
+}
+
+export { convertSecondsToHHMMSS, normaliseString, normaliseStringMatch }

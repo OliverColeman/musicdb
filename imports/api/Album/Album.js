@@ -2,6 +2,8 @@
 
 import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
+import { commonMusicItemFields } from '../Utility/music';
+import { normaliseString, normaliseStringMatch } from '../../modules/util';
 
 const Album = new Mongo.Collection('Album');
 
@@ -18,20 +20,10 @@ Album.deny({
 });
 
 Album.schema = {
-  name: String,
+  ...commonMusicItemFields,
   artistIds: [String],
-  spotifyId: {
-    type: String,
-    optional: true,
-  },
-  imageURLs: {
-    type: Object,
-    optional: true,
-  },
-  "imageURLs.small": { type: String, optional: true },
-  "imageURLs.medium": { type: String, optional: true },
-  "imageURLs.large": { type: String, optional: true },
 };
 Album.attachSchema(new SimpleSchema(Album.schema));
+
 
 export default Album;

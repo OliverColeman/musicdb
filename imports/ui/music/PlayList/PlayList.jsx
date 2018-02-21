@@ -45,8 +45,8 @@ class PlayList extends React.Component {
         <div className="item-header">
           <Link className="name" to={`/list/${playList._id}`}>{playList.name}</Link>
 
-          {viewContext != 'page' || !playList.spotifyUserId || !playList.spotifyListId ? '' :
-            <a className="link spotify" title="Show in Spotify" target="_blank" href={`https://open.spotify.com/user/${playList.spotifyUserId}/playlist/${playList.spotifyListId}`} />
+          {viewContext != 'page' || !playList.spotifyUserId || !playList.spotifyId ? '' :
+            <a className="link spotify" title="Show in Spotify" target="_blank" href={`https://open.spotify.com/user/${playList.spotifyUserId}/playlist/${playList.spotifyId}`} />
           }
         </div>
 
@@ -86,14 +86,14 @@ class PlayList extends React.Component {
 }
 
 
-export default withTracker(({match, playList, playListId, spotifyListId, viewContext, showDate}) => {
+export default withTracker(({match, playList, playListId, spotifyId, viewContext, showDate}) => {
   viewContext = viewContext || "page";
   playListId = playListId || (playList && playList._id) || (match && match.params && match.params.playListId);
 
-  const subList = playList ? null : Meteor.subscribe('PlayList.withId', playListId, spotifyListId);
-  const subTracks = viewContext == 'page' && Meteor.subscribe('PlayList.tracks', playListId, spotifyListId);
+  const subList = playList ? null : Meteor.subscribe('PlayList.withId', playListId, spotifyId);
+  const subTracks = viewContext == 'page' && Meteor.subscribe('PlayList.tracks', playListId, spotifyId);
 
-  const listSelector = spotifyListId ? { spotifyListId } : { _id: playListId };
+  const listSelector = spotifyId ? { spotifyId } : { _id: playListId };
 
   return {
     loading: subList && !subList.ready(),

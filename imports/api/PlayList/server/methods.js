@@ -4,7 +4,7 @@ import { Jobs } from 'meteor/msavin:sjobs';
 
 import rateLimit from '../../../modules/rate-limit';
 import PlayList from '../PlayList';
-import { getCompiler, getArtist, getAlbum, getTrack, getPlayList } from '../../../modules/server/music_service';
+import { getCompiler, getArtist, getAlbum, getTrack, getPlayList } from '../../../modules/server/music/music_service';
 import { getSchemaFieldTypes, throwMethodException } from '../../Utility/methodutils';
 
 
@@ -12,7 +12,7 @@ Meteor.methods({
   'PlayList.import': function PlayListImport(ids, insertMetadata) {
     check(ids, {
       spotifyUserId: String,
-      spotifyListId: String,
+      spotifyId: String,
     });
     check(insertMetadata, {
       name: Match.Maybe(String),

@@ -1,14 +1,19 @@
 import { Meteor } from 'meteor/meteor';
 import { Random } from 'meteor/random';
-import SpotifyWebApi from 'spotify-web-api-node';
 import _ from 'lodash';
+import SpotifyWebApi from 'spotify-web-api-node';
 
-import Compiler from '../../api/Compiler/Compiler';
-import Artist from '../../api/Artist/Artist';
-import Album from '../../api/Album/Album';
-import PlayList from '../../api/PlayList/PlayList';
-import Track from '../../api/Track/Track';
-import ProgressMonitor from '../../api/ProgressMonitor/ProgressMonitor';
+import { normaliseString, normaliseStringMatch } from '../../util';
+import Compiler from '../../../api/Compiler/Compiler';
+import Artist from '../../../api/Artist/Artist';
+import Album from '../../../api/Album/Album';
+import PlayList from '../../../api/PlayList/PlayList';
+import Track from '../../../api/Track/Track';
+import ProgressMonitor from '../../../api/ProgressMonitor/ProgressMonitor';
+
+
+// TODO THIS FILE IS IN THE PROCESS OF BEING HEAVILY REFACTORED, DO NOT MODIFY.
+
 
 /**
  * Functions to retrieve the metadata for music items, such as tracks,
@@ -20,14 +25,87 @@ import ProgressMonitor from '../../api/ProgressMonitor/ProgressMonitor';
  * and a new document created and returned.
  */
 
+
+// Find and return document in given collection with 'name' field matching given
+// name (case insensitive but otherwise exact).
+const findByName = (collection, name) => {
+  if (name) {
+    item = collection.findOne({ $text: { $search: name } });
+    if (item && item.name.toLowerCase() == name.toLowerCase()) {
+      return item;
+    }
+  }
+}
+
+
+/**
+ * Base class for music service integrations.
+ * Subclasses should override one or both of importFromURL and importFromIds.
+ * TODO this is a first bash at this API, likely to change.
+ */
+class MusicService {
+  constructor(name, machineName, url) {
+    this.name = name;
+    this.machineName = machineName;
+    this.url = url;
+
+    this.importFromURL = this.importFromURL.bind(this);
+  }
+
+  /**
+   * Import an item from a URL for the item on the service. A document (for the
+   * appropriate collection for the item, eg Artist, Track) is created if no
+   * matching document exists, otherwise the existing document is updated.
+   * To match existing documents use the findByName functions for the appropriate
+   * collection.
+   * @param {string} url - The url of the item on the service.
+   * @return {Object} A document (for the appropriate collection for the item)
+   *   containing metadata for the item.
+   */
+  importFromURL(url) {
+    throw `Import from URL not supported by ${this.name}.`;
+  }
+
+  /**
+   * Import a specified item from the service. A document (for the
+   * appropriate collection for the item, eg Artist, Track) is created if no
+   * matching document exists, otherwise the existing document is updated.
+   * To match existing documents use the findByName functions for the appropriate
+   * collection.
+   * @param {string} type - The item type, eg 'artist', 'track'.
+   * @param {Object} ids - service and type specific id(s) for the item.
+   * @return {Object} A document (for the appropriate collection for the item)
+   *   containing metadata for the item.
+   */
+  importFromIds(type, ids) {
+    throw `Import from ids not supported by ${this.name}.`;
+  }
+
+  /**
+   * Attempt to import an item from the service by name(s). If the item is found
+   * on the service then a document (for the appropriate collection for the
+   * item, eg Artist, Track) is created if no matching document exists,
+   * otherwise the existing document is updated. To match existing documents use
+   * the findByName functions for the appropriate collection.
+   * @param {string} type - The item type, eg 'artist', 'track'.
+   * @param {Object} names - The name of the item and other associated names if
+   *   applicable. Valid keys are 'name' (the item name), 'artistNames' (for
+   *   tracks and albums), 'albumName' (for tracks), 'albumNames' (for artists,
+   *   to help disambiguate artists).
+   * @return {Object} A document (for the appropriate collection for the item)
+   *   containing metadata for the item, or null if the item could not be found
+   *   on the service.
+   */
+  importFromNames(type, names) {
+    throw `Match from names not supported by ${this.name}.`;
+  }
+}
+
+
 const spotifyApi = new SpotifyWebApi({
   clientId: process.env.SPOTIFY_CLIENT_ID,
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
-
-// For matching names ignoring case, punctuation, multiple and start/end white space characters.
-const normalise = s => s.trim().toLowerCase().replace(/[^a-z0-9\s]*/g, '').replace(/\s+/g, ' ');
-const normaliseMatch = (s1, s2) => normalise(s1) == normalise(s2);
 
 
 /**
@@ -57,17 +135,6 @@ const getSpotifyAPI = async () => {
   }
 
   return spotifyApi;
-}
-
-// Find and return document in given collection with 'name' field matching given
-// name (case insensitive but otherwise exact).
-const findByName = (collection, name) => {
-  if (name) {
-    item = collection.findOne({ $text: { $search: name } });
-    if (item && item.name.toLowerCase() == name.toLowerCase()) {
-      return item;
-    }
-  }
 }
 
 
@@ -280,15 +347,15 @@ const getTrack = async (ids, details) => {
       }
       else {
         //console.log("searching for track data from spotify", ids, details);
-        const query = `track:"${normalise(details.trackName)}" artist:"${normalise(details.artistNames[0])}" album:"${normalise(details.albumName)}"`;
+        const query = `track:"${normaliseString(details.trackName)}" artist:"${normaliseString(details.artistNames[0])}" album:"${normaliseString(details.albumName)}"`;
         const { body } = await spotifyApi.search(query, ['track'], { limit: 50 });
 
         // See if any results match across track name, (first) artist name,
         // album name and are within 1 second duration.
         spotifyTrack = body.tracks.items.find(track => {
-          return normaliseMatch(track.name, details.trackName) &&
-                  normaliseMatch(track.album.name, details.albumName) &&
-                  track.artists.find(artist => normaliseMatch(artist.name, details.artistNames[0])) &&
+          return normaliseStringMatch(track.name, details.trackName) &&
+                  normaliseStringMatch(track.album.name, details.albumName) &&
+                  track.artists.find(artist => normaliseStringMatch(artist.name, details.artistNames[0])) &&
                   (Math.abs(track.duration_ms / 1000 - details.duration) < 1);
         });
       }
@@ -355,18 +422,18 @@ const getTrack = async (ids, details) => {
     for (artistName of details.artistNames) {
       // First search by track and artist name,
       // if we find a result where both names match exactly it's probably the right artist.
-      let response = await spotifyApi.search(`track:"${normalise(details.trackName)}" artist:"${normalise(artistName)}"`, ['track']);
+      let response = await spotifyApi.search(`track:"${normaliseString(details.trackName)}" artist:"${normaliseString(artistName)}"`, ['track']);
       let spotTrack = response.body.tracks.items.find(st =>
-        normaliseMatch(details.trackName, st.name) &&
-        st.artists.find(sta => normaliseMatch(artistName, sta.name)));
+        normaliseStringMatch(details.trackName, st.name) &&
+        st.artists.find(sta => normaliseStringMatch(artistName, sta.name)));
       if (spotTrack) {
-        spotifyArtistIds.push(spotTrack.artists.find(ta => normaliseMatch(artistName, ta.name)).id);
+        spotifyArtistIds.push(spotTrack.artists.find(ta => normaliseStringMatch(artistName, ta.name)).id);
         continue;
       }
 
       // Otherwise just add every matching artist from spotify, a human will have to disambiguate.
-      response = await spotifyApi.search(`artist:"${normalise(artistName)}"`, ['artist']);
-      let filteredArtists = response.body.artists.items.filter(artist => normaliseMatch(artistName, artist.name));
+      response = await spotifyApi.search(`artist:"${normaliseString(artistName)}"`, ['artist']);
+      let filteredArtists = response.body.artists.items.filter(artist => normaliseStringMatch(artistName, artist.name));
       for (spotArtist of filteredArtists) {
         spotifyArtistIds.push(spotArtist.id);
       }
@@ -416,23 +483,23 @@ const getTrack = async (ids, details) => {
 
 /**
  * @summary Get/create a PlayList.
- * @param {Object} ids One or more id fields, such as _id or spotifyUserId and spotifyListId.
+ * @param {Object} ids One or more id fields, such as _id or spotifyUserId and spotifyId.
  * @param {Object} insertMetadata If inserting the PlayList, additional metadata to add.
  */
 const getPlayList = async (ids, insertMetadata) => {
   let list = ids && Object.keys(ids).length && PlayList.findOne(ids);
 
   if (!list) {
-    if (ids.spotifyListId) {
+    if (ids.spotifyId) {
       try {
         let spotifyAPI = await getSpotifyAPI();
-        let response = await spotifyApi.getPlaylist(ids.spotifyUserId, ids.spotifyListId);
+        let response = await spotifyApi.getPlaylist(ids.spotifyUserId, ids.spotifyId);
 
         //console.log(response.statusCode, response.headers);
 
         const listDetails = response.body;
 
-        response = await spotifyApi.getPlaylistTracks(ids.spotifyUserId, ids.spotifyListId);
+        response = await spotifyApi.getPlaylistTracks(ids.spotifyUserId, ids.spotifyId);
         const listTracks = response.body.items;
 
         const owner = await getCompiler({spotifyId: listDetails.owner.id});
@@ -497,7 +564,7 @@ const getPlayList = async (ids, insertMetadata) => {
           trackIds,
           duration,
           spotifyUserId: listDetails.owner.id,
-          spotifyListId: listDetails.id,
+          spotifyId: listDetails.id,
         };
 
         console.log('tl', tl);
