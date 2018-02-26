@@ -4,6 +4,8 @@ import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
 import { commonMusicItemFields } from '../Utility/music';
 import { normaliseString, normaliseStringMatch } from '../../modules/util';
+import Track from '../Track/Track';
+
 
 const PlayList = new Mongo.Collection('PlayList');
 
@@ -24,7 +26,15 @@ PlayList.schema = {
 
   compilerIds: [String],
   trackIds: [String],
-  duration: Number,
+  duration: {
+    type: Number,
+    autoValue() {
+      var tracks = this.field("trackIds");
+      if (!tracks.isSet || !tracks.value.length) return 0;
+      return Track.find({_id: {$in: tracks.value}}).fetch()
+        .reduce((total, track) => total + track.duration, 0);
+    }
+  },
   tagIds: { type: Array, optional: true },
   'tagIds.$': { type: String },
   number: { type: Number, optional: true },

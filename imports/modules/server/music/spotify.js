@@ -488,7 +488,6 @@ const getPlayList = async (ids, insertMetadata) => {
 
       // Then create track documents.
       const trackIds = [];
-      let duration = 0;
       for (let spotifyTrack of listTracks) {
         if (spotifyTrack.added_by && spotifyTrack.added_by.id != owner.spotifyId) {
           let comp = await getCompiler({spotifyId: spotifyTrack.added_by.id});
@@ -513,7 +512,6 @@ const getPlayList = async (ids, insertMetadata) => {
         }
 
         trackIds.push(track._id);
-        duration += track.duration;
       }
 
       insertMetadata = insertMetadata || {};
@@ -526,7 +524,6 @@ const getPlayList = async (ids, insertMetadata) => {
       const tl = {
         ...insertMetadata,
         trackIds,
-        duration,
         spotifyUserId: listDetails.owner.id,
         spotifyId: listDetails.id,
       };
