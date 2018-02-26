@@ -24,51 +24,58 @@ class Track extends React.Component {
   }
 
   render() {
-    const { loading, loadingPlayLists, playLists, track, viewContext } = this.props;
+    const { loading, loadingPlayLists, playLists, track, viewType } = this.props;
 
     if (loading) return (<Loading />);
     if (!track) return (<NotFound />);
 
-    if (viewContext == 'inline') return (
-      <Link to={`/track/${track._id}`} title={track.name} className={"Track inline-context name"}>
+    if (viewType == 'inline') return (
+      <Link to={`/track/${track._id}`} title={track.name} className={"Track inline-viewtype name"}>
         {track.name}
       </Link>);
 
-    return (
-      <div className={"Track " + viewContext + "-context"}>
-        {viewContext == "page" ?
-          <div className="album album-image image">
-            <Album albumId={track.albumId} viewContext="track" viewContext="image-medium" />
-          </div>
-          :
-          <div className="album album-image image">
-            <Album albumId={track.albumId} viewContext="track" viewContext="image-small" />
-          </div>
-        }
-
-        { viewContext == 'list' ?
-          <Link to={`/track/${track._id}`} title={track.name} className={"Track inline-context name"}>
-            {track.name}
-          </Link>
-          :
-          <div className="item-header">
-            <Link className="name" to={`/track/${track._id}`}>{track.name}</Link>
-
-            {viewContext != 'page' || !track.spotifyId ? '' :
-              <a className="link spotify" title="Show in Spotify" target="_blank" href={"https://open.spotify.com/track/" + track.spotifyId} />
-            }
-          </div>
-        }
-
-        <div className="artists inline-list">
-          { track.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewContext="inline" />)) }
+    if (viewType == 'list') return (
+      <div className={"Track " + viewType + "-viewtype"}>
+        <div className="album album-image image">
+          { !track.albumId ? '' : <Album albumId={track.albumId} viewType="track" viewType="image-small" /> }
         </div>
 
-        <Album albumId={track.albumId} viewContext="track" viewContext="inline" />
+        <Link to={`/track/${track._id}`} title={track.name} className={"Track inline-viewtype name"}>
+          {track.name}
+        </Link>
+
+        <div className="artists inline-list">
+          { track.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" />)) }
+        </div>
+
+        { !track.albumId ?
+          <div>[unknown]</div>[unknown] :
+          <Album albumId={track.albumId} viewType="track" viewType="inline" />
+        }
+
+        <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
+      </div>
+    );
+
+    // viewType == 'page'
+    return (
+      <div className={"Track " + viewType + "-viewtype"}>
+        <div className="item-header">
+          <Link className="name" to={`/track/${track._id}`}>{track.name}</Link>
+        </div>
+
+        <div className="album album-image image">
+          { !track.albumId ? '' : <Album albumId={track.albumId} viewType="track" viewType="image-medium" /> }
+        </div>
+
+        <div className="artists inline-list">
+          { track.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" />)) }
+        </div>
+
+        <Album albumId={track.albumId} viewType="inline" />
 
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
 
-      { viewContext != "page" ? "" :
         <div className="playLists">
           <div className="header-row">
             { ["Name", "Date", "Compiler", "Length"].map(h => (
@@ -77,30 +84,28 @@ class Track extends React.Component {
           </div>
 
           { loadingPlayLists ? (<Loading />) : playLists.map(playlist => (
-            <PlayList playList={playlist} viewContext="list" key={playlist._id} showDate={true} />
+            <PlayList playList={playlist} viewType="list" key={playlist._id} showDate={true} />
           ))}
         </div>
-      }
-
       </div>
     );
   }
 }
 
 
-export default withTracker(({ match, trackId, track, viewContext }) => {
+export default withTracker(({ match, trackId, track, viewType }) => {
   trackId = trackId || track && track._id || match.params.trackId
 
-  viewContext = viewContext || "page";
+  viewType = viewType || "page";
   const subscription = track ? null : Meteor.subscribe('Track.withId', trackId);
 
-    const subPlayLists = viewContext == 'page' && Meteor.subscribe('Track.playLists', trackId);
+    const subPlayLists = viewType == 'page' && Meteor.subscribe('Track.playLists', trackId);
 
   return {
     loading: subscription && !subscription.ready(),
     track: track || TrackCollection.findOne(trackId),
     loadingPlayLists: subPlayLists && !subPlayLists.ready(),
     playLists: subPlayLists && PlayListCollection.find({ trackIds: trackId}).fetch(),
-    viewContext,
+    viewType,
   };
 })(Track);

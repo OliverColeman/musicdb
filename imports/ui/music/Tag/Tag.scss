@@ -2,7 +2,7 @@
 
 
 .Tag {
-  &.page-context {
+  &.page-viewtype {
     margin: 0.5em 0;
     
     & > * {
@@ -10,7 +10,7 @@
     }
   }
 
-  &.inline-context {
+  &.inline-viewtype {
     & > * {
       margin: 0 1em;
     }

@@ -59,13 +59,15 @@
   }
 
   .import-results {
+    display: table;
+
     .import-item {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
+      display: table-row;
 
       &> * {
-        margin: 0 1em 0.9em 0;
+        display: table-cell;
+        padding: 0 1em 0.9em 0;
+        vertical-align: middle;
       }
 
       .import-pending {

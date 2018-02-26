@@ -19,30 +19,30 @@ class Artist extends React.Component {
   }
 
   render() {
-    const { loading, artist, viewContext } = this.props;
+    const { loading, artist, viewType } = this.props;
 
     if (loading) return (<Loading />);
     if (!artist) return (<NotFound />);
 
     // TODO list of (known) albums, tracks, and playlists.
 
-    if (viewContext == 'inline') return (
-      <Link to={`/artist/${artist._id}`} title={artist.name} className={"Artist inline-context name"}>
+    if (viewType == 'inline') return (
+      <Link to={`/artist/${artist._id}`} title={artist.name} className={"Artist inline-viewtype name"}>
         {artist.name}
       </Link>);
 
     return (
-      <div className={"Artist " + viewContext + "-context"}>
-        {viewContext != "page" ? "" :
+      <div className={"Artist " + viewType + "-viewtype"}>
+        {viewType != "page" ? "" :
         <div className="artist artist-image image">
-          <img src={artist.imageURLs.medium} className={"Artist image-context image"} />
+          <img src={artist.imageURLs.medium} className={"Artist image-viewtype image"} />
         </div>
         }
 
         <div className="item-header">
           <Link className="name" to={`/artist/${artist._id}`}>{artist.name}</Link>
           
-          {viewContext != 'page' || !artist.spotifyId ? '' :
+          {viewType != 'page' || !artist.spotifyId ? '' :
             <a className="link spotify" title="Show in Spotify" target="_blank" href={`https://open.spotify.com/artist/${artist.spotifyId}`} />
           }
         </div>
@@ -52,13 +52,13 @@ class Artist extends React.Component {
 }
 
 
-export default withTracker(({match, artist, artistId, viewContext}) => {
-  viewContext = viewContext || "page";
+export default withTracker(({match, artist, artistId, viewType}) => {
+  viewType = viewType || "page";
   const subArtist = artist ? null : Meteor.subscribe('Artist.withId', artistId || match.params.artistId);
 
   return {
     loading: subArtist && !subArtist.ready(),
     artist: artist || ArtistCollection.findOne(artistId || match.params.artistId),
-    viewContext,
+    viewType,
   };
 })(Artist);

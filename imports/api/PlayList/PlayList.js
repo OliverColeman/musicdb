@@ -30,6 +30,7 @@ PlayList.schema = {
   number: { type: Number, optional: true },
   date: { type: Number, optional: true }, //unix timestamp
 
+  // Need the user id as well as list id for play lists.
   spotifyUserId: {
     type: String,
     optional: true,

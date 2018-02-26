@@ -1,23 +1,23 @@
 .Album {
 
-  &.page-context {
+  &.page-viewtype {
     & > * {
     }
   }
 
-  &.inline-context {
+  &.inline-viewtype {
     & > * {
     }
   }
 
-  &.image-context {
+  &.image-viewtype {
     & > * {
     }
   }
 }
 
-.Album.page-context .album-image,
-.Track.page-context .album-image {
+.Album.page-viewtype .album-image,
+.Track.page-viewtype .album-image {
   float: right;
   margin-left: 1em;
 

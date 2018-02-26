@@ -4,16 +4,13 @@ import { Jobs } from 'meteor/msavin:sjobs';
 
 import rateLimit from '../../../modules/rate-limit';
 import PlayList from '../PlayList';
-import { getCompiler, getArtist, getAlbum, getTrack, getPlayList } from '../../../modules/server/music/music_service';
+import { importFromURL } from '../../../modules/server/music/music_service';
 import { getSchemaFieldTypes, throwMethodException } from '../../Utility/methodutils';
 
 
 Meteor.methods({
-  'PlayList.import': function PlayListImport(ids, insertMetadata) {
-    check(ids, {
-      spotifyUserId: String,
-      spotifyId: String,
-    });
+  'PlayList.import': function PlayListImport(url, insertMetadata) {
+    check(url, String);
     check(insertMetadata, {
       name: Match.Maybe(String),
       compilerIds: Match.Maybe([String]),
@@ -22,10 +19,10 @@ Meteor.methods({
       date: Match.Maybe(Number),
     });
 
-    console.log('method import', ids, insertMetadata)
+    console.log('method import', url, insertMetadata)
 
     try {
-      const promise = getPlayList(ids, insertMetadata);
+      const promise = importFromURL('playlist', url, insertMetadata);
       const list = promise.await();
       console.log('method import results', list);
 

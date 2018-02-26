@@ -25,27 +25,27 @@ class PlayList extends React.Component {
   }
 
   render() {
-    const { loading, loadingTracks, playList, viewContext, showDate } = this.props;
+    const { loading, loadingTracks, playList, viewType, showDate } = this.props;
 
     if (loading) return (<Loading />);
-    if (!playList && viewContext == 'page') return (  <NotFound /> );
+    if (!playList && viewType == 'page') return (  <NotFound /> );
     if (!playList) return ( <div className="PlayList not-found" /> );
 
-    if (viewContext == 'inline') return (
-      <Link to={`/list/${playList._id}`} title={playList.name} className={"PlayList inline-context name"}>
+    if (viewType == 'inline') return (
+      <Link to={`/list/${playList._id}`} title={playList.name} className={"PlayList inline-viewtype name"}>
         {playList.name}
       </Link>);
 
-    const showTracks = viewContext == "page";
+    const showTracks = viewType == "page";
     // Get Tracks in order (when/if available and applicable).
     const tracks = !loadingTracks && showTracks && playList.trackIds.map(trackId => TrackCollection.findOne(trackId)).filter(t => t);
 
     return (
-      <div className={"PlayList " + viewContext + "-context"}>
+      <div className={"PlayList " + viewType + "-viewtype"}>
         <div className="item-header">
           <Link className="name" to={`/list/${playList._id}`}>{playList.name}</Link>
 
-          {viewContext != 'page' || !playList.spotifyUserId || !playList.spotifyId ? '' :
+          {viewType != 'page' || !playList.spotifyUserId || !playList.spotifyId ? '' :
             <a className="link spotify" title="Show in Spotify" target="_blank" href={`https://open.spotify.com/user/${playList.spotifyUserId}/playlist/${playList.spotifyId}`} />
           }
         </div>
@@ -53,18 +53,18 @@ class PlayList extends React.Component {
         { showDate ? <div className="date">{moment.unix(playList.date).format('YYYY-MM-DD')}</div> : '' }
 
         <div className="compilers inline-list">
-          { viewContext == 'page' ? <Label>Created by:</Label> : '' }
-          { playList.compilerIds.map(compilerId => (<Compiler compilerId={compilerId} viewContext="inline" key={compilerId} />)) }
+          { viewType == 'page' ? <Label>Created by:</Label> : '' }
+          { playList.compilerIds.map(compilerId => (<Compiler compilerId={compilerId} viewType="inline" key={compilerId} />)) }
         </div>
 
         <div className="duration">
-          { viewContext == 'page' ? <Label>Duration:</Label> : '' }
+          { viewType == 'page' ? <Label>Duration:</Label> : '' }
           {convertSecondsToHHMMSS(playList.duration)}, {playList.trackIds.length} tracks
         </div>
 
-        { viewContext != 'page' ? '' : <div className="tags inline-list">
+        { viewType != 'page' ? '' : <div className="tags inline-list">
           <Label>Tags:</Label>
-          { playList.tagIds.map(tagId => (<Tag tagId={tagId} viewContext="inline" key={tagId} />)) }
+          { playList.tagIds.map(tagId => (<Tag tagId={tagId} viewType="inline" key={tagId} />)) }
         </div>}
 
         { !showTracks ? '' :
@@ -76,7 +76,7 @@ class PlayList extends React.Component {
             </div>
 
             { loadingTracks ? (<Loading />) : tracks.map(track => (
-              <Track track={track} viewContext="list" key={track._id} />
+              <Track track={track} viewType="list" key={track._id} />
             ))}
           </div>
         }
@@ -86,12 +86,12 @@ class PlayList extends React.Component {
 }
 
 
-export default withTracker(({match, playList, playListId, spotifyId, viewContext, showDate}) => {
-  viewContext = viewContext || "page";
+export default withTracker(({match, playList, playListId, spotifyId, viewType, showDate}) => {
+  viewType = viewType || "page";
   playListId = playListId || (playList && playList._id) || (match && match.params && match.params.playListId);
 
   const subList = playList ? null : Meteor.subscribe('PlayList.withId', playListId, spotifyId);
-  const subTracks = viewContext == 'page' && Meteor.subscribe('PlayList.tracks', playListId, spotifyId);
+  const subTracks = viewType == 'page' && Meteor.subscribe('PlayList.tracks', playListId, spotifyId);
 
   const listSelector = spotifyId ? { spotifyId } : { _id: playListId };
 
@@ -99,7 +99,7 @@ export default withTracker(({match, playList, playListId, spotifyId, viewContext
     loading: subList && !subList.ready(),
     loadingTracks: subTracks && !subTracks.ready(),
     playList: playList || PlayListCollection.findOne(listSelector),
-    viewContext,
+    viewType,
     showDate,
   };
 })(PlayList);

@@ -20,46 +20,55 @@ class Album extends React.Component {
   }
 
   render() {
-    const { loading, album, viewContext } = this.props;
+    const { loading, album, viewType } = this.props;
 
     if (loading) return (<Loading />);
     if (!album) return (<NotFound />);
 
-    if (viewContext == 'inline') return (
-      <Link to={`/album/${album._id}`} title={album.name} className={"Album inline-context name"}>
+    if (viewType == 'inline') return (
+      <Link to={`/album/${album._id}`} title={album.name} className={"Album inline-viewtype name"}>
         {album.name}
       </Link>);
 
-    if (viewContext == 'image-medium') return (
-      <Link to={`/album/${album._id}`} title={album.name} className={"Album inline-context name"}>
-        <img src={album.imageURLs.medium} className={"Album image-context image"} height={"300"} width={"300"} />
+    if (viewType == 'image-medium') return (
+      <Link to={`/album/${album._id}`} title={album.name} className={"Album inline-viewtype name"}>
+        { !album.imageURLs || !album.imageURLs.medium ?
+          '?' :
+          <img src={album.imageURLs.medium} className={"Album image-viewtype image"} height={"300"} width={"300"} />
+        }
       </Link>);
 
-    if (viewContext == 'image-small') return (
-      <Link to={`/album/${album._id}`} title={album.name} className={"Album inline-context name"}>
-        <img src={album.imageURLs.small} className={"Album image-context image"} />
+    if (viewType == 'image-small') return (
+      <Link to={`/album/${album._id}`} title={album.name} className={"Album inline-viewtype name"}>
+        { !album.imageURLs || !album.imageURLs.medium ?
+          '' :
+          <img src={album.imageURLs.small} className={"Album image-viewtype image"} />
+        }
       </Link>);
 
+
+    // viewType == 'page'
     return (
-      <div className={"Album " + viewContext + "-context"}>
+      <div className={"Album " + viewType + "-viewtype"}>
         {loading ? <Loading /> :
           <div>
-            {viewContext != "page" ? "" :
-            <div className="album album-image image">
-              <img src={album.imageURLs.medium} className={"Album image-context image"} />
-            </div>
+            {viewType != "page" || !album.imageURLs || !album.imageURLs.medium
+              ? "" :
+              <div className="album album-image image">
+                <img src={album.imageURLs.medium} className={"Album image-viewtype image"} />
+              </div>
             }
 
             <div className="item-header">
               <Link className="name" to={`/album/${album._id}`}>{album.name}</Link>
-              
-              {viewContext != 'page' || !album.spotifyId ? '' :
+
+              {viewType != 'page' || !album.spotifyId ? '' :
                 <a className="link spotify" title="Show in Spotify" target="_blank" href={`https://open.spotify.com/album/${album.spotifyId}`} />
               }
             </div>
 
             <div className="artists inline-list">
-              { album.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewContext="inline" />)) }
+              { album.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" />)) }
             </div>
           </div>
         }
@@ -69,13 +78,13 @@ class Album extends React.Component {
 }
 
 
-export default withTracker(({match, album, albumId, viewContext}) => {
-  viewContext = viewContext || "page";
+export default withTracker(({match, album, albumId, viewType}) => {
+  viewType = viewType || "page";
   const subAlbum = album ? null : Meteor.subscribe('Album.withId', albumId || match.params.albumId);
 
   return {
     loading: subAlbum && !subAlbum.ready(),
     album: album || AlbumCollection.findOne(albumId || match.params.albumId),
-    viewContext,
+    viewType,
   };
 })(Album);

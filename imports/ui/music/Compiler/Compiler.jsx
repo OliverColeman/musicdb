@@ -17,24 +17,24 @@ class Compiler extends React.Component {
   }
 
   render() {
-    const { loading, compiler, viewContext } = this.props;
+    const { loading, compiler, viewType } = this.props;
 
     if (loading) return (<Loading />);
     if (!compiler) return (<NotFound />);
 
-    if (viewContext == 'inline') return (
-      <Link to={`/compiler/${compiler._id}`} title={compiler.name} className={"Compiler inline-context name"}>
+    if (viewType == 'inline') return (
+      <Link to={`/compiler/${compiler._id}`} title={compiler.name} className={"Compiler inline-viewtype name"}>
         {compiler.name}
       </Link>);
 
     // TODO list of (known) albums, tracks, and playlists.
 
     return (
-      <div className={"Compiler " + viewContext + "-context"}>
+      <div className={"Compiler " + viewType + "-viewtype"}>
         <div className="item-header">
           <Link className="name" to={`/compiler/${compiler._id}`}>{compiler.name}</Link>
           
-          {viewContext != 'page' || !compiler.spotifyId ? '' :
+          {viewType != 'page' || !compiler.spotifyId ? '' :
             <a className="link spotify" title="Show in Spotify" target="_blank" href={`https://open.spotify.com/user/${compiler.spotifyId}`} />
           }
         </div>
@@ -44,13 +44,13 @@ class Compiler extends React.Component {
 }
 
 
-export default withTracker(({match, compiler, compilerId, viewContext}) => {
-  viewContext = viewContext || "page";
+export default withTracker(({match, compiler, compilerId, viewType}) => {
+  viewType = viewType || "page";
   const subCompiler = compiler ? null : Meteor.subscribe('Compiler.withId', compilerId || match.params.compilerId);
 
   return {
     loading: subCompiler && !subCompiler.ready(),
     compiler: compiler || CompilerCollection.findOne(compilerId || match.params.compilerId),
-    viewContext,
+    viewType,
   };
 })(Compiler);

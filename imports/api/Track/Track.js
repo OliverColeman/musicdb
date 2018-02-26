@@ -22,7 +22,10 @@ Track.deny({
 Track.schema = {
   ...commonMusicItemFields,
   artistIds: [String],
-  albumId: String,
+  albumId: {
+    type: String,
+    optional: true,
+  },
   duration: {
     type: Number,
     optional: true,
@@ -37,15 +40,14 @@ Track.attachSchema(new SimpleSchema(Track.schema));
 
 
 /**
- * Find a Track by its name and the names or Ids of the artists and album.
+ * Find Tracks by name and the names or Ids of the artists and album.
  * Name matching uses "normalised" matching, ignoring case, punctuation,
  * multiple and start/end white space characters.
- * If multipe tracks match then one is returned at random.
  *
  * @param {string} name - The name of the track.
  * @param {Array} artists - Either artist names or Artist documents.
- * @param {string|Object} album - Either album name or Album document.
- * @return {Object} The matching Track if found, otherwise `undefined`.
+ * @param {string|Object} album - Either an album name or an Album document.
+ * @return {Array} The matching Tracks.
  */
 Track.findByName = (name, artists, album) => {
   name = normaliseString(name);
@@ -54,10 +56,9 @@ Track.findByName = (name, artists, album) => {
   const albumNameGiven = typeof album == 'string';
   album = albumNameGiven ? normaliseString(album) : album._id;
 
-  // Search Track collection by track name...
+  // Search Track collection by track name then filter for album and artists.
   const tracks = Track.find({nameNormalised: name}).fetch();
-  // ...then filter for album and artists.
-  return tracks.find(t => {
+  return tracks.filter(t => {
     // Check album.
     if (albumNameGiven && Album.findOne(t.albumId).nameNormalised != album) return false;
     if (!albumNameGiven && t.albumId != album) return false;

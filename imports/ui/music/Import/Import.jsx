@@ -32,8 +32,6 @@ const fileImportPlaceholder =
 `Select a spreadsheet file to import multiple lists from, in CSV or TSV format.
 First row should be a list of headings and may include 'Name', 'Number', 'Date', 'Compilers', 'URL'`
 
-const urlRE = /^.*(?:spotify\.com\/user\/(\w+)\/playlist\/(\w+))\s*$/;
-
 
 class Import extends React.Component {
   constructor(props) {
@@ -51,7 +49,6 @@ class Import extends React.Component {
     };
 
     this.importFromSingle = this.importFromSingle.bind(this);
-    this.getIdsForImport = this.getIdsForImport.bind(this);
     this.doImport = this.doImport.bind(this);
   }
 
@@ -60,8 +57,6 @@ class Import extends React.Component {
     const { loading, compilers, tags, toImport } = this.props;
 
     if (loading) return ( <div className="Import"><Loading /></div> );
-
-    console.log('render', toImport);
 
     const { inProgress, tagIds, importedPlayLists, singleName,
       singleNumber, singleDate, singleCompilers, singleURL, importFile, massImportText } = this.state;
@@ -99,8 +94,7 @@ class Import extends React.Component {
 
             <FormControl componentClass="input" type="text" className="listurl"
               placeholder="List URL" title="List URL, like 'open.spotify.com/user/46554353/playlist/67YquHJGJabxbFnB9Yn4Y'"
-              value={singleURL} onChange={ e => this.setState({singleURL: e.target.value}) }
-              pattern={urlRE} />
+              value={singleURL} onChange={ e => this.setState({singleURL: e.target.value}) } />
 
             <Button onClick={this.importFromSingle}>Import!</Button>
           </div>
@@ -132,17 +126,19 @@ class Import extends React.Component {
 
 
         <div className="import-results">
-          {toImport.map(ti => (
-            <div className="import-item" key={ti.url}>
-              { ti.listId ?
-                <PlayList playListId={ti.listId} viewContext="inline" />
-                :
-                <div className="import-pending">
-                  <div className="name">{ti.insertMetadata.name || (ti.ids && ti.ids.spotifyId)}</div>
-                  <Loading />
-                </div>
-              }
-            </div>
+          {toImport.map((ti, idx) => (
+            ti.listId ?
+              <div className="import-item" key={ti.url}>
+                <label>{idx + 1}</label>
+                <div /><PlayList playListId={ti.listId} viewType="inline" />
+                <div className="url">{ti.url}</div>
+              </div>
+              :
+              <div className="import-item" key={ti.url}>
+                <label>{idx + 1}</label>
+                <Loading /><div className="name">{ti.insertMetadata.name}</div>
+                <div className="url">{ti.url}</div>
+              </div>
           ))}
         </div>
       </div>
@@ -163,50 +159,21 @@ class Import extends React.Component {
     if (singleName) insertMetadata.name = singleName;
     if (singleNumber) insertMetadata.number = singleNumber;
     if (singleDate) insertMetadata.date = moment(singleDate).unix();
-    if (singleCompilers) insertMetadata.compilerIds = singleCompilers;
-
+    if (singleCompilers) insertMetadata.compilerIds = singleCompilers.map(c => c._id);
     const importData = {
       insertMetadata,
       url: singleURL,
     }
-    this.getIdsForImport(importData);
 
     toImport.push(importData);
-
-    console.log('importFromSingle', toImport.length-1, importData);
-
     Session.set("Import_toImport", toImport);
-
     Meteor.defer(() => this.doImport(toImport.length-1));
-  }
-
-
-  getIdsForImport(importData) {
-    importData.ids = {};
-
-    const urlParts = importData.url.match(urlRE);
-    if (!urlParts) {
-      console.log("url error", urlParts);
-      importData.error = "URL is malformed.";
-      return;
-    }
-
-    // Spotify url (only supported type so far).
-    if (urlParts[1]) {
-      importData.ids.spotifyUserId = urlParts[1];
-      importData.ids.spotifyId = urlParts[2];
-    }
   }
 
 
   doImport(index) {
     const { toImport } = this.props;
-
-    console.log('doImport', index, toImport[index]);
-
-    Meteor.call('PlayList.import', toImport[index].ids, toImport[index].insertMetadata, (error, list) => {
-      console.log('mc results', error, list);
-
+    Meteor.call('PlayList.import', toImport[index].url, toImport[index].insertMetadata, (error, list) => {
       if (error) {
         toImport[index].error = error.message;
       }
@@ -215,7 +182,6 @@ class Import extends React.Component {
         // TODO if the list contains tracks that need review then show a symbol or similar
         // to indicate this, which perhaps when clicked on opens the list in a modal window.
       }
-
       Session.set("Import_toImport", toImport);
     });
   }

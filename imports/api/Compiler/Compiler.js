@@ -24,4 +24,19 @@ Compiler.schema = {
 };
 Compiler.attachSchema(new SimpleSchema(Compiler.schema));
 
+
+/**
+ * Find Compilers by name.
+ * Name matching uses "normalised" matching, ignoring case, punctuation,
+ * multiple and start/end white space characters.
+ *
+ * @param {string} name - The name of the compiler.
+ * @return {Array} The matching Compilers.
+ */
+Compiler.findByName = (name) => {
+  // Search Compiler collection by name.
+  return Album.find({nameNormalised: normaliseString(name)}).fetch();
+}
+
+
 export default Compiler;

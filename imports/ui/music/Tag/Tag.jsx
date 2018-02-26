@@ -23,23 +23,23 @@ class Tag extends React.Component {
   }
 
   render() {
-    const { loading, loadingLists, tag, playLists, viewContext } = this.props;
+    const { loading, loadingLists, tag, playLists, viewType } = this.props;
 
     if (loading) return (<Loading />);
     if (!tag) return (<NotFound />);
 
-    if (viewContext == 'inline') return (
-      <Link to={`/tag/${tag._id}`} title={tag.name} className={"Tag inline-context name"}>
+    if (viewType == 'inline') return (
+      <Link to={`/tag/${tag._id}`} title={tag.name} className={"Tag inline-viewtype name"}>
         {tag.name}
       </Link>);
 
-    const showLists = viewContext == "page";
+    const showLists = viewType == "page";
     const hasDates = playLists && playLists.find(tl => !!tl.date);
 
     const headers = hasDates ? ["Name", "Date", "Compiler(s)", "Length"] : ["Name", "Compiler(s)", "Length"];
 
     return (
-      <div className={"Tag " + viewContext + "-context"}>
+      <div className={"Tag " + viewType + "-viewtype"}>
         <div className="item-header">
           <Link className="name" to={`/tag/${tag._id}`}>{tag.name}</Link>
         </div>
@@ -53,7 +53,7 @@ class Tag extends React.Component {
             </div>
 
             { loadingLists ? (<Loading />) : playLists.map(playList => (
-              <PlayList playList={playList} viewContext="list" showDate={hasDates} key={playList._id} />
+              <PlayList playList={playList} viewType="list" showDate={hasDates} key={playList._id} />
             ))}
           </div>
         }
@@ -63,12 +63,12 @@ class Tag extends React.Component {
 }
 
 
-export default withTracker(({match, tag, tagId, viewContext}) => {
-  viewContext = viewContext || "page";
+export default withTracker(({match, tag, tagId, viewType}) => {
+  viewType = viewType || "page";
   const id = tagId || (tag && tag._id) || match.params.tagId;
 
   const sub = tag ? false : Meteor.subscribe('Tag.withId', id);
-  const subLists = viewContext == 'page' && Meteor.subscribe('PlayList.withTagId', id);
+  const subLists = viewType == 'page' && Meteor.subscribe('PlayList.withTagId', id);
 
   const sortOptions = {
     number: -1,
@@ -81,6 +81,6 @@ export default withTracker(({match, tag, tagId, viewContext}) => {
     loadingLists: subLists && !subLists.ready(),
     tag: tag || TagCollection.findOne(id),
     playLists: subLists && PlayListCollection.find({tagIds: id}, {sort: sortOptions}).fetch(),
-    viewContext,
+    viewType,
   };
 })(Tag);

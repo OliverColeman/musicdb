@@ -28,4 +28,20 @@ Artist.schema = {
 };
 Artist.attachSchema(new SimpleSchema(Artist.schema));
 
+
+/**
+ * Find Artists by name.
+ * Name matching uses "normalised" matching, ignoring case, punctuation,
+ * multiple and start/end white space characters.
+ * // TODO Allow disambiguation by album or track names/ids?
+ *
+ * @param {string} name - The name of the track.
+ * @return {Object} The matching Artists.
+ */
+Artist.findByName = (name) => {
+  // Search Compiler collection by name.
+  return Artist.find({nameNormalised: normaliseString(name)}).fetch();
+}
+
+
 export default Artist;
