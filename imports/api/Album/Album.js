@@ -4,6 +4,7 @@ import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
 import { commonMusicItemFields } from '../Utility/music';
 import { normaliseString, normaliseStringMatch } from '../../modules/util';
+import Artist from '../Artist/Artist';
 
 const Album = new Mongo.Collection('Album');
 

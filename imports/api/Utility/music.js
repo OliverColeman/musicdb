@@ -18,6 +18,11 @@ const commonMusicItemFields = {
     },
   },
 
+  disambiguation: {
+    type: String,
+    optional: true,
+  },
+
   dataMaybeMissing: {
     type: Array,
     optional: true,
@@ -43,6 +48,11 @@ const commonMusicItemFields = {
   "imageURLs.large": { type: String, optional: true },
 
   spotifyId: {
+    type: String,
+    optional: true,
+  },
+  // MusicBrainz
+  mbId: {
     type: String,
     optional: true,
   },

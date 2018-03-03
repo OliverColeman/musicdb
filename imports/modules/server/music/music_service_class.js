@@ -62,11 +62,10 @@ export default class MusicService  {
    * otherwise the existing document is updated. To match existing documents use
    * the findByName functions for the appropriate collection. (PlayLists are not
    * matched automatically.)
-   * @param {string} type - The item type, eg 'artist', 'track'.
-   * @param {Object} names - The name of the item and other associated names if
-   *   applicable. Valid keys are 'name' (the item name), 'artistNames' (for
-   *   tracks and albums), 'albumName' (for tracks), 'albumNames' (for artists,
-   *   to help disambiguate artists).
+   * @param {string} type - The item type, supported types are 'album' and 'track'.
+   * @param {Object} names - The name of the item and other associated names to
+   * use for disambiguation. For albums: { albumName, artistNames }. For tracks:
+   * { trackName, albumName, artistNames }.
    * @return {Object} A Promise, resolving to a document for the appropriate
    *   collection for the item containing metadata for the item or null if the
    *   item could not be found on the service.
