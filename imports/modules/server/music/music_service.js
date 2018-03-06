@@ -100,3 +100,29 @@ const importFromSearch = (service, type, names) => {
 
 
 export { importFromURL, importFromIds, importFromSearch };
+//
+// let tra;
+//
+// tra = importFromURL('track', "https://musicbrainz.org/recording/e3adcd5b-c3ff-4860-bcde-9e92ef0967ad").await();
+// console.log('tra b', tra);
+//
+// tra = importFromURL("track", "https://open.spotify.com/track/0Ry3vlDRNON0neCzTYnChh").await();
+// console.log('tra a', tra);
+//
+//
+// tra = importFromSearch('musicbrainz', 'track', {
+//   trackName: "the winner takes it all",
+//   albumName: "super trouper",
+//   artistNames: ['abba'],
+//   duration: 295
+// }).await();
+// console.log('tra1', tra);
+//
+//
+// tra = importFromSearch('spotify', 'track', {
+//   trackName: "the winner takes it all",
+//   albumName: "super trouper",
+//   artistNames: ['abba'],
+//   duration: 295
+// }).await();
+// console.log('tra2', tra);

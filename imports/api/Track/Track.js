@@ -42,19 +42,19 @@ Track.attachSchema(new SimpleSchema(Track.schema));
 
 
 /**
- * Find Tracks by name and the names or Ids of the artists and album.
+ * Find Tracks by name and the name or id of an artist and the album.
  * Name matching uses "normalised" matching, ignoring case, punctuation,
  * multiple and start/end white space characters.
  *
  * @param {string} name - The name of the track.
- * @param {Array} artists - Either artist names or Artist documents.
+ * @param {string|Object} artist - Either an artist name or Artist document.
  * @param {string|Object} album - Either an album name or an Album document.
  * @return {Array} The matching Tracks.
  */
-Track.findByName = (name, artists, album) => {
+Track.findByName = (name, artist, album) => {
   name = normaliseString(name);
-  const artistNamesGiven = typeof artists[0] == 'string';
-  artists = artists.map(a => artistNamesGiven ? normaliseString(a) : a._id).sort();
+  const artistNameGiven = typeof artist == 'string';
+  artist = artistNameGiven ? normaliseString(artist) : artist._id;
   const albumNameGiven = typeof album == 'string';
   album = albumNameGiven ? normaliseString(album) : album._id;
 
@@ -65,9 +65,9 @@ Track.findByName = (name, artists, album) => {
     if (albumNameGiven && Album.findOne(t.albumId).nameNormalised != album) return false;
     if (!albumNameGiven && t.albumId != album) return false;
 
-    // Check artists.
-    const trackArtists = artistNamesGiven ? t.artistIds.map(aid => Artist.findOne(aid).nameNormalised) : t.artistIds;
-    return _.isEqual(trackArtists.sort(), artists);
+    // Check artist.
+    const trackArtists = artistNameGiven ? t.artistIds.map(aid => Artist.findOne(aid).nameNormalised) : t.artistIds;
+    return !!trackArtists.find(ta => ta == artist);
   });
 }
 

@@ -34,6 +34,7 @@ const commonMusicItemFields = {
     type: Boolean,
     optional: true,
   },
+
   needsReview: {
     type: Boolean,
     optional: true,

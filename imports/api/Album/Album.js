@@ -28,25 +28,25 @@ Album.attachSchema(new SimpleSchema(Album.schema));
 
 
 /**
- * Find Albums by name and the names or ids of the artists.
+ * Find Albums by name and the name or id of an artist.
  * Name matching uses "normalised" matching, ignoring case, punctuation,
  * multiple and start/end white space characters.
  *
  * @param {string} name - The name of the album.
- * @param {Array} artists - Either artist names or Artist documents.
+ * @param {string|Object} artist - Either an artist name or Artist document.
  * @return {Array} The matching Albums.
  */
-Album.findByName = (name, artists) => {
+Album.findByName = (name, artist) => {
   name = normaliseString(name);
-  const artistNamesGiven = typeof artists[0] == 'string';
-  artists = artists.map(a => artistNamesGiven ? normaliseString(a) : a._id).sort();
+  const artistNameGiven = typeof artist[0] == 'string';
+  artist = artistNameGiven ? normaliseString(artist) : artist._id;
 
-  // Search Album collection by name then filter on artists.
+  // Search Album collection by name then filter on artist.
   const albums = Album.find({nameNormalised: name}).fetch();
   return albums.filter(a => {
-    // Check artists.
-    const albumArtists = artistNamesGiven ? a.artistIds.map(aid => Artist.findOne(aid).nameNormalised) : a.artistIds;
-    return _.isEqual(albumArtists.sort(), artists);
+    // Check artist.
+    const albumArtists = artistNameGiven ? a.artistIds.map(aid => Artist.findOne(aid).nameNormalised) : a.artistIds;
+    return !!albumArtists.find(a => a == artist);
   });
 }
 

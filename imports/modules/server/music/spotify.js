@@ -12,6 +12,9 @@ import PlayList from '../../../api/PlayList/PlayList';
 import Track from '/imports/api/Track/Track';
 
 
+const durationMatchMargin = 4;
+
+
 /**
  * Functions to import items from spotify.
  * @see MusicService
@@ -59,12 +62,16 @@ export default class Spotify extends MusicService {
    * @see MusicService
    */
   importFromSearch(type, names) {
-    throw `Match from names not supported by ${this.name}.`;
+    switch (type) {
+      case 'album':     return getAlbum(null, names);
+      case 'track':     return getTrack(null, names);
+    }
+    throw "Unsupported music item type: " + type;
   }
 }
 
 
-const spotifyApi = new SpotifyWebApi({
+const spotifyAPI = new SpotifyWebApi({
   clientId: process.env.SPOTIFY_CLIENT_ID,
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
@@ -75,20 +82,20 @@ const spotifyApi = new SpotifyWebApi({
  */
 const getSpotifyAPI = async () => {
   // Get/refresh access token if necessary.
-  if (!spotifyApi.getAccessToken()) {
+  if (!spotifyAPI.getAccessToken()) {
     try {
-      let data = await spotifyApi.clientCredentialsGrant();
+      let data = await spotifyAPI.clientCredentialsGrant();
 
       // Reset the stored access token when it expires.
       Meteor.setTimeout(
         () => {
           console.log("Resetting Spotify access token.");
-          spotifyApi.resetAccessToken();
+          spotifyAPI.resetAccessToken();
         },
         data.body['expires_in'] * 1000
       );
 
-      spotifyApi.setAccessToken(data.body['access_token']);
+      spotifyAPI.setAccessToken(data.body['access_token']);
     }
     catch (err) {
       console.error("Error retrieving Spotify access token:", err);
@@ -96,16 +103,18 @@ const getSpotifyAPI = async () => {
     }
   }
 
-  return spotifyApi;
+  return spotifyAPI;
 }
 
 
 /**
  * @summary Get/create a Compiler (for a track list).
- * @param {Object} ids - 'spotifyId' is the only accepted id field.
+ * @param {Object} ids - An id field, such as _id or spotifyId.
  */
 const getCompiler = async (ids, insertMetadata) => {
+  ids = ids || {};
   insertMetadata = insertMetadata || {};
+
   let compiler = ids && Object.keys(ids).length && Compiler.findOne(ids);
   if (!!compiler) return compiler;
 
@@ -113,7 +122,7 @@ const getCompiler = async (ids, insertMetadata) => {
     //console.log("loading compiler data from spotify by id");
     try {
       const spotifyAPI = await getSpotifyAPI();
-      const { body } = await spotifyApi.getUser(ids.spotifyId);
+      const { body } = await spotifyAPI.getUser(ids.spotifyId);
       compiler = {
         name: body.display_name ? body.display_name : "spotify:" + body.id,
         spotifyId: body.id,
@@ -137,47 +146,43 @@ const getCompiler = async (ids, insertMetadata) => {
 
 /**
  * @summary Get/create an Artist.
- * @param {Object} ids One or more id fields, such as _id or spotifyId.
+ * @param {Object} ids An id field, such as _id or spotifyId.
  * @param {Object} details Artist details (not implemented yet, see TODO in getTrack),
     or a full artist description from a music service, eg {spotifyArtist}. May be empty.
  */
 const getArtist = async (ids, details, insertMetadata) => {
+  ids = ids || {};
+  details = details || {};
   insertMetadata = insertMetadata || {};
-  let artist = ids && Object.keys(ids).length && Artist.findOne(ids)
-  if (!!artist) return artist;
 
-  if (ids.spotifyId || details && details.spotifyArtist) {
+  let spotifyArtist = details.spotifyArtist || null;
+  let spotifyId = ids.spotifyId || spotifyArtist && spotifyArtist.id;
+  let artist = ids && Object.keys(ids).length && Artist.findOne(ids)
+
+  if (spotifyId && (!artist || !artist.spotifyId)) {
     try {
-      let spotifyArtist;
-      if (details && details.spotifyArtist) {
-        //console.log("using preloaded artist data");
-        spotifyArtist = details.spotifyArtist;
-      }
-      else {
+      if (!spotifyArtist || !spotifyArtist.images) {
         //console.log("loading artist data from spotify by id");
         const spotifyAPI = await getSpotifyAPI();
-        const response = await spotifyApi.getArtist(ids.spotifyId);
+        const response = await spotifyAPI.getArtist(spotifyId);
         spotifyArtist = response.body;
+      }
+
+      if (artist) {
+        getImages(artist, spotifyArtist);
+        Artist.update(artist._id,  {$set :{
+          spotifyId,
+          imageURLs: artist.imageURLs,
+        }});
+        return Artist.findOne(artist._id);
       }
 
       artist = {
         name: spotifyArtist.name,
-        spotifyId: spotifyArtist.id,
+        spotifyId,
         ...insertMetadata,
       };
-      if (spotifyArtist.images && spotifyArtist.images.length) {
-        // default images sizes seem to be 640, 300, and 64, in that order.
-        artist.imageURLs = {};
-        for (let image of spotifyArtist.images) {
-          if (image.height == 640) {
-            artist.imageURLs.large = image.url;
-          } else if (image.height == 320) {
-            artist.imageURLs.medium = image.url;
-          } else if (image.height == 160) {
-            artist.imageURLs.small = image.url;
-          }
-        }
-      }
+      getImages(artist, spotifyArtist);
       const id = Artist.insert(artist);
       return Artist.findOne(id);
     }
@@ -186,114 +191,157 @@ const getArtist = async (ids, details, insertMetadata) => {
       throw "Error retrieving artist info from Spotify."
     }
   }
+
+  return artist;
 }
 
 
 /**
  * @summary Get/create an Album. Either by ids or by artist (ids) and name.
- * @param {Object} ids One or more id fields, such as _id or spotifyId. May be empty.
- * @param {Object} details Album details including {artistIds (internal), albumName},
-    or a full album description from a music service, eg {spotifyAlbum}. May be empty.
+ * @param {Object} ids An id field, such as _id or spotifyId. May be empty.
+ * @param {Object} details Album details including {artistIds (internal) or
+ *   artistNames, albumName}, or a full album description {spotifyAlbum}. May be empty.
  */
 const getAlbum = async (ids, details, insertMetadata) => {
+  details = details || {};
+  if ((details.albumName || details.artistIds || details.artistNames) &&
+        (!details.trackName || !(details.artistIds || details.artistNames)))
+      throw "Invalid arguments: if any one of 'albumName', 'artistIds', 'artistNames' is provided in the details argument then albumName and one of artistIds or artistNames must also be provided.";
+
+  ids = ids || {};
   insertMetadata = insertMetadata || {};
+
+  let spotifyAlbum = details.spotifyAlbum || null;
+  let spotifyId = ids.spotifyId || spotifyAlbum && spotifyAlbum.id;
+  let spotifyArtists, spotifyArtist;
+  let name, artist, artists;
+
+  // First see if we already have this album in our DB...
+  // ...by id
   let album = ids && Object.keys(ids).length && Album.findOne(ids);
-  if (!!album) return album;
 
-  if (ids.spotifyId || details && (details.artistIds && details.albumName || details.spotifyAlbum)) {
-    try {
-      const spotifyAPI = await getSpotifyAPI();
+  // ...or by matching from a spotifyAlbum object or names.
+  if (!album && (spotifyAlbum || details.albumName)) {
+    // Get artist and album document if possible, otherwise use names.
+    if (spotifyAlbum) {
+      name = spotifyAlbum.name;
+      artist = spotifyAlbum.artists[0];
+      artist = Album.findOne({spotifyId: artist.id}) || artist.name;
+    }
+    else {
+      name = details.albumName;
+      artist = details.artistNames ? details.artistNames[0] : Artist.findOne(details.artistIds[0]);
+    }
 
-      let spotifyAlbum;
-      if (details.spotifyAlbum) {
-        //console.log("using preloaded album data");
-        spotifyAlbum = details.spotifyAlbum;
-      }
-      else if (ids.spotifyId) {
-        //console.log("loading album data from spotify by id");
-        const { body } = await spotifyApi.getAlbum(ids.spotifyId);
-        spotifyAlbum = body;
-      }
-      else {
-        //console.log("searching for album data from spotify", details);
-        // Get (first/one of the) artists spotify id.
-        const artist = details.artistIds.find(aid => !!Artist.findOne(aid).spotifyId);
-        const artistSpotifyId = artist ? artist.spotifyId : null;
+    album = Album.findByName(name, artist).find(a=>!!a);
+  }
+  const spotifyAPI = await getSpotifyAPI();
 
-        if (artistSpotifyId) {
-          // TODO replace with search when not broken for albums https://github.com/thelinmichael/spotify-web-api-node/issues/178
-          for (let albumType of ['album', 'compilation', 'appears_on', 'single']) {
-            const { body } = await spotifyApi.getArtistAlbums(artistSpotifyId, {album_type: albumType, limit:50});
-            // Only consider exact (but case insensitive) match against album name.
-            const nameLC = details.albumName.toLowerCase();
-            spotifyAlbum = body.items.find(album => album.name.toLowerCase() == nameLC);
-            if (spotifyAlbum) {
-              break;
-            }
-          }
-        }
-      }
-
-      if (spotifyAlbum) {
-        // Collate list of artists.
-        const artists = (await Promise.all(
-          spotifyAlbum.artists.map(sa => getArtist({spotifyId: sa.id}))
-        )).filter(artist => !!artist);
-
-        const existingAlbums = Album.findByName(spotifyAlbum.name, artists);
-        let album;
-        if (existingAlbums.length == 1) {
-          album = existingAlbums[0];
+  // If we haven't matched the album or we don't have an associated spotifyId for it.
+  if (!album || !album.spotifyId) {
+    // Make sure we have a Spotify album object, with images.
+    if ((!spotifyAlbum || !spotifyAlbum.images) && (spotifyId || details.albumName)) {
+      try {
+        if (spotifyId || !spotifyAlbum.images) {
+          //console.log("loading album data from spotify by id");
+          const { body } = await spotifyAPI.getAlbum(spotifyId);
+          spotifyAlbum = body;
         }
         else {
-          album = {
-            name: spotifyAlbum.name,
-            artistIds: artists.map(a => a._id),
-            ...insertMetadata,
-          };
-        }
-        album.spotifyId = spotifyAlbum.id;
+          //console.log("searching for album data from spotify", details);
+          // Get first artist name
+          artist = details.artistNames ? normaliseString(details.artistNames[0]) : details.artistIds.findOne(aid => !!Artist.findOne(aid)).nameNormalised;
+          const query = `artist:"${artist}" album:"${normaliseString(details.albumName)}"`;
+          response = await spotifyAPI.search(query, ['track'], { limit: 50 });
 
-        if (spotifyAlbum.images && spotifyAlbum.images.length) {
-          album.imageURLs = {};
-          for (let image of spotifyAlbum.images) {
-            if (image.height == 640) {
-              album.imageURLs.large = image.url;
-            } else if (image.height == 300) {
-              album.imageURLs.medium = image.url;
-            } else if (image.height == 64) {
-              album.imageURLs.small = image.url;
-            }
-          }
+          // See if any results match across artist and album name.
+          spotifyAlbum = response.body.albums.items.find(sa =>
+            normaliseStringMatch(sa.name, details.albumName) &&
+            album.artists.find(sa => normaliseString(sa.name) == artist)
+          );
         }
-
-        if (existingAlbums.length == 1) {
-          Album.update(album._id, {$set: album});
-          return album;
-        }
-        else {
-          const id = Album.insert(album);
-          return Album.findOne(id);
-        }
+      }
+      catch (err) {
+        console.error("Error retrieving album info from Spotify:", err);
+        throw "Error retrieving album info from Spotify."
       }
     }
-    catch (err) {
-      console.error("Error retrieving album info from Spotify:", err);
-      throw "Error retrieving album info from Spotify."
+
+    if (spotifyAlbum) {
+      spotifyId = spotifyAlbum.id;
+
+      /////// If there's already a matching album object in the DB, update it. /////////
+      if (album) {
+        // Set the spotifyId (and images) for the album and associated artists as necessary.
+        getImages(album, spotifyAlbum);
+        Album.update(album._id, {$set: {
+          spotifyId,
+          imageURLs: album.imageURLs,
+        }});
+
+        spotifyArtists = spotifyAlbum.artists;
+        for (artist of Artist.find({_id: {$in: album.artistIds}}).fetch()) {
+          if (!artist.spotifyId) {
+            // See if this artist appears in the artists listed for the recording on Spotify.
+            spotifyArtist = spotifyArtists.find(sa => normaliseStringMatch(sa.name, artist.name));
+            if (spotifyArtist) {
+              await getArtist({_id: artist._id}, { spotifyArtist });
+              spotifyArtists = spotifyArtists.filter(sa => sa.id != spotifyArtist.id);
+            }
+          }
+          else {
+            spotifyArtists = spotifyArtists.filter(sa => sa.id != artist.spotifyId);
+          }
+        }
+        // Add remaining artists listed by Spotify that didn't appear in the album artist list.
+        if (spotifyArtists.length) {
+          let newArtists = [];
+          for (let sa of spotifyArtists) {
+            newArtists.push(await getArtist({spotifyId: sa.id}, {spotifyArtist: sa}));
+          }
+          Album.update(album._id, {
+            $push: {artistIds: newArtists.map(a => a._id)},
+            $set: {needsReview: true}
+          });
+        }
+
+        // Return the updated Album.
+        return Album.findOne(album._id);
+      }
+
+      /////// We have a spotifyAlbum but no matching Album. Create the Album. ////////
+      // Get Artists and Album.
+      let spotifyArtistIds = spotifyAlbum.artists.map(sa => sa.id);
+      await ensureArtistsBySpotifyId(spotifyArtistIds);
+      artists = Artist.find({spotifyId: {$in: spotifyArtistIds}});
+
+      // Create the Album.
+      album = {
+        name: spotifyAlbum.name,
+        artistIds: artists.map(artist => artist._id),
+        spotifyId: spotifyAlbum.id,
+        ...insertMetadata,
+      }
+
+      getImages(album, spotifyAlbum);
+
+      const albumId = Album.insert(album);
+      return Album.findOne(albumId);
     }
   }
 
-  // If we get to to here the album wasn't found on Spotify.
+  //////// We could not find a matching Spotify album. ////////
+  // If we found a matching Album in our DB just return it.
+  if (album) return album;
+
+  // Otherwise create an Album from details if given.
   if (details.albumName) {
     artistIds = details.artistIds || [];
-
-    // See if we already have an album with same name and artists.
-    const existingAlbums = Album.findByName(details.albumName, artistIds);
-    if (existingAlbums.length) return existingAlbums[0];
+    // TODO Add artists from names if artistIds not given?
 
     const id = Album.insert({
       name: details.albumName,
-      artistIds: artistIds,
+      artistIds,
       ...insertMetadata,
     });
     return Album.findOne(id);
@@ -305,104 +353,202 @@ const getAlbum = async (ids, details, insertMetadata) => {
  * @summary Get/create a Track. Either by ids or with the given track details.
  * @param {Object} ids One or more id fields, such as _id or spotifyId. May be empty.
  * @param {Object} details Basic track details {'trackName', 'artistNames' (array), 'albumName', 'duration'},
-    or a full track description from a music service, eg {'spotifyTrack'}. May be empty.
- * TODO Handle adding tracks (and associated artists and album) when can't find on Spotify.
+    or a full track description from Spotify {'spotifyTrack'}. May be empty.
  */
 const getTrack = async (ids, details, insertMetadata) => {
+  // We use the below logic to find and match up an Spotify track.
+  //  Attempt to load an existing Track by given ids (either internal or Spotify id).
+  //  If that fails attempt to load an existing Track by the track, artist and album names and track duration.
+  //  If we couldn't find an existing track or it doesn't have an asssociated Spotify id:
+  //    Load or search for the track/recording on Spotify (spotifyTrack).
+  //    If it was found on Spotify:
+  //      If we found an existing track in our DB then:
+  //        Update it and its associated artists and album with their corresponding Spotify ids.
+  //        Return the track.
+  //      Else
+  //        Create and return a new Track using the Spotify recording/track data.
+  //    Else (it was not found on Spotify):
+  //      If we found an existing track in our DB then:
+  //        Return it.
+  //      Else
+  //        Create a new Track if the track, artist and album names and track duration were provided.
+
+  details = details || {};
+  if ((details.trackName || details.artistNames || details.albumName || details.duration) &&
+        (!details.trackName || !details.artistNames || !details.albumName || !details.duration))
+      throw "Invalid arguments: if any one of 'trackName', 'artistNames', 'albumName', or 'duration' is provided in the details argument then all must also be provided.";
+
+  ids = ids || {};
   insertMetadata = insertMetadata || {};
-  // First see if we already have this track in our DB.
-  let track = ids && Object.keys(ids).length && Track.findOne(ids);
-  if (!!track) return track;
 
-  // If this is a spotify track or we can search for it on spotify.
-  if (ids.spotifyId || details.spotifyTrack || details.trackName && details.artistNames && details.albumName && details.duration) {
-    try {
-      const spotifyAPI = await getSpotifyAPI();
-      let spotifyTrack;
+  let spotifyTrack = details.spotifyTrack || null; //Spotify recording/track object.
+  let spotifyId = ids.spotifyId || spotifyTrack && spotifyAlbum.id;
+  let spotifyAlbums, spotifyArtists, spotifyArtist, spotifyAlbum;
+  let name, artist, artists, album, duration;
+  const spotifyAPI = await getSpotifyAPI();
+  let response;
 
-      if (details.spotifyTrack) {
-        //console.log("using preloaded spotify track data");
-        spotifyTrack = details.spotifyTrack;
-      }
-      else if (ids.spotifyId) {
-        //console.log("loading track data from spotify by id");
-        const { body } = await spotifyApi.getTrack(ids.spotifyId);
-        spotifyTrack = body;
+  // First see if we already have this track in our DB...
+  // ...by id
+  let track = Object.keys(ids).length && Track.findOne(ids);
+
+  // ...or by matching from a spotifyTrack object or names and duration.
+  if (!track && (spotifyId || spotifyTrack || details.trackName)) {
+    // If we have a spotifyId but no spotifyTrack then fetch the spotifyTrack.
+    if (spotifyId && !spotifyTrack) {
+      console.log("loading track data from Spotify by id");
+      response = await spotifyAPI.getTrack(spotifyId);
+      spotifyTrack = response.body;
+    }
+
+    // Get artist and album document if possible, otherwise use names.
+    if (spotifyTrack) {
+      name = spotifyTrack.name;
+      artist = spotifyTrack.artists[0];
+      artist = Artist.findOne({spotifyId: artist.id}) || artist.name;
+      album = spotifyTrack.album;
+      album = Album.findOne({spotifyId: album.id}) || album.name;
+      duration = spotifyTrack.duration_ms / 1000;
+    }
+    else {
+      name = details.trackName;
+      artist = details.artistNames[0];
+      album = details.albumName;
+      duration = details.duration;
+    }
+
+    track = Track.findByName(name, artist, album)
+      .filter(t => Math.abs(t.duration - duration) < durationMatchMargin)
+      .find(t=>!!t);
+  }
+
+  // If we haven't matched the track or we don't have an associated spotifyId for it.
+  if (!track || !track.spotifyId) {
+    // Make sure we have a Spotify recording/track object.
+    if (!spotifyTrack && (spotifyId || details.trackName)) {
+      if (spotifyId) {
+        console.log("loading track data from Spotify by id");
+        response = await spotifyAPI.getTrack(spotifyId);
+        spotifyTrack = response.body;
       }
       else {
-        //console.log("searching for track data from spotify", ids, details);
+        console.log("searching for track data from mb", details);
         const query = `track:"${normaliseString(details.trackName)}" artist:"${normaliseString(details.artistNames[0])}" album:"${normaliseString(details.albumName)}"`;
-        const { body } = await spotifyApi.search(query, ['track'], { limit: 50 });
+        response = await spotifyAPI.search(query, ['track'], { limit: 50 });
 
         // See if any results match across track name, (first) artist name,
         // album name and are within 1 second duration.
-        spotifyTrack = body.tracks.items.find(track => {
-          return normaliseStringMatch(track.name, details.trackName) &&
-                  normaliseStringMatch(track.album.name, details.albumName) &&
-                  track.artists.find(artist => normaliseStringMatch(artist.name, details.artistNames[0])) &&
-                  (Math.abs(track.duration_ms / 1000 - details.duration) < 1);
-        });
-      }
+        spotifyTrack = response.body.tracks.items.find(track =>
+          normaliseStringMatch(track.name, details.trackName) &&
+          normaliseStringMatch(track.album.name, details.albumName) &&
+          track.artists.find(artist => normaliseStringMatch(artist.name, details.artistNames[0])) &&
+          (Math.abs(track.duration_ms / 1000 - details.duration) < durationMatchMargin)
+        );
 
-      if (spotifyTrack) {
-        const spotifyArtistIds = spotifyTrack.artists.map(sa => sa.id);
-        await ensureArtistsBySpotifyId(spotifyArtistIds);
-        const artists = Artist.find({spotifyId: {$in: spotifyArtistIds}});
-        const album = await getAlbum({spotifyId: spotifyTrack.album.id});
-        const existingTracks = Track.findByName(spotifyTrack.name, artists, album);
+        // If we didn't find an exact matching track, see if we can find one with different duration.
+        // This at least allows us to unaspotifyiguously match artists and album.
+        if (!spotifyTrack) {
+          spotifyTrack = response.body.tracks.items.find(track =>
+            normaliseStringMatch(track.name, details.trackName) &&
+            normaliseStringMatch(track.album.name, details.albumName) &&
+            track.artists.find(artist => normaliseStringMatch(artist.name, details.artistNames[0]))
+          );
 
-        if (existingTracks.length == 1) {
-          Track.update(existingTracks[0]._id, {$set: {spotifyId: spotifyTrack.id}});
-          return Track.findOne(existingTracks[0]._id);
+          console.log("found diff duration");
         }
-        else {
-          const trackId = Track.insert({
-            name: spotifyTrack.name,
-            artistIds: artists.map(artist => artist._id),
-            albumId: album._id,
-            duration: spotifyTrack.duration_ms / 1000,
-            spotifyId: spotifyTrack.id,
-            ...insertMetadata,
-          });
-          return Track.findOne(trackId);
-        }
-
-        // TODO a lot of spotify tracks don't seem to have audio features?
-        // TODO should run this as a background job.
-        // try {
-        //   const featuresResult = await spotifyApi.getAudioFeaturesForTrack(spotifyTrack.id);
-        //   console.log(featuresResult);
-        //   if (featuresResult.body.id) {
-        //     track.features = featuresResult.body;
-        //   }
-        // }
-        // catch (err) {
-        //   console.warn("Could not retrieve audio features for " + spotifyTrack.id);
-        // }
       }
     }
-    catch (err) {
-      console.error("Error retrieving track info from Spotify:", err);
-      throw "Error retrieving track info from Spotify."
+
+    // If a Spotify track object was provided or found, then create or update a/the Track.
+    if (spotifyTrack) {
+      spotifyId = spotifyTrack.id;
+
+      /////// If there's already a matching track object in the DB, update it. /////////
+      if (track) {
+        // Set the spotifyId for the track and associated artists and albums as necessary.
+        Track.update(track._id, {$set: { spotifyId }});
+
+        album = Album.findOne(track.albumId);
+        if (!album.spotifyId) {
+          // If our recorded album name and the spotify album name match.
+          if (normaliseStringMatch(album.name, spotifyTrack.album.name)) {
+            album = await getAlbum({_id: album._id}, {spotifyAlbum: spotifyTrack.album});
+          }
+        }
+
+        spotifyArtists = spotifyTrack.artists;
+        for (artist of Artist.find({_id: {$in: track.artistIds}}).fetch()) {
+          if (!artist.spotifyId) {
+            // See if this artist appears in the artists listed for the recording on Spotify.
+            spotifyArtist = spotifyArtists.find(sa => normaliseStringMatch(sa.name, artist.name));
+            if (spotifyArtist) {
+              await getArtist({_id: artist._id}, { spotifyArtist });
+              spotifyArtists = spotifyArtists.filter(sa => sa.id != spotifyArtist.id);
+            }
+          }
+          else {
+            spotifyArtists = spotifyArtists.filter(sa => sa.id != artist.spotifyId);
+          }
+        }
+        // Add remaining artists listed by Spotify that didn't appear in the track artist list.
+        if (spotifyArtists.length) {
+          let newArtists = [];
+          for (let sa of spotifyArtists) {
+            newArtists.push(await getArtist({spotifyId: sa.id}, {spotifyArtist: sa}));
+          }
+          Track.update(track._id, {
+            $push: {artistIds: newArtists.map(a => a._id)},
+            $set: {needsReview: true}
+          });
+        }
+
+        // Return the updated Track.
+        return Track.findOne(track._id);
+      }
+
+      /////// We have a spotifyTrack but no matching Track. Create the Track. ////////
+      // Get Artists and Album.
+      album = await getAlbum({spotifyId: spotifyTrack.album.id}, {spotifyAlbum: spotifyTrack.album});
+      let spotifyArtistIds = spotifyTrack.artists.map(sa => sa.id);
+      await ensureArtistsBySpotifyId(spotifyArtistIds);
+      artists = Artist.find({spotifyId: {$in: spotifyArtistIds}});
+
+      // Determine if the specified duration matches the duration of the Spotify track.
+      const durationMatch = !details.duration || (Math.abs(spotifyTrack.duration_ms / 1000 - details.duration) < durationMatchMargin);
+      // Create the Track.
+      track = {
+        name: spotifyTrack.name,
+        artistIds: artists.map(artist => artist._id),
+        albumId: album._id,
+        duration: durationMatch ? spotifyTrack.duration_ms / 1000 : details.duration,
+        ...insertMetadata,
+      }
+      // If we found the exact track, set the spotifyId.
+      if (durationMatch) {
+        track.spotifyId = spotifyTrack.id;
+      }
+
+      const trackId = Track.insert(track);
+
+      return Track.findOne(trackId);
     }
   }
 
-  // We didn't find it in Spotify...
-  if (details.trackName && details.artistNames && details.albumName) {
-    // ...if we can find a name match in DB return that.
-    let existingTracks = Track.findByName(details.trackName, details.artistNames, details.albumName);
-    if (existingTracks.length) return existingTracks[0];
+  //////// We could not find a matching Spotify track/recording. ////////
+  // If we found a matching Track in our DB just return it.
+  if (track) return track;
 
-    // We can't find an exact match for the track+artist+album. We need to determine artists,
-    // which almost certainly will be on Spotify and so should be linked to, but we need to
-    // reliably unambiguously determine the artists. Many artists have same name. We can't use
-    // album to disambiguate otherwise we would have found the track in the above spotify search.
-
+  // Otherwise create a Track from details if given.
+  if (details.trackName) {
+    // We can't find an exact match for the track+artist+album names in Spotify. We need to determine artists,
+    // which almost certainly will be on MusicBrainz and so should be linked to, but we need to
+    // reliably unaspotifyiguously determine the artists. Many artists have same name. We can't use
+    // album to disambiguate otherwise we would have found the track in the above Spotify search.
     const spotifyArtistIds = [];
-    for (artistName of details.artistNames) {
+    for (let artistName of details.artistNames) {
       // First search by track and artist name,
       // if we find a result where both names match exactly it's probably the right artist.
-      let response = await spotifyApi.search(`track:"${normaliseString(details.trackName)}" artist:"${normaliseString(artistName)}"`, ['track']);
+      response = await spotifyAPI.search(`track:"${normaliseString(details.trackName)}" artist:"${normaliseString(artistName)}"`, ['track']);
       let spotTrack = response.body.tracks.items.find(st =>
         normaliseStringMatch(details.trackName, st.name) &&
         st.artists.find(sta => normaliseStringMatch(artistName, sta.name)));
@@ -412,7 +558,7 @@ const getTrack = async (ids, details, insertMetadata) => {
       }
 
       // Otherwise just add every matching artist from spotify, a human will have to disambiguate.
-      response = await spotifyApi.search(`artist:"${normaliseString(artistName)}"`, ['artist']);
+      response = await spotifyAPI.search(`artist:"${normaliseString(artistName)}"`, ['artist']);
       let filteredArtists = response.body.artists.items.filter(artist => normaliseStringMatch(artistName, artist.name));
       for (spotArtist of filteredArtists) {
         spotifyArtistIds.push(spotArtist.id);
@@ -432,7 +578,6 @@ const getTrack = async (ids, details, insertMetadata) => {
       });
 
     const dataMaybeMissing = ['artistIds'];
-    if (!details.duration) dataMaybeMissing.push('duration');
     if (!album) dataMaybeMissing.push('albumId');
 
     const track = {
@@ -455,18 +600,20 @@ const getTrack = async (ids, details, insertMetadata) => {
  * @param {Object} insertMetadata If inserting the PlayList, additional metadata to add.
  */
 const getPlayList = async (ids, insertMetadata) => {
+  ids = ids || {};
   insertMetadata = insertMetadata || {};
+
   let list = ids && Object.keys(ids).length && PlayList.findOne(ids);
   if (list) return list;
 
   if (ids.spotifyId) {
     try {
       let spotifyAPI = await getSpotifyAPI();
-      let response = await spotifyApi.getPlaylist(ids.spotifyUserId, ids.spotifyId);
+      let response = await spotifyAPI.getPlaylist(ids.spotifyUserId, ids.spotifyId);
 
       const listDetails = response.body;
 
-      response = await spotifyApi.getPlaylistTracks(ids.spotifyUserId, ids.spotifyId);
+      response = await spotifyAPI.getPlaylistTracks(ids.spotifyUserId, ids.spotifyId);
       const listTracks = response.body.items;
 
       const owner = await getCompiler({spotifyId: listDetails.owner.id});
@@ -542,7 +689,7 @@ const getPlayList = async (ids, insertMetadata) => {
 
 
 // Utility method to ensure we have records for the given spotify artist IDs.
-// Uses minimum number of Spotify API requests.
+// Uses minimum nuspotifyer of Spotify API requests.
 const ensureArtistsBySpotifyId = async (spotifyArtistIds) => {
   // Remove duplicates.
   spotifyArtistIds = [ ...new Set(spotifyArtistIds) ];
@@ -550,7 +697,7 @@ const ensureArtistsBySpotifyId = async (spotifyArtistIds) => {
   spotifyArtistIds = spotifyArtistIds.filter(spotifyId => !Artist.findOne({spotifyId}));
   // Get artist records from Spotify, respecting limit of 50 per request.
   while (spotifyArtistIds.length) {
-    response = await spotifyApi.getArtists(spotifyArtistIds.splice(0, 50));
+    response = await spotifyAPI.getArtists(spotifyArtistIds.splice(0, 50));
     for (artist of response.body.artists) {
       await getArtist(
         {spotifyId: artist.id},
@@ -561,7 +708,7 @@ const ensureArtistsBySpotifyId = async (spotifyArtistIds) => {
 }
 
 // Utility method to ensure we have records for the given spotify album IDs.
-// Uses minimum number of Spotify API requests.
+// Uses minimum nuspotifyer of Spotify API requests.
 const ensureAlbumsBySpotifyId = async (spotifyAlbumIds) => {
   // Remove duplicates.
   spotifyAlbumIds = [ ...new Set(spotifyAlbumIds) ];
@@ -569,7 +716,7 @@ const ensureAlbumsBySpotifyId = async (spotifyAlbumIds) => {
   spotifyAlbumIds = spotifyAlbumIds.filter(spotifyId => !Album.findOne({spotifyId}));
   // Get album records from Spotify, respecting limit of 50 per request.
   while (spotifyAlbumIds.length) {
-    response = await spotifyApi.getAlbums(spotifyAlbumIds.splice(0, 20));
+    response = await spotifyAPI.getAlbums(spotifyAlbumIds.splice(0, 20));
     for (album of response.body.albums) {
       await getAlbum(
         {spotifyId: album.id},
@@ -578,3 +725,22 @@ const ensureAlbumsBySpotifyId = async (spotifyAlbumIds) => {
     }
   }
 };
+
+
+// If the item doesn't yet have the imageURLs field set and the given
+// spotifyItem provides images, set the imageURLs field in the item.
+const getImages = (item, spotifyItem) => {
+  if ((!item.imageURLs || !item.imageURLs.length) && spotifyItem.images && spotifyItem.images.length) {
+    item.imageURLs = {};
+    for (let image of spotifyItem.images) {
+      let maxD = Math.max(image.height, image.width);
+      if (maxD >= 640) {
+        item.imageURLs.large = image.url;
+      } else if (maxD <= 160) {
+        item.imageURLs.small = image.url;
+      } else {
+        item.imageURLs.medium = image.url;
+      }
+    }
+  }
+}

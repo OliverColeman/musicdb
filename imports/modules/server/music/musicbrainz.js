@@ -26,6 +26,9 @@ const typeMapping = {
   'playlist':  false,
 }
 
+const durationMatchMargin = 4;
+
+
 /**
  * Functions to import items from MusicBrainz.
  * @see MusicService
@@ -88,33 +91,32 @@ const mbAPI = bluebird.promisifyAll(new NB({
  */
 const getArtist = async (ids, details, insertMetadata) => {
   ids = ids || {};
-  if (!ids.mbId && details && details.mbArtist) ids.mbId = details.mbArtist.id;
-
-  let artist = Object.keys(ids).length && Artist.findOne(ids)
-  if (!!artist) return artist;
-
   insertMetadata = insertMetadata || {};
   details = details || {};
 
-  if (ids.mbId || details && details.mbArtist) {
+  let mbArtist = details.mbArtist || null;
+  let mbId = ids.mbId || mbArtist && mbArtist.id;
+
+  let artist = Object.keys(ids).length && Artist.findOne(ids)
+
+  if (mbId && (!artist || !artist.mbId)) {
     try {
-      let mbArtist;
-      if (details && details.mbArtist) {
-        console.log("using preloaded artist data");
-        mbArtist = details.mbArtist;
-        // If the given artist details are missing the disambiguation field, load full details.
-        if (typeof mbArtist.disambiguation == 'undefined') {
-          mbArtist = await mbAPI.artistAsync(mbArtist.id);
-        }
-      }
-      else {
+      if (!mbArtist) {
         console.log("loading artist data from mb by id");
-        mbArtist = await mbAPI.artistAsync(ids.mbId);
+        mbArtist = await mbAPI.artistAsync(mbId);
+      }
+
+      if (artist) {
+        Artist.update(artist._id,  {$set :{
+          mbId,
+          disambiguation: mbArtist.disambiguation,
+        }});
+        return Artist.findOne(artist._id);
       }
 
       artist = {
         name: mbArtist.name,
-        mbId: mbArtist.id,
+        mbId,
         disambiguation: mbArtist.disambiguation,
         ...insertMetadata,
       };
@@ -126,6 +128,8 @@ const getArtist = async (ids, details, insertMetadata) => {
       throw "Error retrieving artist info from MusicBrainz."
     }
   }
+
+  return artist;
 }
 
 
@@ -137,98 +141,150 @@ const getArtist = async (ids, details, insertMetadata) => {
  *   {'mbAlbum'}. May be empty.
  */
 const getAlbum = async (ids, details, insertMetadata) => {
-  ids = ids || {};
-  if (!ids.mbId && details && details.mbAlbum) ids.mbId = details.mbAlbum.id;
-
-  let album = Object.keys(ids).length && Album.findOne(ids);
-  if (!!album) return album;
-
   details = details || {};
+  if ((details.albumName || details.artistIds || details.artistNames) &&
+        (!details.trackName || !(details.artistIds || details.artistNames)))
+      throw "Invalid arguments: if any one of 'albumName', 'artistIds', 'artistNames' is provided in the details argument then albumName and one of artistIds or artistNames must also be provided.";
+
+  ids = ids || {};
   insertMetadata = insertMetadata || {};
 
-  if (ids.mbId || details && ((details.artistIds || details.artistNames) && details.albumName || details.mbAlbum)) {
-    try {
-      let mbAlbum;
-      if (details.mbAlbum && details.mbAlbum['artist-credit']) {
-        console.log("using preloaded album data");
-        mbAlbum = details.mbAlbum;
+  let mbAlbum = details.mbAlbum || null;
+  let mbId = ids.mbId || mbAlbum && mbAlbum.id;
+  let mbArtists, mbArtist;
+  let name, artist, artists;
+
+  // First see if we already have this album in our DB...
+  // ...by id
+  let album = ids && Object.keys(ids).length && Album.findOne(ids)
+
+  // ...or by matching from a mbAlbum object or names.
+  if (!album && (mbAlbum || details.albumName)) {
+    // Get artist and album document if possible, otherwise use names.
+    if (mbAlbum) {
+      if (!mbAlbum['artist-credit']) {
+        mbAlbum = await mbAPI.releaseGroupAsync(mbId, {inc: 'artists'});
       }
-      else if (ids.mbId) {
-        console.log("loading album data from mb by id");
-        mbAlbum = await mbAPI.releaseGroupAsync(ids.mbId, {inc: 'artists'});
-      }
-      else {
-        // Before querying MB, see if we have a matching album in our DB with a mbId.
-        const artistNames = details.artistNames ? details.artistNames :
-          Artist.find({_id: {$in: details.artistIds}}).fetch().map(a => a.name);
-        const existingAlbum = Album.findByName(details.albumName, artistNames).find(a => !!a.mbId);
-        if (existingAlbum) {
-          console.log("using existing album");
-          return existingAlbum;
-        }
+      name = mbAlbum.title;
+      artist = mbAlbum['artist-credit'][0].artist;
+      artist = Album.findOne({mbId: artist.id}) || artist.name;
+    }
+    else {
+      name = details.albumName;
+      artist = details.artistNames ? details.artistNames[0] : Artist.findOne(details.artistIds[0]);
+    }
 
-        console.log("searching for album data from mb", details);
-        const results = await mbAPI.searchAsync('release-group', {
-          artist: artistNames[0],
-          releasegroup: details.albumName,
-          limit: 50,
-        });
+    album = Album.findByName(name, artist).find(a=>!!a);
+  }
 
-        // See if any results match the album name and (first) artist name.
-        mbAlbum = results['release-groups'].find(rg => {
-          return normaliseStringMatch(rg.title, details.albumName) &&
-                  rg['artist-credit'].find(ac => normaliseStringMatch(ac.artist.name, artistNames[0]));
-        });
-      }
-
-      if (mbAlbum) {
-        // Collate list of artists.
-        const artists = (await Promise.all(
-          mbAlbum['artist-credit'].map(ac => getArtist({mbId: ac.id ? ac.id : ac.artist.id}))
-        )).filter(artist => !!artist);
-
-        const existingAlbums = Album.findByName(mbAlbum.title, artists);
-        let album;
-        if (existingAlbums.length == 1) {
-          album = existingAlbums[0];
+  // If we haven't matched the album or we don't have an associated mbId for it.
+  if (!album || !album.mbId) {
+    // Make sure we have a MB album object.
+    if (!mbAlbum && (mbId || details.albumName)) {
+      try {
+        if (mbId) {
+          console.log("loading album data from mb by id");
+          mbAlbum = await mbAPI.releaseGroupAsync(mbId, {inc: 'artists'});
         }
         else {
-          album = {
-            name: mbAlbum.title,
-            artistIds: artists.map(a => a._id),
-            ...insertMetadata,
-          };
+          console.log("searching for album data from mb", details);
+          artist = details.artistNames ? normaliseString(details.artistNames[0]) : details.artistIds.findOne(aid => !!Artist.findOne(aid)).nameNormalised;
+          const results = await mbAPI.searchAsync('release-group', {
+            artist: artist,
+            releasegroup: details.albumName,
+            limit: 50,
+          });
+          // See if any results match across artist and album name.
+          mbAlbum = results['release-groups'].find(rg =>
+            normaliseStringMatch(rg.title, details.albumName) &&
+            rg['artist-credit'].find(ac => normaliseString(ac.artist.name) == artist)
+          );
         }
-        album.mbId = mbAlbum.id;
-        album.disambiguation = mbAlbum.disambiguation;
-
-        if (existingAlbums.length == 1) {
-          Album.update(album._id, {$set: album});
-          return album;
-        }
-        else {
-          const id = Album.insert(album);
-          return Album.findOne(id);
-        }
+      }
+      catch (err) {
+        console.error("Error retrieving album info from MB:", err);
+        throw "Error retrieving album info from MB."
       }
     }
-    catch (err) {
-      console.error("Error retrieving album info from MusicBrainz:", err);
-      throw "Error retrieving album info from MusicBrainz."
+
+    if (mbAlbum) {
+      mbId = mbAlbum.id;
+
+      /////// If there's already a matching album object in the DB, update it. /////////
+      if (album) {
+        // Set the mbId for the album and associated artists as necessary.
+        Album.update(album._id, {$set: {
+          mbId,
+          disambiguation: mbAlbum.disambiguation,
+        }});
+
+        mbArtists = mbAlbum['artist-credit'].map(ac => ac.artist ? ac.artist : ac);
+        for (artist of Artist.find({_id: {$in: album.artistIds}}).fetch()) {
+          if (!artist.mbId) {
+            // See if this artist appears in the artists listed for the recording on MB.
+            mbArtist = mbArtists.find(mba => normaliseStringMatch(mba.name, artist.name));
+            if (mbArtist) {
+              await getArtist({_id: artist._id}, { mbArtist });
+              mbArtists = mbArtists.filter(mba => mba.id != mbArtist.id);
+            }
+          }
+          else {
+            mbArtists = mbArtists.filter(mba => mba.id != artist.mbId);
+          }
+        }
+        // Add remaining artists listed by MB that didn't appear in the album artist list.
+        if (mbArtists.length) {
+          let newArtists = [];
+          for (let mba of mbArtists) {
+            newArtists.push(await getArtist({mbId: mba.id}, {mbArtist: mba}));
+          }
+          Album.update(album._id, {
+            $push: {artistIds: newArtists.map(a => a._id)},
+            $set: {needsReview: true}
+          });
+        }
+
+        // Return the updated Album.
+        return Album.findOne(album._id);
+      }
+
+      /////// We have a mbAlbum but no matching Album. Create the Album. ////////
+      // Get Artists.
+      mbArtists = mbAlbum['artist-credit'].map(ac => ac.artist);
+      artists = [];
+      for (let mba of mbArtists) {
+       artists.push(await getArtist(
+          {mbId: mba.id},
+          {mbArtist: mba}
+        ));
+      }
+
+      // Create the Album.
+      album = {
+        name: mbAlbum.title,
+        artistIds: artists.map(artist => artist._id),
+        mbId: mbAlbum.id,
+        disambiguation: mbAlbum.disambiguation,
+        ...insertMetadata,
+      }
+
+      const albumId = Album.insert(album);
+      return Album.findOne(albumId);
     }
   }
 
-  // If we get to to here the album wasn't found on MusicBrainz.
+  //////// We could not find a matching MB album. ////////
+  // If we found a matching Album in our DB just return it.
+  if (album) return album;
+
+  // Otherwise create an Album from details if given.
   if (details.albumName) {
     artistIds = details.artistIds || [];
-
-    // See if we already have an album with same name and artists.
-    const existingAlbums = Album.findByName(details.albumName, Artist.find({_id: {$in: artistIds}}));
-    if (existingAlbums.length) return existingAlbums[0];
+    // TODO Add artists from names if artistIds not given?
 
     const id = Album.insert({
       name: details.albumName,
-      artistIds: artistIds,
+      artistIds,
       ...insertMetadata,
     });
     return Album.findOne(id);
@@ -236,48 +292,94 @@ const getAlbum = async (ids, details, insertMetadata) => {
 }
 
 
+
 /**
  * @summary Get/create a Track. Either by ids or with the given track details.
  * @param {Object} ids One or more id fields, such as _id or mbId. May be empty.
  * @param {Object} details Basic track details {'trackName', 'artistNames' (array), 'albumName', 'duration'},
     or a full track description from the MB API {'mbTrack'}. May be empty.
- * TODO Handle adding tracks (and associated artists and album) when can't find on MusicBrainz.
  */
 const getTrack = async (ids, details, insertMetadata) => {
-  ids = ids || {};
-  if (!ids.mbId && details && details.mbTrack) ids.mbId = details.mbTrack.id;
-
-  // First see if we already have this track in our DB.
-  let track = Object.keys(ids).length && Track.findOne(ids);
-  if (!!track) return track;
+  // We use the below logic to find and match up an MB track.
+  //  Attempt to load an existing Track by given ids (either internal or MB id).
+  //  If that fails attempt to load an existing Track by the track, artist and album names and track duration.
+  //  If we couldn't find an existing track or it doesn't have an asssociated MB id:
+  //    Load or search for the track/recording on MB (mbTrack).
+  //    If it was found on MB:
+  //      If we found an existing track in our DB then:
+  //        Update it and its associated artists and album with their corresponding MB ids.
+  //        Return the track.
+  //      Else
+  //        Create and return a new Track using the MB recording/track data.
+  //    Else (it was not found on MB):
+  //      If we found an existing track in our DB then:
+  //        Return it.
+  //      Else
+  //        Create a new Track if the track, artist and album names and track duration were provided.
 
   details = details || {};
+  if ((details.trackName || details.artistNames || details.albumName || details.duration) &&
+        (!details.trackName || !details.artistNames || !details.albumName || !details.duration))
+      throw "Invalid arguments: if any one of 'trackName', 'artistNames', 'albumName', or 'duration' is provided in the details argument then all must also be provided.";
+
+  ids = ids || {};
   insertMetadata = insertMetadata || {};
 
-  // If this is a mb track or we can search for it on mb.
-  if (ids.mbId || details.mbTrack || details.trackName && details.artistNames && details.albumName && details.duration) {
-    try {
-      let mbTrack;
+  let mbTrack = details.mbTrack || null; //MB recording/track object.
+  let mbId = ids.mbId || mbTrack && mbTrack.id;
+  let mbReleaseGroups, mbArtists, mbArtist, mbAlbum;
+  let name, artist, artists, album, duration, durationMatch;
 
-      if (details.mbTrack) {
-        console.log("using preloaded mb track data");
-        mbTrack = details.mbTrack;
+  // First see if we already have this track in our DB...
+  // ...by id
+  let track = Object.keys(ids).length && Track.findOne(ids);
+
+  // ...or by matching from a mbTrack object or names and duration.
+  if (!track && (mbTrack || details.trackName)) {
+    // If we have a MB id but no MB track then fetch the mbTrack.
+    if (mbId && !mbTrack) {
+      console.log("loading track data from mb by id");
+      mbTrack = await mbAPI.recordingAsync(mbId, {inc: 'artists+releases+release-groups'});
+    }
+
+    // Get artist and album document if possible, otherwise use names.
+    if (mbTrack) {
+      name = mbTrack.title;
+
+      artist = mbTrack['artist-credit'][0].artist;
+      artist = Artist.findOne({mbId: artist.id}) || artist.name;
+
+      mbReleaseGroups = await getReleaseGroups(mbTrack);
+      album = Album.findOne({mbId: {$in: mbReleaseGroups.map(rg => r.id)}});
+      if (!album) {
+        let matchAlbumName = track && track.albumId && Album.findOne(track.albumId).name;
+        album = matchReleaseGroup(mbReleaseGroups, matchAlbumName).title;
       }
-      else if (ids.mbId) {
+
+      duration = mbTrack.length / 1000;
+    }
+    else {
+      name = details.trackName;
+      artist = details.artistNames[0];
+      album = details.albumName;
+      duration = details.duration;
+    }
+
+    track = Track.findByName(name, artist, album)
+      .filter(t => Math.abs(t.duration - duration) < durationMatchMargin)
+      .find(t=>!!t);
+  }
+
+  // If we haven't matched the track or we don't have an associated mbId for it.
+  if (!track || !track.mbId) {
+    // Make sure we have an MB recording/track object.
+    if (!mbTrack && (mbId || details.trackName)) {
+      if (mbId) {
         console.log("loading track data from mb by id");
-        mbTrack = await mbAPI.recordingAsync(ids.mbId, {inc: 'artists+releases+release-groups'});
+        mbTrack = await mbAPI.recordingAsync(mbId, {inc: 'artists+releases+release-groups'});
       }
       else {
-        // Before querying MB, see if we already have a matching track in our DB with a mbId.
-        let existingTrack = Track.findByName(details.trackName, details.artistNames, details.albumName)
-          .find(et => et.mbId && (Math.abs(et.duration - details.duration) < 1));
-
-        if (existingTrack) {
-          console.log("using existing track");
-          return existingTrack;
-        }
-
-        console.log("searching for track data from mb", ids, details);
+        console.log("searching for track data from mb", details);
         const results = await mbAPI.searchAsync('recording', {
           recording: details.trackName,
           artist: details.artistNames[0],
@@ -286,116 +388,135 @@ const getTrack = async (ids, details, insertMetadata) => {
         });
 
         // See if any results match across track name, (first) artist name,
-        // album name and are within 1 second duration.
-        mbTrack = results.recordings.find(track => {
-          return normaliseStringMatch(track.title, details.trackName) &&
-                  (Math.abs(track.length / 1000 - details.duration) < 1) &&
-                  track['artist-credit'].find(ac => normaliseStringMatch(ac.artist.name, details.artistNames[0])) &&
-                  track.releases.find(r => normaliseStringMatch(r.title, details.albumName));
-        });
+        // album name, and are within 1 second duration.
+        mbTrack = results.recordings.find(mbt =>
+          normaliseStringMatch(mbt.title, details.trackName) &&
+          (Math.abs(mbt.length / 1000 - details.duration) < durationMatchMargin) &&
+          mbt['artist-credit'].find(ac => normaliseStringMatch(ac.artist.name, details.artistNames[0])) &&
+          mbt.releases.find(r => normaliseStringMatch(r.title, details.albumName))
+        );
 
         // If we didn't find an exact matching track, see if we can find one with different duration.
         // This at least allows us to unambiguously match artists and album.
         if (!mbTrack) {
-          mbTrack = results.recordings.find(track => {
-            return normaliseStringMatch(track.title, details.trackName) &&
-                    track['artist-credit'].find(ac => normaliseStringMatch(ac.artist.name, details.artistNames[0])) &&
-                    track.releases.find(r => normaliseStringMatch(r.title, details.albumName));
-          });
+          mbTrack = results.recordings.find(mbt =>
+            normaliseStringMatch(mbt.title, details.trackName) &&
+            mbt['artist-credit'].find(ac => normaliseStringMatch(ac.artist.name, details.artistNames[0])) &&
+            mbt.releases.find(r => normaliseStringMatch(r.title, details.albumName))
+          );
 
-          console.log("found diff diration");
+          console.log("found diff duration");
         }
-      }
-
-      if (mbTrack) {
-        // If we don't have the required release group info then fetch it.
-        // This can happen when using search results.
-        if (!mbTrack.releases[0]['release-group']['first-release-date']) {
-          mbTrack = await mbAPI.recordingAsync(mbTrack.id, {inc: 'artists+releases+release-groups'});
-        }
-
-        const mbArtists = mbTrack['artist-credit'].map(ac => ac.artist);
-        const artists = await Promise.all(
-          mbArtists.map(
-            mbArtist => getArtist(
-              {mbId: mbArtist.id},
-              {mbArtist}
-            )
-          )
-        );
-
-        // Use the earliest album/release if no album name given, otherwise earliest matching album.
-        const mbReleases = _.sortBy(mbTrack.releases, [ r => r['release-group']['first-release-date'] ]);
-        let mbAlbum;
-        if (!details.albumName) {
-          mbAlbum = mbReleases[0]['release-group'];
-        }
-        else {
-          mbAlbum = mbReleases.find(r => normaliseStringMatch(details.albumName, r['release-group'].title));
-          if (mbAlbum) mbAlbum = mbAlbum['release-group'];
-        }
-
-        const album = mbAlbum ? await getAlbum({mbId: mbAlbum.id}, {mbAlbum}) : null;
-
-        const existingTracks = Track.findByName(mbTrack.title, artists, album)
-          .filter(track => Math.abs(track.duration - details.duration) < 1);
-
-        console.log('etc', existingTracks.length);
-
-        if (existingTracks.length == 1) {
-          Track.update(existingTracks[0]._id, {$set: {
-            mbId: mbTrack.id,
-            disambiguation: mbTrack.disambiguation
-          }});
-          return Track.findOne(existingTracks[0]._id);
-        }
-        else {
-          const durationMatch = Math.abs(mbTrack.length / 1000 - details.duration) < 1;
-          const track = {
-            name: mbTrack.title,
-            artistIds: artists.map(artist => artist._id),
-            duration: durationMatch ? mbTrack.length / 1000 : details.duration,
-            ...insertMetadata,
-          }
-          // If we found the exact track, set the mbId.
-          if (Math.abs(track.length / 1000 - details.duration) < 1) {
-            track.mbId = mbTrack.id;
-            track.disambiguation = mbTrack.disambiguation;
-          }
-
-          if (!album) {
-            track.dataMaybeMissing = ['albumId']
-          } else {
-            track.albumId = album._id;
-          }
-
-          const trackId = Track.insert(track);
-
-          console.log('it', track);
-          return Track.findOne(trackId);
-        }
-
-        // TODO fetch acoustic features. should run this as a background job?
       }
     }
-    catch (err) {
-      console.error("Error retrieving track info from MusicBrainz:", err);
-      throw "Error retrieving track info from MusicBrainz."
+
+    // If an MB recording/track object was provided or found,
+    // then create or update a/the Track.
+    if (mbTrack) {
+      mbId = mbTrack.id;
+      mbReleaseGroups = await getReleaseGroups(mbTrack);
+
+      /////// If there's already a matching track object in the DB, update it. /////////
+      if (track) {
+        // Set the mbId for the track and associated artists and albums as necessary.
+        Track.update(track._id, {$set: {
+          mbId,
+          disambiguation: mbTrack.disambiguation,
+        }});
+
+        album = Album.findOne(track.albumId);
+        if (!album.mbId) {
+          mbAlbum = matchReleaseGroup(mbReleaseGroups, album.name);
+          if (mbAlbum) {
+            album = await getAlbum({_id: album._id}, {mbAlbum});
+          }
+        }
+
+        mbArtists = mbTrack['artist-credit'].map(ac => ac.artist ? ac.artist : ac);
+        for (artist of Artist.find({_id: {$in: track.artistIds}}).fetch()) {
+          if (!artist.mbId) {
+            // See if this artist appears in the artists listed for the recording on MB.
+            mbArtist = mbArtists.find(mba => normaliseStringMatch(mba.name, artist.name));
+            if (mbArtist) {
+              await getArtist({_id: artist._id}, { mbArtist });
+              mbArtists = mbArtists.filter(mba => mba.id != mbArtist.id);
+            }
+          }
+          else {
+            mbArtists = mbArtists.filter(mba => mba.id != artist.mbId);
+          }
+        }
+        // Add remaining artists listed by MB that didn't appear in the track artist list.
+        if (mbArtists.length) {
+          let newArtists = [];
+          for (let mba of mbArtists) {
+            newArtists.push(await getArtist({mbId: mba.id}, {mbArtist: mba}));
+          }
+          Track.update(track._id, {
+            $push: {artistIds: newArtists.map(a => a._id)},
+            $set: {needsReview: true}
+          });
+        }
+
+        // Return the updated Track.
+        return Track.findOne(track._id);
+      }
+
+      /////// We have an mbTrack but no matching Track. Create the Track. ////////
+      // Get Album.
+      mbAlbum = matchReleaseGroup(mbReleaseGroups, details.albumName ? details.albumName : null);
+      album = mbAlbum ? await getAlbum({mbId: mbAlbum.id}, {mbAlbum}) : null;
+
+      // Get Artists.
+      mbArtists = mbTrack['artist-credit'].map(ac => ac.artist);
+      artists = [];
+      for (let mba of mbArtists) {
+       artists.push(await getArtist(
+          {mbId: mba.id},
+          {mbArtist: mba}
+        ));
+      }
+
+      // Determine if the specified duration matches the duration of the MB track.
+      const durationMatch = !details.duration || (Math.abs(mbTrack.length / 1000 - details.duration) < durationMatchMargin);
+      // Create the Track.
+      track = {
+        name: mbTrack.title,
+        artistIds: artists.map(artist => artist._id),
+        duration: durationMatch ? mbTrack.length / 1000 : details.duration,
+        ...insertMetadata,
+      }
+      // If we found the exact track, set the mbId.
+      if (durationMatch) {
+        track.mbId = mbTrack.id;
+        track.disambiguation = mbTrack.disambiguation;
+      }
+
+      if (!album) {
+        track.dataMaybeMissing = ['albumId']
+      } else {
+        track.albumId = album._id;
+      }
+
+      const trackId = Track.insert(track);
+      return Track.findOne(trackId);
+
+      // TODO fetch acoustic features. should run this as a background job?
     }
   }
 
-  // We didn't find a recording with matching artist and release-group names in MusicBrainz...
-  if (details.trackName && details.artistNames && details.albumName) {
-    // ...if we can find a name match in DB return that.
-    const existingTracks = Track.findByName(details.trackName, details.artistNames, details.albumName);
-    if (existingTracks.length) return existingTracks[0];
+  //////// We could not find a matching MB track/recording. ////////
+  // If we found a matching Track in our DB just return it.
+  if (track) return track;
 
-    // We can't find an exact match for the track+artist+album names. We need to determine artists,
+  // Otherwise create a Track from details if given.
+  if (details.trackName) {
+    // We can't find an exact match for the track+artist+album names in MB. We need to determine artists,
     // which almost certainly will be on MusicBrainz and so should be linked to, but we need to
     // reliably unambiguously determine the artists. Many artists have same name. We can't use
     // album to disambiguate otherwise we would have found the track in the above MB search.
     const artists = [];
-    for (artistName of details.artistNames) {
+    for (let artistName of details.artistNames) {
       // First search by track and artist name,
       // if we find a result where both names match exactly it's probably the right artist.
       let results = await mbAPI.searchAsync('recording', {
@@ -409,7 +530,7 @@ const getTrack = async (ids, details, insertMetadata) => {
       });
       if (mbTrack) {
         let mbArtist = mbTrack['artist-credit'].find(ac => normaliseStringMatch(ac.artist.name, artistName)).artist;
-        artists.push(await getArtist({}, {mbArtist}));
+        artists.push(await getArtist({mbId: mbArtist.id}, {mbArtist}));
         continue;
       }
 
@@ -420,7 +541,7 @@ const getTrack = async (ids, details, insertMetadata) => {
       });
       let filteredArtists = results.artists.filter(artist => normaliseStringMatch(artistName, artist.name));
       for (mbArtist of filteredArtists) {
-        artists.push(await getArtist({},  {mbArtist}));
+        artists.push(await getArtist({mbId: mbArtist.id},  {mbArtist}));
       }
     }
     const artistIds = artists.map(artist => artist._id);
@@ -435,7 +556,6 @@ const getTrack = async (ids, details, insertMetadata) => {
       });
 
     const dataMaybeMissing = ['artistIds'];
-    if (!details.duration) dataMaybeMissing.push('duration');
 
     const track = {
       name: details.trackName,
@@ -448,4 +568,36 @@ const getTrack = async (ids, details, insertMetadata) => {
     const id = Track.insert(track);
     return Track.findOne(id);
   }
+}
+
+
+const getReleaseGroups = async (mbTrack) => {
+  // Make sure we have release-group/album for the MB recording/track.
+  if (!mbTrack.releases[0]['release-group'] || !mbTrack.releases[0]['release-group']['first-release-date']) {
+    const mbTrack2 = await mbAPI.recordingAsync(mbTrack.id, {inc: 'releases+release-groups'});
+    mbTrack.releases = mbTrack2.releases;
+  }
+  return mbTrack.releases.map(r => r['release-group']);
+}
+
+
+// Get the best match for a release-group/album for the given release groups.
+// If albumName is given then try to match against it. Otherwise returns the
+// earliest release group with a first-release-date if available, otherwise
+// returns any release group.
+const matchReleaseGroup = (mbReleaseGroups, albumName) => {
+  // Sort by first release date.
+  mbReleaseGroups = _.sortBy(mbReleaseGroups, [ rg => rg['first-release-date'] ]);
+  // Filter out any RGs missing first release date.
+  mbReleaseGroupsFiltered = mbReleaseGroups.filter(rg => !!rg['first-release-date']);
+
+  // Attempt to match against album name if given.
+  if (albumName) {
+    let releaseGroup = mbReleaseGroupsFiltered.find(rg => normaliseStringMatch(rg.title, albumName));
+    if (releaseGroup) return releaseGroup;
+    releaseGroup = mbReleaseGroups.find(rg => normaliseStringMatch(rg.title, albumName));
+    if (releaseGroup) return releaseGroup;
+  }
+  if (mbReleaseGroupsFiltered.length) return mbReleaseGroupsFiltered[0];
+  return mbReleaseGroups[0];
 }
