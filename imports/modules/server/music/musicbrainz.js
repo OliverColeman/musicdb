@@ -73,6 +73,28 @@ export default class MusicBrainz extends MusicService {
     }
     throw "Unsupported music item type: " + type;
   }
+
+  /**
+   * @see MusicService
+   */
+  linkToService(type, item) {
+    switch (type) {
+      case 'album':
+        return getAlbum({_id: item._id}, {
+          albumName: item.name,
+          artistIds: item.artistIds,
+        });
+      case 'track':
+        const artistNames = Artist.find({_id: {$in: item.artistIds}}).fetch().map(a => a.name);
+        return getTrack({_id: item._id}, {
+          trackName: item.name,
+          albumName: Album.findOne(item.albumId).name,
+          artistNames,
+          duration: item.duration,
+        });
+    }
+    throw "Unsupported music item type: " + type;
+  }
 }
 
 
@@ -136,8 +158,8 @@ const getArtist = async (ids, details, insertMetadata) => {
 /**
  * @summary Get/create an Album. Either by ids or by artist (ids) and name.
  * @param {Object} ids One or more id fields, such as _id or mbId. May be empty.
- * @param {Object} details Album details including {artistIds (internal) or
- *   artistNames, albumName}, or a full album description from the MB API
+ * @param {Object} details Album details including {albumName, artistIds (internal)
+ *   or artistNames}, or a full album description from the MB API
  *   {'mbAlbum'}. May be empty.
  */
 const getAlbum = async (ids, details, insertMetadata) => {
@@ -180,7 +202,7 @@ const getAlbum = async (ids, details, insertMetadata) => {
   // If we haven't matched the album or we don't have an associated mbId for it.
   if (!album || !album.mbId) {
     // Make sure we have a MB album object.
-    if (!mbAlbum && (mbId || details.albumName)) {
+    if ((!mbAlbum || !mbAlbum['artist-credit']) && (mbId || details.albumName)) {
       try {
         if (mbId) {
           console.log("loading album data from mb by id");
@@ -379,7 +401,7 @@ const getTrack = async (ids, details, insertMetadata) => {
         mbTrack = await mbAPI.recordingAsync(mbId, {inc: 'artists+releases+release-groups'});
       }
       else {
-        console.log("searching for track data from mb", details);
+        //console.log("searching for track data from mb", details);
         const results = await mbAPI.searchAsync('recording', {
           recording: details.trackName,
           artist: details.artistNames[0],
@@ -405,7 +427,7 @@ const getTrack = async (ids, details, insertMetadata) => {
             mbt.releases.find(r => normaliseStringMatch(r.title, details.albumName))
           );
 
-          console.log("found diff duration");
+          if (mbTrack) console.log("found diff duration: " + details.duration + " : " + (mbTrack.length / 1000));
         }
       }
     }

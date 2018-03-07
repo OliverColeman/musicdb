@@ -12,6 +12,9 @@ import PlayList from '../../../api/PlayList/PlayList';
 import Track from '/imports/api/Track/Track';
 
 
+// TODO REMOVE market specification in searches when this is resolved: https://github.com/spotify/web-api/issues/813
+
+
 const durationMatchMargin = 4;
 
 
@@ -68,10 +71,32 @@ export default class Spotify extends MusicService {
     }
     throw "Unsupported music item type: " + type;
   }
+
+  /**
+   * @see MusicService
+   */
+  linkToService(type, item) {
+    switch (type) {
+      case 'album':
+        return getAlbum({_id: item._id}, {
+          albumName: item.name,
+          artistIds: item.artistIds,
+        });
+      case 'track':
+        const artistNames = Artist.find({_id: {$in: item.artistIds}}).fetch().map(a => a.name);
+        return getTrack({_id: item._id}, {
+          trackName: item.name,
+          albumName: Album.findOne(item.albumId).name,
+          artistNames,
+          duration: item.duration,
+        });
+    }
+    throw "Unsupported music item type: " + type;
+  }
 }
 
 
-const spotifyAPI = new SpotifyWebApi({
+const spotifyAPIGlobal = new SpotifyWebApi({
   clientId: process.env.SPOTIFY_CLIENT_ID,
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
@@ -82,20 +107,20 @@ const spotifyAPI = new SpotifyWebApi({
  */
 const getSpotifyAPI = async () => {
   // Get/refresh access token if necessary.
-  if (!spotifyAPI.getAccessToken()) {
+  if (!spotifyAPIGlobal.getAccessToken()) {
     try {
-      let data = await spotifyAPI.clientCredentialsGrant();
+      let data = await spotifyAPIGlobal.clientCredentialsGrant();
 
       // Reset the stored access token when it expires.
       Meteor.setTimeout(
         () => {
           console.log("Resetting Spotify access token.");
-          spotifyAPI.resetAccessToken();
+          spotifyAPIGlobal.resetAccessToken();
         },
         data.body['expires_in'] * 1000
       );
 
-      spotifyAPI.setAccessToken(data.body['access_token']);
+      spotifyAPIGlobal.setAccessToken(data.body['access_token']);
     }
     catch (err) {
       console.error("Error retrieving Spotify access token:", err);
@@ -103,7 +128,7 @@ const getSpotifyAPI = async () => {
     }
   }
 
-  return spotifyAPI;
+  return spotifyAPIGlobal;
 }
 
 
@@ -199,8 +224,8 @@ const getArtist = async (ids, details, insertMetadata) => {
 /**
  * @summary Get/create an Album. Either by ids or by artist (ids) and name.
  * @param {Object} ids An id field, such as _id or spotifyId. May be empty.
- * @param {Object} details Album details including {artistIds (internal) or
- *   artistNames, albumName}, or a full album description {spotifyAlbum}. May be empty.
+ * @param {Object} details Album details including {albumName, artistIds (internal)
+ *   or artistNames}, or a full album description {spotifyAlbum}. May be empty.
  */
 const getAlbum = async (ids, details, insertMetadata) => {
   details = details || {};
@@ -252,7 +277,7 @@ const getAlbum = async (ids, details, insertMetadata) => {
           // Get first artist name
           artist = details.artistNames ? normaliseString(details.artistNames[0]) : details.artistIds.findOne(aid => !!Artist.findOne(aid)).nameNormalised;
           const query = `artist:"${artist}" album:"${normaliseString(details.albumName)}"`;
-          response = await spotifyAPI.search(query, ['track'], { limit: 50 });
+          response = await spotifyAPI.search(query, ['track'], { market: 'AU' });
 
           // See if any results match across artist and album name.
           spotifyAlbum = response.body.albums.items.find(sa =>
@@ -432,9 +457,9 @@ const getTrack = async (ids, details, insertMetadata) => {
         spotifyTrack = response.body;
       }
       else {
-        console.log("searching for track data from mb", details);
+        console.log("searching for track data from spotify", details);
         const query = `track:"${normaliseString(details.trackName)}" artist:"${normaliseString(details.artistNames[0])}" album:"${normaliseString(details.albumName)}"`;
-        response = await spotifyAPI.search(query, ['track'], { limit: 50 });
+        response = await spotifyAPI.search(query, ['track'], {market: 'AU'});
 
         // See if any results match across track name, (first) artist name,
         // album name and are within 1 second duration.
@@ -454,7 +479,7 @@ const getTrack = async (ids, details, insertMetadata) => {
             track.artists.find(artist => normaliseStringMatch(artist.name, details.artistNames[0]))
           );
 
-          console.log("found diff duration");
+          if (spotifyTrack) console.log("found diff duration: " + details.duration + " : " + (spotifyTrack.duration_ms / 1000));
         }
       }
     }
@@ -606,9 +631,10 @@ const getPlayList = async (ids, insertMetadata) => {
   let list = ids && Object.keys(ids).length && PlayList.findOne(ids);
   if (list) return list;
 
+  const spotifyAPI = await getSpotifyAPI();
+
   if (ids.spotifyId) {
     try {
-      let spotifyAPI = await getSpotifyAPI();
       let response = await spotifyAPI.getPlaylist(ids.spotifyUserId, ids.spotifyId);
 
       const listDetails = response.body;
@@ -697,6 +723,7 @@ const ensureArtistsBySpotifyId = async (spotifyArtistIds) => {
   spotifyArtistIds = spotifyArtistIds.filter(spotifyId => !Artist.findOne({spotifyId}));
   // Get artist records from Spotify, respecting limit of 50 per request.
   while (spotifyArtistIds.length) {
+    const spotifyAPI = await getSpotifyAPI();
     response = await spotifyAPI.getArtists(spotifyArtistIds.splice(0, 50));
     for (artist of response.body.artists) {
       await getArtist(
@@ -716,6 +743,7 @@ const ensureAlbumsBySpotifyId = async (spotifyAlbumIds) => {
   spotifyAlbumIds = spotifyAlbumIds.filter(spotifyId => !Album.findOne({spotifyId}));
   // Get album records from Spotify, respecting limit of 50 per request.
   while (spotifyAlbumIds.length) {
+    const spotifyAPI = await getSpotifyAPI();
     response = await spotifyAPI.getAlbums(spotifyAlbumIds.splice(0, 20));
     for (album of response.body.albums) {
       await getAlbum(

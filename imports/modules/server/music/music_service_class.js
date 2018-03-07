@@ -73,4 +73,14 @@ export default class MusicService  {
   async importFromSearch(type, names) {
     throw `Match from names not supported by ${this.name}.`;
   }
+
+  /**
+   * Attempt to link the given item to the service.
+   * @param {string} type - The item type, supported types are 'album' and 'track'.
+   * @param {Object} item - The item, a Track or Album.
+   * @return {Object} A Promise, resolving to the updated item.
+   */
+  async linkToService(type, names) {
+    throw `Link not supported by ${this.name}.`;
+  }
 }

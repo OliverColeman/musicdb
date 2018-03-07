@@ -2,12 +2,7 @@ import { Meteor } from 'meteor/meteor';
 import { Random } from 'meteor/random';
 import _ from 'lodash';
 
-import Compiler from '../../../api/Compiler/Compiler';
-import Artist from '../../../api/Artist/Artist';
-import Album from '../../../api/Album/Album';
-import PlayList from '../../../api/PlayList/PlayList';
 import Track from '../../../api/Track/Track';
-import ProgressMonitor from '../../../api/ProgressMonitor/ProgressMonitor';
 import SpotifyMS from './spotify';
 import MusicBrainzMS from './musicbrainz';
 
@@ -99,8 +94,40 @@ const importFromSearch = (service, type, names) => {
 }
 
 
+/**
+ * Attempt to link the given Track to any services it's not currently linked to.
+ */
+const linkTrackToAllServices = async (track) => {
+  if (!track.mbId) {
+    console.log('a');
+    await MusicBrainz.linkToService('track', track);
+  }
+
+  if (!track.spotifyId) {
+    console.log('b');
+    await Spotify.linkToService('track', track);
+  }
+}
+
+
+// Link to (other) music services upon insert.
+Track.after.insert((userId, track) => {
+  Meteor.setTimeout(() => {
+    try {
+      linkTrackToAllServices(track);
+    }
+    catch (e) {
+      console.error(e);
+    }
+  }, 500)
+});
+
+
 export { importFromURL, importFromIds, importFromSearch };
-//
+
+
+
+
 // let tra;
 //
 // tra = importFromURL('track', "https://musicbrainz.org/recording/e3adcd5b-c3ff-4860-bcde-9e92ef0967ad").await();
@@ -118,7 +145,7 @@ export { importFromURL, importFromIds, importFromSearch };
 // }).await();
 // console.log('tra1', tra);
 //
-//
+
 // tra = importFromSearch('spotify', 'track', {
 //   trackName: "the winner takes it all",
 //   albumName: "super trouper",
