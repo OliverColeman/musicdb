@@ -9,6 +9,7 @@ import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 import moment from 'moment';
+import autoBind from 'react-autobind';
 
 import CompilerCollection from '../../../api/Compiler/Compiler';
 import TagCollection from '../../../api/Tag/Tag';
@@ -20,13 +21,15 @@ import ProgressMonitor from '../../misc/ProgressMonitor/ProgressMonitor';
 
 import './Import.scss';
 
-
 const massImportPlaceholder =
 `Enter lists to import, one per line, with fields separated by tab or semicolon.
-First line must be headers. Only the URL field is required. For example:
-Name	Number	Date	Compilers	URL
-My first list	1	2018-01-09	Tor Mac	https://open.spotify.com/user/46554353/playlist/67YquHJGJabxbFnB9Yn4Y
-My second list	2	2018-01-16	Billy Bob, Robin Bobin	https://open.spotify.com/user/893789762/playlist/2DnfP9e2KRc3C1zXIy96p`;
+The first line must be headers. Only the URL field is required.`;
+
+const massImportHoverText =
+`Example:
+Name; Number; Date; Compilers; URL
+Nice; 2018-01-09; Robin Bobin; https://spotify.com/user/123/playlist/67Yq
+Cool; 2018-01-16; Tor Mac, Billy Bob; spotify.com/user/456/playlist/2Dnf`;
 
 const fileImportPlaceholder =
 `Select a spreadsheet file to import multiple lists from, in CSV or TSV format.
@@ -46,10 +49,20 @@ class Import extends React.Component {
       singleURL: '',
       importFile: '',
       massImportText: '',
+      importInProgress: false,
+      lastImportIndex: -1,
     };
 
-    this.importFromSingle = this.importFromSingle.bind(this);
-    this.doImport = this.doImport.bind(this);
+    autoBind(this);
+  }
+
+
+  componentDidMount() {
+    this.doImportIntervalId = Meteor.setInterval(this.doImport, 500);
+  }
+
+  componentWillUnmount() {
+    Meteor.clearInterval(this.doImportIntervalId);
   }
 
 
@@ -102,7 +115,7 @@ class Import extends React.Component {
           <div className="import-spec-textarea">
             <h4>Mass import cut and paste</h4>
 
-            <FormControl componentClass="textarea" placeholder={massImportPlaceholder}
+            <FormControl componentClass="textarea" placeholder={massImportPlaceholder} title={massImportHoverText}
               value={massImportText} onChange={ e => this.setState({massImportText: e.target.value}) }
               rows={ Math.max(5, Math.min(15, massImportText.split(/\r|\r\n|\n/).length)) }
               wrap="off"
@@ -167,13 +180,77 @@ class Import extends React.Component {
 
     toImport.push(importData);
     Session.set("Import_toImport", toImport);
-    Meteor.defer(() => this.doImport(toImport.length-1));
   }
 
 
-  doImport(index) {
+  importFromTextArea() {
+    const { toImport, compilers } = this.props;
+    const { tagIds, massImportText } = this.state;
+    const lines = massImportText
+                  .split(/[\r\n]/)
+                  .map(line => line.split(/[;\t]/).map(v => v.trim()));
+
+    const headingIndices = {};
+    const firstLine = lines[0].map(v => v.toLowerCase());
+    for (let h of [ 'name', 'number', 'date', 'compilers', 'url' ]) {
+      headingIndices[h] = firstLine.indexOf(h);
+    }
+    if (headingIndices.url == -1) {
+      Bert.alert("Missing URL column header", 'danger');
+      return;
+    }
+
+    // Make sure all rows have url.
+    for (let li = 1; li < lines.length; li++) {
+      if (!lines[li][headingIndices.url]) {
+        Bert.alert("Missing URL on row " + (li+1), 'danger');
+        return;
+      }
+    }
+
+    let originalToImportLength = toImport.length;
+
+    for (let li = 1; li < lines.length; li++) {
+      let line = lines[li];
+      // Ignore if already processed.
+      if (toImport.find(ti => ti.url == line[headingIndices.url])) return;
+
+      const insertMetadata = {};
+      if (tagIds) insertMetadata.tagIds = tagIds;
+      if (headingIndices.name != -1 && line[headingIndices.name]) insertMetadata.name = line[headingIndices.name];
+      if (headingIndices.number != -1 && line[headingIndices.number]) insertMetadata.number = parseInt(line[headingIndices.number]);
+      if (headingIndices.date != -1 && line[headingIndices.date]) insertMetadata.date = moment(line[headingIndices.date]).unix();
+      if (headingIndices.compilers != -1 && line[headingIndices.compilers]) {
+        insertMetadata.compilerIds = line[headingIndices.compilers]
+          .split(',')
+          .map(compilerName => compilers.find(c => c.name.toLowerCase() == compilerName.trim().toLowerCase()))
+          .filter(c => !!c)
+          .map(c => c._id);
+      }
+      const importData = {
+        insertMetadata,
+        url: line[headingIndices.url],
+      }
+      console.log('importData', importData);
+      toImport.push(importData);
+    }
+    Session.set("Import_toImport", toImport);
+  }
+
+
+  doImport() {
+    const { importInProgress, lastImportIndex } = this.state;
     const { toImport } = this.props;
+
+    if (importInProgress) return;
+    if (toImport.length - 1 <= lastImportIndex) return;
+
+    this.setState({importInProgress: true});
+    const index = lastImportIndex + 1;
+
     Meteor.call('PlayList.import', toImport[index].url, toImport[index].insertMetadata, (error, list) => {
+      console.log('doImport result', error, list);
+
       if (error) {
         toImport[index].error = error.message;
       }
@@ -183,9 +260,13 @@ class Import extends React.Component {
         // to indicate this, which perhaps when clicked on opens the list in a modal window.
       }
       Session.set("Import_toImport", toImport);
+
+      this.setState({
+        importInProgress: false,
+        lastImportIndex: index,
+      });
     });
   }
-
 }
 
 

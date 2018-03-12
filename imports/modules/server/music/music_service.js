@@ -99,12 +99,10 @@ const importFromSearch = (service, type, names) => {
  */
 const linkTrackToAllServices = async (track) => {
   if (!track.mbId) {
-    console.log('a');
     await MusicBrainz.linkToService('track', track);
   }
 
   if (!track.spotifyId) {
-    console.log('b');
     await Spotify.linkToService('track', track);
   }
 }
