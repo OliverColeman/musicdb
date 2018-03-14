@@ -1,6 +1,7 @@
 import { Meteor } from 'meteor/meteor';
 import { Random } from 'meteor/random';
 import _ from 'lodash';
+import { Jobs } from 'meteor/msavin:sjobs';
 
 import Track from '../../../api/Track/Track';
 import SpotifyMS from './spotify';
@@ -108,21 +109,25 @@ const linkTrackToAllServices = async (track) => {
 }
 
 
-// Link to (other) music services upon insert.
-Track.after.insert((userId, track) => {
-  Meteor.setTimeout(() => {
-    try {
-      linkTrackToAllServices(track);
-    }
-    catch (e) {
-      console.error(e);
-    }
-  }, 500)
-});
-
-
 export { importFromURL, importFromIds, importFromSearch };
 
+
+// Link to (other) music services upon insert.
+Track.after.insert((userId, track) => {
+  Jobs.run("music.linkTrackToAllServices", track);
+});
+
+Jobs.register({
+  "music.linkTrackToAllServices": function (track) {
+    try {
+      linkTrackToAllServices(track).await();
+    }
+    catch(error) {
+      console.error(error);
+    }
+    this.success();
+  }
+});
 
 
 

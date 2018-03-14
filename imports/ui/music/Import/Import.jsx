@@ -9,6 +9,7 @@ import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 import moment from 'moment';
+import Papa from 'papaparse';
 import autoBind from 'react-autobind';
 
 import CompilerCollection from '../../../api/Compiler/Compiler';
@@ -17,6 +18,7 @@ import PlayList from '../PlayList/PlayList';
 import Tag from '../Tag/Tag';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
+import LoadingSmall from '../../misc/Loading/LoadingSmall';
 import ProgressMonitor from '../../misc/ProgressMonitor/ProgressMonitor';
 
 import './Import.scss';
@@ -71,8 +73,8 @@ class Import extends React.Component {
 
     if (loading) return ( <div className="Import"><Loading /></div> );
 
-    const { inProgress, tagIds, importedPlayLists, singleName,
-      singleNumber, singleDate, singleCompilers, singleURL, importFile, massImportText } = this.state;
+    const { inProgress, tagIds, importedPlayLists, importFile, massImportText, lastImportIndex,
+      singleName, singleNumber, singleDate, singleCompilers, singleURL } = this.state;
 
     return (
       <div className="Import">
@@ -129,7 +131,7 @@ class Import extends React.Component {
 
             <FormControl componentClass="input" type="file"
               className="listfile" title={fileImportPlaceholder}
-              value={importFile} onChange={ e => this.setState({importFile: e.target.value}) }
+              onChange={ e => this.setState({importFile: e.target.files[0]}) }
             />
 
             <Button onClick={this.importFromFile}>Import!</Button>
@@ -144,13 +146,16 @@ class Import extends React.Component {
               <div className="import-item" key={ti.url}>
                 <label>{idx + 1}</label>
                 <div /><PlayList playListId={ti.listId} viewType="inline" />
-                <div className="url">{ti.url}</div>
+                <div className="url"><a href={ti.url} target="_blank">{ti.url}</a></div>
+                <div className="error">{ti.error}</div>
               </div>
               :
               <div className="import-item" key={ti.url}>
                 <label>{idx + 1}</label>
-                <Loading /><div className="name">{ti.insertMetadata.name}</div>
-                <div className="url">{ti.url}</div>
+                {idx == (lastImportIndex+1) ? <LoadingSmall /> : <div className="waiting">{ti.error ? "" : "⌛"}</div>}
+                <div className="name">{ti.insertMetadata.name}</div>
+                <div className="url"><a href={ti.url} target="_blank">{ti.url}</a></div>
+                <div className="error">{ti.error}</div>
               </div>
           ))}
         </div>
@@ -184,16 +189,42 @@ class Import extends React.Component {
 
 
   importFromTextArea() {
-    const { toImport, compilers } = this.props;
-    const { tagIds, massImportText } = this.state;
-    const lines = massImportText
+    const { massImportText } = this.state;
+    const rows = massImportText
                   .split(/[\r\n]/)
                   .map(line => line.split(/[;\t]/).map(v => v.trim()));
+    this.massImport(rows);
+  }
+
+
+  importFromFile() {
+    const { importFile } = this.state;
+    Papa.parse(importFile, {
+      complete: (results) => {
+        if (results.data.length == 0) {
+          const errors = results.errors.length
+                      ? results.errors.map(e => e.message).join('<br/>')
+                      : "Empty file or unknown error.";
+          Bert.alert("Errors parsing file:<br\>" + errors, 'danger');
+        }
+        else {
+          this.massImport(results.data);
+        }
+      }
+    });
+  }
+
+
+  massImport(rows) {
+    const { toImport, compilers } = this.props;
+    const { tagIds } = this.state;
+
+    rows = rows.filter(row => row.join('').trim().length > 0);
 
     const headingIndices = {};
-    const firstLine = lines[0].map(v => v.toLowerCase());
+    const firstRow = rows[0].map(v => v.toLowerCase());
     for (let h of [ 'name', 'number', 'date', 'compilers', 'url' ]) {
-      headingIndices[h] = firstLine.indexOf(h);
+      headingIndices[h] = firstRow.indexOf(h);
     }
     if (headingIndices.url == -1) {
       Bert.alert("Missing URL column header", 'danger');
@@ -201,27 +232,27 @@ class Import extends React.Component {
     }
 
     // Make sure all rows have url.
-    for (let li = 1; li < lines.length; li++) {
-      if (!lines[li][headingIndices.url]) {
-        Bert.alert("Missing URL on row " + (li+1), 'danger');
+    for (let ri = 1; ri < rows.length; ri++) {
+      if (!rows[ri][headingIndices.url]) {
+        Bert.alert("Missing URL on row " + (ri+1), 'danger');
         return;
       }
     }
 
     let originalToImportLength = toImport.length;
 
-    for (let li = 1; li < lines.length; li++) {
-      let line = lines[li];
+    for (let ri = 1; ri < rows.length; ri++) {
+      let row = rows[ri];
       // Ignore if already processed.
-      if (toImport.find(ti => ti.url == line[headingIndices.url])) return;
+      if (toImport.find(ti => ti.url == row[headingIndices.url])) return;
 
       const insertMetadata = {};
       if (tagIds) insertMetadata.tagIds = tagIds;
-      if (headingIndices.name != -1 && line[headingIndices.name]) insertMetadata.name = line[headingIndices.name];
-      if (headingIndices.number != -1 && line[headingIndices.number]) insertMetadata.number = parseInt(line[headingIndices.number]);
-      if (headingIndices.date != -1 && line[headingIndices.date]) insertMetadata.date = moment(line[headingIndices.date]).unix();
-      if (headingIndices.compilers != -1 && line[headingIndices.compilers]) {
-        insertMetadata.compilerIds = line[headingIndices.compilers]
+      if (headingIndices.name != -1 && row[headingIndices.name]) insertMetadata.name = row[headingIndices.name];
+      if (headingIndices.number != -1 && row[headingIndices.number]) insertMetadata.number = parseInt(row[headingIndices.number]);
+      if (headingIndices.date != -1 && row[headingIndices.date]) insertMetadata.date = moment(row[headingIndices.date]).unix();
+      if (headingIndices.compilers != -1 && row[headingIndices.compilers]) {
+        insertMetadata.compilerIds = row[headingIndices.compilers]
           .split(',')
           .map(compilerName => compilers.find(c => c.name.toLowerCase() == compilerName.trim().toLowerCase()))
           .filter(c => !!c)
@@ -229,7 +260,7 @@ class Import extends React.Component {
       }
       const importData = {
         insertMetadata,
-        url: line[headingIndices.url],
+        url: row[headingIndices.url],
       }
       console.log('importData', importData);
       toImport.push(importData);
@@ -249,10 +280,8 @@ class Import extends React.Component {
     const index = lastImportIndex + 1;
 
     Meteor.call('PlayList.import', toImport[index].url, toImport[index].insertMetadata, (error, list) => {
-      console.log('doImport result', error, list);
-
       if (error) {
-        toImport[index].error = error.message;
+        toImport[index].error = error.reason ? error.reason : error.message;
       }
       else {
         toImport[index].listId = list._id;

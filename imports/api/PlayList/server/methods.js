@@ -19,12 +19,9 @@ Meteor.methods({
       date: Match.Maybe(Number),
     });
 
-    console.log('method import', url, insertMetadata)
-
     try {
       const promise = importFromURL('playlist', url, insertMetadata);
       const list = promise.await();
-      console.log('method import results', list);
 
       if (list && list._id) return list;
 

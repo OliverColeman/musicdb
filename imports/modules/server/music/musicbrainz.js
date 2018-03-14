@@ -165,8 +165,10 @@ const getArtist = async (ids, details, insertMetadata) => {
 const getAlbum = async (ids, details, insertMetadata) => {
   details = details || {};
   if ((details.albumName || details.artistIds || details.artistNames) &&
-        (!details.trackName || !(details.artistIds || details.artistNames)))
-      throw "Invalid arguments: if any one of 'albumName', 'artistIds', 'artistNames' is provided in the details argument then albumName and one of artistIds or artistNames must also be provided.";
+        (!details.albumName || !(details.artistIds || details.artistNames))) {
+    console.error('mb', details);
+    throw "Invalid arguments: if any one of 'albumName', 'artistIds', 'artistNames' is provided in the details argument then albumName and one of artistIds or artistNames must also be provided.";
+  }
 
   ids = ids || {};
   insertMetadata = insertMetadata || {};
@@ -210,7 +212,7 @@ const getAlbum = async (ids, details, insertMetadata) => {
         }
         else {
           console.log("searching for album data from mb", details);
-          artist = details.artistNames ? normaliseString(details.artistNames[0]) : details.artistIds.findOne(aid => !!Artist.findOne(aid)).nameNormalised;
+          artist = details.artistNames ? normaliseString(details.artistNames[0]) : Artist.findOne(details.artistIds[0]).nameNormalised;
           const results = await mbAPI.searchAsync('release-group', {
             artist: artist,
             releasegroup: details.albumName,
@@ -411,7 +413,7 @@ const getTrack = async (ids, details, insertMetadata) => {
 
         // See if any results match across track name, (first) artist name,
         // album name, and are within 1 second duration.
-        mbTrack = results.recordings.find(mbt =>
+        mbTrack = results.recordings && results.recordings.find(mbt =>
           normaliseStringMatch(mbt.title, details.trackName) &&
           (Math.abs(mbt.length / 1000 - details.duration) < durationMatchMargin) &&
           mbt['artist-credit'].find(ac => normaliseStringMatch(ac.artist.name, details.artistNames[0])) &&
@@ -421,7 +423,7 @@ const getTrack = async (ids, details, insertMetadata) => {
         // If we didn't find an exact matching track, see if we can find one with different duration.
         // This at least allows us to unambiguously match artists and album.
         if (!mbTrack) {
-          mbTrack = results.recordings.find(mbt =>
+          mbTrack = results.recordings && results.recordings.find(mbt =>
             normaliseStringMatch(mbt.title, details.trackName) &&
             mbt['artist-credit'].find(ac => normaliseStringMatch(ac.artist.name, details.artistNames[0])) &&
             mbt.releases.find(r => normaliseStringMatch(r.title, details.albumName))

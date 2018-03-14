@@ -230,8 +230,14 @@ const getArtist = async (ids, details, insertMetadata) => {
 const getAlbum = async (ids, details, insertMetadata) => {
   details = details || {};
   if ((details.albumName || details.artistIds || details.artistNames) &&
-        (!details.trackName || !(details.artistIds || details.artistNames)))
-      throw "Invalid arguments: if any one of 'albumName', 'artistIds', 'artistNames' is provided in the details argument then albumName and one of artistIds or artistNames must also be provided.";
+        (!details.albumName || !(details.artistIds || details.artistNames))) {
+    console.error('sp', details);
+    console.error("!details.trackName", !details.trackName)
+    console.error("!!details.artistIds", !!details.artistIds)
+    console.error("!!details.artistNames", !!details.artistNames)
+
+    throw "Invalid arguments: if any one of 'albumName', 'artistIds', 'artistNames' is provided in the details argument then albumName and one of artistIds or artistNames must also be provided.";
+  }
 
   ids = ids || {};
   insertMetadata = insertMetadata || {};
@@ -267,7 +273,7 @@ const getAlbum = async (ids, details, insertMetadata) => {
     // Make sure we have a Spotify album object, with images.
     if ((!spotifyAlbum || !spotifyAlbum.images) && (spotifyId || details.albumName)) {
       try {
-        if (spotifyId || !spotifyAlbum.images) {
+        if (spotifyId || (spotifyAlbum && !spotifyAlbum.images)) {
           //console.log("loading album data from spotify by id");
           const { body } = await spotifyAPI.getAlbum(spotifyId);
           spotifyAlbum = body;
@@ -275,9 +281,9 @@ const getAlbum = async (ids, details, insertMetadata) => {
         else {
           //console.log("searching for album data from spotify", details);
           // Get first artist name
-          artist = details.artistNames ? normaliseString(details.artistNames[0]) : details.artistIds.findOne(aid => !!Artist.findOne(aid)).nameNormalised;
+          artist = details.artistNames ? normaliseString(details.artistNames[0]) : Artist.findOne(details.artistIds[0]).nameNormalised;
           const query = `artist:"${artist}" album:"${normaliseString(details.albumName)}"`;
-          response = await spotifyAPI.search(query, ['track'], { market: 'AU' });
+          response = await spotifyAPI.search(query, ['album'], { market: 'AU' });
 
           // See if any results match across artist and album name.
           spotifyAlbum = response.body.albums.items.find(sa =>

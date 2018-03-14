@@ -70,15 +70,12 @@
         vertical-align: middle;
       }
 
-      .import-pending {
-        display: flex;
-        align-items: center;
-        font-style: italic;
-        &> * {
-          margin-right: 1em;
-        }
+      .waiting {
+        font-weight: bold;
       }
-
+      .error {
+        color: $cb-red;
+      }      
       .PlayList {
         font-weight: bold;
       }
