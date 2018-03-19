@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
 import { ButtonToolbar, ButtonGroup, Button, Label } from 'react-bootstrap';
 import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
@@ -15,6 +14,7 @@ import Compiler from '../Compiler/Compiler';
 import Tag from '../Tag/Tag';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
+import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
 
 import './PlayList.scss';
 
@@ -25,16 +25,16 @@ class PlayList extends React.Component {
   }
 
   render() {
-    const { loading, loadingTracks, playList, viewType, showDate } = this.props;
+    const { loading, loadingTracks, playList, viewType, showDate, noLinks } = this.props;
 
     if (loading) return (<Loading />);
     if (!playList && viewType == 'page') return (  <NotFound /> );
     if (!playList) return ( <div className="PlayList not-found" /> );
 
     if (viewType == 'inline') return (
-      <Link to={`/list/${playList._id}`} title={playList.name} className={"PlayList inline-viewtype name"}>
+      <LinkOrNot link={!noLinks} to={`/list/${playList._id}`} title={playList.name} className={"PlayList inline-viewtype name"}>
         {playList.name}
-      </Link>);
+      </LinkOrNot>);
 
     const showTracks = viewType == "page";
     // Get Tracks in order (when/if available and applicable).
@@ -43,7 +43,7 @@ class PlayList extends React.Component {
     return (
       <div className={"PlayList " + viewType + "-viewtype"}>
         <div className="item-header">
-          <Link className="name" to={`/list/${playList._id}`}>{playList.name}</Link>
+          <LinkOrNot link={!noLinks} className="name" to={`/list/${playList._id}`}>{playList.name}</LinkOrNot>
 
           {viewType != 'page' || !playList.spotifyUserId || !playList.spotifyId ? '' :
             <a className="link spotify" title="Show in Spotify" target="_blank" href={`https://open.spotify.com/user/${playList.spotifyUserId}/playlist/${playList.spotifyId}`} />
@@ -54,7 +54,7 @@ class PlayList extends React.Component {
 
         <div className="compilers inline-list">
           { viewType == 'page' ? <Label>Created by:</Label> : '' }
-          { playList.compilerIds.map(compilerId => (<Compiler compilerId={compilerId} viewType="inline" key={compilerId} />)) }
+          { playList.compilerIds.map(compilerId => (<Compiler compilerId={compilerId} viewType="inline" noLinks={noLinks} key={compilerId} />)) }
         </div>
 
         <div className="duration">
@@ -76,7 +76,7 @@ class PlayList extends React.Component {
             </div>
 
             { loadingTracks ? (<Loading />) : tracks.map(track => (
-              <Track track={track} viewType="list" key={track._id} />
+              <Track track={track} viewType="list" noLinks={noLinks} key={track._id} />
             ))}
           </div>
         }
@@ -86,7 +86,7 @@ class PlayList extends React.Component {
 }
 
 
-export default withTracker(({match, playList, playListId, spotifyId, viewType, showDate}) => {
+export default withTracker(({match, playList, playListId, spotifyId, viewType, showDate, noLinks}) => {
   viewType = viewType || "page";
   playListId = playListId || (playList && playList._id) || (match && match.params && match.params.playListId);
 
@@ -101,5 +101,6 @@ export default withTracker(({match, playList, playListId, spotifyId, viewType, s
     playList: playList || PlayListCollection.findOne(listSelector),
     viewType,
     showDate,
+    noLinks,
   };
 })(PlayList);

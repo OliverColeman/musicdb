@@ -7,10 +7,6 @@ import { normaliseString, normaliseStringMatch } from '../../modules/util';
 
 const Artist = new Mongo.Collection('Artist');
 
-if (Meteor.isServer) {
-  Artist._ensureIndex( { name: "text" } );
-}
-
 Artist.allow({
   insert: () => false,
   update: () => false,

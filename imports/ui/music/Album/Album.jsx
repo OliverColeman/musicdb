@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
 import { ButtonToolbar, ButtonGroup, Button } from 'react-bootstrap';
 import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
@@ -10,6 +9,7 @@ import AlbumCollection from '../../../api/Album/Album';
 import Artist from '../Artist/Artist';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
+import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
 
 import './Album.scss';
 
@@ -20,31 +20,31 @@ class Album extends React.Component {
   }
 
   render() {
-    const { loading, album, viewType } = this.props;
+    const { loading, album, viewType, noLinks } = this.props;
 
     if (loading) return (<Loading />);
     if (!album) return (<NotFound />);
 
     if (viewType == 'inline') return (
-      <Link to={`/album/${album._id}`} title={album.name} className={"Album inline-viewtype name"}>
+      <LinkOrNot link={!noLinks} to={`/album/${album._id}`} title={album.name} className={"Album inline-viewtype name"}>
         {album.name}
-      </Link>);
+      </LinkOrNot>);
 
     if (viewType == 'image-medium') return (
-      <Link to={`/album/${album._id}`} title={album.name} className={"Album inline-viewtype name"}>
+      <LinkOrNot link={!noLinks} to={`/album/${album._id}`} title={album.name} className={"Album inline-viewtype name"}>
         { !album.imageURLs || !album.imageURLs.medium ?
           '?' :
           <img src={album.imageURLs.medium} className={"Album image-viewtype image"} height={"300"} width={"300"} />
         }
-      </Link>);
+      </LinkOrNot>);
 
     if (viewType == 'image-small') return (
-      <Link to={`/album/${album._id}`} title={album.name} className={"Album inline-viewtype name"}>
+      <LinkOrNot link={!noLinks} to={`/album/${album._id}`} title={album.name} className={"Album inline-viewtype name"}>
         { !album.imageURLs || !album.imageURLs.medium ?
           '' :
           <img src={album.imageURLs.small} className={"Album image-viewtype image"} />
         }
-      </Link>);
+      </LinkOrNot>);
 
 
     // viewType == 'page'
@@ -60,7 +60,7 @@ class Album extends React.Component {
             }
 
             <div className="item-header">
-              <Link className="name" to={`/album/${album._id}`}>{album.name}</Link>
+              <LinkOrNot link={!noLinks} className="name" to={`/album/${album._id}`}>{album.name}</LinkOrNot>
 
               {viewType != 'page' || !album.spotifyId ? '' :
                 <a className="link spotify" title="Show in Spotify" target="_blank" href={`https://open.spotify.com/album/${album.spotifyId}`} />
@@ -68,7 +68,7 @@ class Album extends React.Component {
             </div>
 
             <div className="artists inline-list">
-              { album.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" />)) }
+              { album.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" noLinks={noLinks} />)) }
             </div>
           </div>
         }
@@ -78,7 +78,7 @@ class Album extends React.Component {
 }
 
 
-export default withTracker(({match, album, albumId, viewType}) => {
+export default withTracker(({match, album, albumId, viewType, noLinks}) => {
   viewType = viewType || "page";
   const subAlbum = album ? null : Meteor.subscribe('Album.withId', albumId || match.params.albumId);
 
@@ -86,5 +86,6 @@ export default withTracker(({match, album, albumId, viewType}) => {
     loading: subAlbum && !subAlbum.ready(),
     album: album || AlbumCollection.findOne(albumId || match.params.albumId),
     viewType,
+    noLinks,
   };
 })(Album);

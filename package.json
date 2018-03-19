@@ -13,10 +13,13 @@
     "bluebird": "^3.5.1",
     "commonmark": "^0.28.1",
     "core-js": "^2.5.1",
+    "double-metaphone": "^1.0.2",
     "handlebars": "^4.0.11",
     "jquery": "^2.2.4",
     "jquery-validation": "^1.17.0",
     "juice": "^4.2.2",
+    "lancaster-stemmer": "^1.0.2",
+    "levenshtein-edit-distance": "^2.0.2",
     "lodash": "^4.17.4",
     "meteor-node-stubs": "^0.3.2",
     "moment": "^2.19.1",
@@ -35,6 +38,7 @@
     "react-router-dom": "^4.2.2",
     "react-select": "^1.2.1",
     "simpl-schema": "^0.3.2",
+    "soundex-code": "^1.0.2",
     "spotify-web-api-node": "^2.5.0"
   },
   "devDependencies": {

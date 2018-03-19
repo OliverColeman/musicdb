@@ -6,6 +6,7 @@ import '../../api/Tag/server/publications';
 import '../../api/Artist/server/publications';
 import '../../api/Album/server/publications';
 import '../../api/Compiler/server/publications';
+import '../../api/Search/server/publications';
 
 import '../../api/ProgressMonitor/server/publications';
 

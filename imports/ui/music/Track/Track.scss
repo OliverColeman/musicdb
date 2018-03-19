@@ -63,3 +63,37 @@
     }
   }
 }
+
+
+.AddTrack {
+  .search-fields .form-group {
+    display: flex;
+
+    input {
+      margin-right: 1em;
+    }
+  }
+}
+
+
+.SearchTracks {
+  .no-results {
+    font-weight: bold;
+  }
+
+  .track-list {
+    display: table;
+    border-collapse: collapse;
+
+    .Track {
+      display: table-row;
+
+      & > * {
+        display: table-cell;
+        padding: 0.5em;
+        @include seperator-bottom;
+        @include seperator-top;
+      }
+    }
+  }
+}

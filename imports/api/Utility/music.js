@@ -1,4 +1,4 @@
-import { normaliseString, normaliseStringMatch } from '../../modules/util';
+import { normaliseString, normaliseStringMatch, soundex, doubleMetaphone } from '../../modules/util';
 
 
 /**
@@ -56,6 +56,27 @@ const commonMusicItemFields = {
   mbId: {
     type: String,
     optional: true,
+  },
+
+  soundex: {
+    type: Array,
+    autoValue() {
+      const name = this.field("name");
+      if (name.value) return soundex(name.value);
+    },
+  }, 'soundex.$': {
+    type: String,
+  },
+
+  doubleMetaphone: {
+    type: Array,
+    optional: true,
+    autoValue() {
+      const name = this.field("name");
+      if (name.value) return doubleMetaphone(name.value);
+    },
+  }, 'doubleMetaphone.$': {
+    type: String,
   },
 }
 
