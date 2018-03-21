@@ -3,6 +3,7 @@ import { check, Match } from 'meteor/check';
 import { publishComposite } from 'meteor/reywood:publish-composite';
 
 import { soundex, doubleMetaphone, findBySoundexOrDoubleMetaphone } from '../../../modules/util';
+import { importFromSearch } from '../../../modules/server/music/music_service';
 import PlayList from '../../PlayList/PlayList';
 import Track from '../../Track/Track';
 import Artist from '../../Artist/Artist';
@@ -49,7 +50,18 @@ publishComposite('search.track', function search(artistName, albumName, trackNam
 
   return {
     find() {
-      return findBySoundexOrDoubleMetaphone(Track, soundex(trackName), doubleMetaphone(trackName), additionalSelectors, limit);
+      const results = findBySoundexOrDoubleMetaphone(Track, soundex(trackName), doubleMetaphone(trackName), additionalSelectors, limit);
+      if (results.count() < 5) {
+        Meteor.defer(async () => {
+        try {
+            await importFromSearch('musicbrainz', 'track', { trackName, albumName, artistNames: [artistName] });
+          }
+          catch(e) {
+            console.error(e);
+          }
+        });
+      }
+      return results;
     },
     children: [
       {

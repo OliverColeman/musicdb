@@ -114,7 +114,7 @@ const getSpotifyAPI = async () => {
       // Reset the stored access token when it expires.
       Meteor.setTimeout(
         () => {
-          console.log("Resetting Spotify access token.");
+          //console.log("Resetting Spotify access token.");
           spotifyAPIGlobal.resetAccessToken();
         },
         data.body['expires_in'] * 1000
@@ -427,7 +427,7 @@ const getTrack = async (ids, details, insertMetadata) => {
   if (!track && (spotifyId || spotifyTrack || details.trackName)) {
     // If we have a spotifyId but no spotifyTrack then fetch the spotifyTrack.
     if (spotifyId && !spotifyTrack) {
-      console.log("loading track data from Spotify by id");
+      //console.log("loading track data from Spotify by id");
       response = await spotifyAPI.getTrack(spotifyId);
       spotifyTrack = response.body;
     }
@@ -458,12 +458,12 @@ const getTrack = async (ids, details, insertMetadata) => {
     // Make sure we have a Spotify recording/track object.
     if (!spotifyTrack && (spotifyId || details.trackName)) {
       if (spotifyId) {
-        console.log("loading track data from Spotify by id");
+        //console.log("loading track data from Spotify by id");
         response = await spotifyAPI.getTrack(spotifyId);
         spotifyTrack = response.body;
       }
       else {
-        console.log("searching for track data from spotify", details);
+        //console.log("searching for track data from spotify", details);
         const query = `track:"${normaliseString(details.trackName)}" artist:"${normaliseString(details.artistNames[0])}" album:"${normaliseString(details.albumName)}"`;
         response = await spotifyAPI.search(query, ['track'], {market: 'AU'});
 
@@ -485,7 +485,7 @@ const getTrack = async (ids, details, insertMetadata) => {
             track.artists.find(artist => normaliseStringMatch(artist.name, details.artistNames[0]))
           );
 
-          if (spotifyTrack) console.log("found diff duration: " + details.duration + " : " + (spotifyTrack.duration_ms / 1000));
+          //if (spotifyTrack) console.log("found diff duration: " + details.duration + " : " + (spotifyTrack.duration_ms / 1000));
         }
       }
     }

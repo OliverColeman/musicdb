@@ -80,9 +80,8 @@ const importFromIds = (service, type, ids, insertMetadata) => {
  * @param {Object} names - The name of the item and other associated info to
  * use for disambiguation. For albums: { albumName, artistNames }. For tracks:
  * { trackName, albumName, artistNames, duration }.
- * @return {Object} A Promise, resolving to a document for the appropriate
- *   collection for the item containing metadata for the item or null if the
- *   item could not be found on the service.
+ * @return {Object} A Promise, resolving to an array of documents for the
+ *   appropriate collection.
  */
 const importFromSearch = (service, type, names) => {
   if (service.toLowerCase() == 'spotify') {
@@ -100,11 +99,21 @@ const importFromSearch = (service, type, names) => {
  */
 const linkTrackToAllServices = async (track) => {
   if (!track.mbId) {
-    await MusicBrainz.linkToService('track', track);
+    try {
+      await MusicBrainz.linkToService('track', track);
+    }
+    catch(e) {
+      console.error(e);
+    }
   }
 
   if (!track.spotifyId) {
-    await Spotify.linkToService('track', track);
+    try {
+      await Spotify.linkToService('track', track);
+    }
+    catch(e) {
+      console.error(e);
+    }
   }
 }
 
