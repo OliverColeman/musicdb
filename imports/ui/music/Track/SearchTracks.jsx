@@ -6,16 +6,12 @@ import { ButtonToolbar, ButtonGroup, Button, FormControl, FormGroup } from 'reac
 import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
-import _ from 'lodash';
 
-import { soundex, doubleMetaphone, findBySoundexOrDoubleMetaphone, levenshteinScore } from '../../../modules/util';
 import TrackCollection from '../../../api/Track/Track';
-import ArtistCollection from '../../../api/Artist/Artist';
-import AlbumCollection from '../../../api/Album/Album';
-import Track from './Track';
 import Album from '../Album/Album';
 import Artist from '../Artist/Artist';
 import Loading from '../../misc/Loading/Loading';
+import SearchTrackResults from './SearchTrackResults';
 
 import './Track.scss';
 
@@ -25,58 +21,66 @@ class SearchTracks extends React.Component {
     super(props);
 
     this.state = {
-      selectedId: null,
+      formValues: {
+        artist: '',
+        album: '',
+        track: '',
+      },
+      searchValues: {
+        artist: '',
+        album: '',
+        track: '',
+      }
     }
 
     autoBind(this);
   }
 
 
+  handleChange(type, event) {
+    const { formValues } = this.state;
+    formValues[type] = event.target.value;
+    this.setState({formValues});
+
+    if (this.updateSearchTimeoutHandle) Meteor.clearTimeout(this.updateSearchTimeoutHandle);
+    this.updateSearchTimeoutHandle = Meteor.setTimeout(this.updateSearch, 500);
+  }
+
+
+  updateSearch() {
+    this.setState({searchValues: {...this.state.formValues}});
+  }
+
+
   render() {
-    const { loading, artistName, albumName, trackName, tracks, limit, onSelect } = this.props;
-    const { selectedId } = this.state;
-
-    if (loading) return (<div className="SearchTracks"><Loading /></div>);
-
-    const tracksScored = tracks.map(t => {
-      let scores = [levenshteinScore(trackName, t.name)];
-      if (albumName) scores.push(levenshteinScore(albumName, AlbumCollection.findOne({_id: t.albumId}).name));
-      // Use best scoring artist for the track.
-      if (artistName) scores.push(Math.min(ArtistCollection.find({_id: {$in: t.artistIds}}).map(a => levenshteinScore(artistName, a.name))));
-      return { ...t, score: _.mean(scores)};
-    });
-    const tracksSorted = _.sortBy(tracksScored, ['score']).slice(0, Math.min(tracksScored.length, limit));
+    const { onSelect } = this.props;
+    const { formValues, searchValues } = this.state;
 
     return (
       <div className="SearchTracks">
-        { (trackName && tracks.length == 0) ?
-          <div className="no-results">No tracks found.</div>
-          :
-          <div className="track-list">
-            { tracksSorted.map(trk => (
-              <Track track={trk} viewType="list" noImage={true} noLinks={true} key={trk._id} />
-            ))}
-          </div>
-        }
+        <form>
+          <FormGroup className="search-fields">
+            <FormControl type="text" value={formValues.album} placeholder="Album" onChange={e => this.handleChange('album', e)} />
+            <FormControl type="text" value={formValues.artist} placeholder="Artist" onChange={e => this.handleChange('artist', e)} />
+            <FormControl type="text" value={formValues.track} placeholder="Track" onChange={e => this.handleChange('track', e)} className="track" />
+          </FormGroup>
+        </form>
+
+        <SearchTrackResults
+          artistName={searchValues.artist}
+          albumName={searchValues.album}
+          trackName={searchValues.track}
+          limit={10}
+          onSelect={onSelect}
+        />
       </div>
     );
   }
 }
 
 
-export default withTracker(({ artistName, albumName, trackName, onSelect, limit }) => {
-  artistName = artistName ? artistName.trim() : '';
-  albumName = albumName ? albumName.trim() : '';
-  trackName = trackName ? trackName.trim() : '';
-  // We can't use Levenshtein score to order the search server-side, so collect more
-  // than we'll show and the sort by Levenshtein and then truncate to desired limit.
-  const searchLimit = 100;
-  const subscription = !trackName ? null : Meteor.subscribe('search.track', artistName, albumName, trackName, searchLimit);
-
+export default withTracker(({ onSelect }) => {
   return {
-    loading: subscription && !subscription.ready(),
-    artistName, albumName, trackName, limit,
-    tracks: subscription ? findBySoundexOrDoubleMetaphone(TrackCollection, soundex(trackName), doubleMetaphone(trackName), null, searchLimit).fetch() : [],
     onSelect,
   };
 })(SearchTracks);

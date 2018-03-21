@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { ButtonToolbar, ButtonGroup, Button, Label } from 'react-bootstrap';
+import autoBind from 'react-autobind';
+import { ButtonToolbar, ButtonGroup, Button, Label, Modal } from 'react-bootstrap';
 import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
@@ -15,6 +16,7 @@ import Tag from '../Tag/Tag';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
+import SearchTracks from '../Track/SearchTracks';
 
 import './PlayList.scss';
 
@@ -22,10 +24,28 @@ import './PlayList.scss';
 class PlayList extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      showSearchTracks: false,
+    }
+    autoBind(this);
   }
+
+
+  handleTrackAdd(track) {
+    console.log(track);
+    const { playList } = this.props;
+    Meteor.call('PlayList.addTracks', playList._id, [track._id], (error, list) => {
+      if (error) {
+        Bert.alert(error.reason ? error.reason : error.message, 'danger');
+      }
+    });
+    this.setState({showSearchTracks: false});
+  }
+
 
   render() {
     const { loading, loadingTracks, playList, viewType, showDate, noLinks } = this.props;
+    const { showSearchTracks } = this.state;
 
     if (loading) return (<Loading />);
     if (!playList && viewType == 'page') return (  <NotFound /> );
@@ -50,36 +70,61 @@ class PlayList extends React.Component {
           }
         </div>
 
-        { showDate ? <div className="date">{moment.unix(playList.date).format('YYYY-MM-DD')}</div> : '' }
+        { !showDate ? '' :
+          <div className="date">
+            { viewType == 'page' ? <Label>Date:</Label> : '' }
+            <span className="data">{moment.unix(playList.date).format('YYYY-MM-DD')}</span>
+          </div>
+        }
 
         <div className="compilers inline-list">
           { viewType == 'page' ? <Label>Created by:</Label> : '' }
-          { playList.compilerIds.map(compilerId => (<Compiler compilerId={compilerId} viewType="inline" noLinks={noLinks} key={compilerId} />)) }
+          <span className="data">
+            { playList.compilerIds.map(compilerId => (<Compiler compilerId={compilerId} viewType="inline" noLinks={noLinks} key={compilerId} />)) }
+          </span>
         </div>
 
         <div className="duration">
           { viewType == 'page' ? <Label>Duration:</Label> : '' }
-          {convertSecondsToHHMMSS(playList.duration)}, {playList.trackIds.length} tracks
+          <span className="data">{convertSecondsToHHMMSS(playList.duration)}, {playList.trackIds.length}&nbsp;tracks</span>
         </div>
 
         { viewType != 'page' ? '' : <div className="tags inline-list">
           <Label>Tags:</Label>
-          { playList.tagIds.map(tagId => (<Tag tagId={tagId} viewType="inline" key={tagId} />)) }
+          <span className="data">
+            { playList.tagIds.map(tagId => (<Tag tagId={tagId} viewType="inline" key={tagId} />)) }
+          </span>
         </div>}
 
+        { viewType != 'page' ? '' :
+          <Button className='btn btn-success' onClick={() => this.setState({showSearchTracks: true})}>Add track</Button>
+        }
+
         { !showTracks ? '' :
-          <div className="tracks">
-            <div className="header-row">
-              { ["Cover", "Title", "Artist", "Album", "Length"].map(h => (
-                <div className={"header-cell header-" + h} key={h}>{h}</div>
+          <div className="tracks-wrapper">
+            <div className="tracks">
+              <div className="header-row">
+                { ["Cover", "Title", "Artist", "Album", "Length"].map(h => (
+                  <div className={"header-cell header-" + h} key={h}>{h}</div>
+                ))}
+              </div>
+
+              { loadingTracks ? (<Loading />) : tracks.map(track => (
+                <Track track={track} viewType="list" noLinks={noLinks} key={track._id} />
               ))}
             </div>
-
-            { loadingTracks ? (<Loading />) : tracks.map(track => (
-              <Track track={track} viewType="list" noLinks={noLinks} key={track._id} />
-            ))}
           </div>
         }
+
+        <Modal className="playlist-add-track" show={showSearchTracks}>
+          <Modal.Header><Modal.Title>
+            <span>Add track to { playList.name }</span>
+            <Button className='btn btn-default' onClick={() => this.setState({showSearchTracks: false})}>Cancel</Button>
+          </Modal.Title></Modal.Header>
+          <Modal.Body>
+            <SearchTracks onSelect={this.handleTrackAdd} onCancel={() => this.setState({showSearchTracks: false})} />
+          </Modal.Body>
+        </Modal>
       </div>
     );
   }
@@ -89,6 +134,8 @@ class PlayList extends React.Component {
 export default withTracker(({match, playList, playListId, spotifyId, viewType, showDate, noLinks}) => {
   viewType = viewType || "page";
   playListId = playListId || (playList && playList._id) || (match && match.params && match.params.playListId);
+
+  if (typeof showDate == 'undefined') showDate = viewType == 'page';
 
   const subList = playList ? null : Meteor.subscribe('PlayList.withId', playListId, spotifyId);
   const subTracks = viewType == 'page' && Meteor.subscribe('PlayList.tracks', playListId, spotifyId);

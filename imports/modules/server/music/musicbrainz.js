@@ -263,7 +263,7 @@ const getAlbum = async (ids, details, insertMetadata) => {
             newArtists.push(await getArtist({mbId: mba.id}, {mbArtist: mba}));
           }
           Album.update(album._id, {
-            $push: {artistIds: newArtists.map(a => a._id)},
+            $push: {artistIds: {$each: newArtists.map(a => a._id)}},
             $set: {needsReview: true}
           });
         }
@@ -477,7 +477,7 @@ const getTrack = async (ids, details, insertMetadata) => {
             newArtists.push(await getArtist({mbId: mba.id}, {mbArtist: mba}));
           }
           Track.update(track._id, {
-            $push: {artistIds: newArtists.map(a => a._id)},
+            $push: {artistIds: {$each: newArtists.map(a => a._id)}},
             $set: {needsReview: true}
           });
         }

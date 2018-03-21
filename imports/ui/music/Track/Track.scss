@@ -18,82 +18,37 @@
 
   /* TODO Inline layout and remove some details on small screens */
   .playLists {
-    display: table;
-    table-layout:fixed;
-    width: 100%;
-    margin-top: 1em;
-    @include seperator-top;
-
-    .PlayList, .header-row {
-      display: table-row;
-
-      & > * {
-        display: table-cell;
-        margin: 0;
-
-        @include seperator-bottom;
-        padding: 0.5em 1em;
-
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-
-        &.inline-list > * {
-          display: inline-block;
-          white-space: nowrap;
-          margin-right: 0.5em;
-
-          &:after {
-            content: ',';
-          }
-          &:last-child:after {
-            content: '';
-          }
-
-          & > * {
-            display: inline-block;
-            margin-right: 0;
-          }
-        }
-
-        &.date, &.header-Date {
-          width: 8em;
-        }
-      }
-    }
-  }
-}
-
-
-.AddTrack {
-  .search-fields .form-group {
-    display: flex;
-
-    input {
-      margin-right: 1em;
-    }
+    @include playlist-table;
   }
 }
 
 
 .SearchTracks {
+  form {
+    .search-fields {
+      display: flex;
+      flex-wrap: wrap-reverse;
+      justify-content: space-between;
+      flex-direction: row-reverse;
+      margin: 0 -10px;
+
+      input {
+        margin: 0 10px 10px;
+        flex-grow: 1;
+        width: auto;
+        min-width: 15em;
+      }
+    }
+  }
+}
+
+
+.SearchTrackResults {
   .no-results {
     font-weight: bold;
   }
 
   .track-list {
-    display: table;
-    border-collapse: collapse;
-
-    .Track {
-      display: table-row;
-
-      & > * {
-        display: table-cell;
-        padding: 0.5em;
-        @include seperator-bottom;
-        @include seperator-top;
-      }
-    }
+    @include track-table;
   }
 }

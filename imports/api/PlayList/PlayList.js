@@ -28,12 +28,7 @@ PlayList.schema = {
   trackIds: [String],
   duration: {
     type: Number,
-    autoValue() {
-      var tracks = this.field("trackIds");
-      if (!tracks.isSet || !tracks.value.length) return 0;
-      return Track.find({_id: {$in: tracks.value}}).fetch()
-        .reduce((total, track) => total + track.duration, 0);
-    }
+    defaultValue: 0,
   },
   tagIds: { type: Array, optional: true },
   'tagIds.$': { type: String },
@@ -48,5 +43,16 @@ PlayList.schema = {
 };
 
 PlayList.attachSchema(new SimpleSchema(PlayList.schema));
+
+
+PlayList.before.insert((userId, doc) => {
+  const tracks = Track.find({_id: {$in: doc.trackIds}}).fetch();
+  if (tracks.length) {
+    doc.duration = tracks.reduce((total, track) => total + track.duration, 0);
+  }
+});
+// We don't use .after.update because it's a pain handling the various modifier types.
+// Methods that add or remove tracks must manually update the duration.
+
 
 export default PlayList;

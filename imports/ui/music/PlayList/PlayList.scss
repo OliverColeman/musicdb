@@ -5,8 +5,17 @@
   margin: 0.5em 0;
 
   &.page-viewtype {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 -10px;
+
     & > * {
-      margin: 0.5em 0;
+      margin: 10px;
+    }
+    .item-header {
+      width: 100%;
     }
   }
 
@@ -17,50 +26,18 @@
   }
 
   /* TODO Inline layout and remove some details on small screens */
-  .tracks {
-    display: table;
-    table-layout:fixed;
+  .tracks-wrapper {
     width: 100%;
-    margin-top: 1em;
-    @include seperator-top;
 
-    .Track, .header-row {
-      display: table-row;
-
-      & > * {
-        display: table-cell;
-        margin: 0;
-
-        @include seperator-bottom;
-        padding: 0.5em 1em;
-
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-
-        &.inline-list > * {
-          display: inline-block;
-          white-space: nowrap;
-          margin-right: 0.5em;
-
-          &:after {
-            content: ',';
-          }
-          &:last-child:after {
-            content: '';
-          }
-
-          & > * {
-            display: inline-block;
-            margin-right: 0;
-          }
-        }
-
-        &.album-image, &.header-Cover,
-        &.duration, &.header-Length {
-          width: 5.5em;
-        }
-      }
+    .tracks {
+      @include track-table;
     }
+  }
+}
+
+.modal.playlist-add-track {
+  .modal-title {
+    display: flex;
+    justify-content: space-between;
   }
 }

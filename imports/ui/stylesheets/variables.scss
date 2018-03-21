@@ -62,9 +62,91 @@ $default-border-radius: 4px;
 
 @mixin seperator-bottom {
   border-bottom: 1px solid #777;
-  padding-bottom: 0.5em;
+  padding-bottom: 5px;
+}
+@mixin seperator-bottom-light {
+  border-bottom: 1px solid #333;
+  padding-bottom: 5px;
 }
 @mixin seperator-top {
-  padding-top: 0.5em;
+  padding-top: 5px;
   border-top: 1px solid #777;
+}
+@mixin seperator-top-light {
+  padding-top: 5px;
+  border-top: 1px solid #333;
+}
+
+
+@mixin table {
+  display: table;
+  table-layout:fixed;
+  width: 100%;
+  @include seperator-top;
+  text-align: left;
+
+  & > * {
+    display: table-row;
+
+    & > * {
+      display: table-cell;
+      margin: 0;
+      padding: 5px;
+      &:first-child {
+        padding-left: 0;
+      }
+      &:last-child {
+        padding-right: 0;
+      }
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      @include seperator-bottom-light;
+
+      &.inline-list > * {
+        display: inline-block;
+        white-space: nowrap;
+        padding: 0;
+        margin-right: 0.3em;
+        border-style: none;
+
+        &:after {
+          content: ',';
+        }
+        &:last-child:after {
+          content: '';
+        }
+
+        & > * {
+          display: inline-block;
+          margin-right: 0;
+        }
+      }
+    }
+  }
+}
+
+
+@mixin playlist-table {
+  @include table;
+
+  &.date, &.header-Date {
+    width: 8em;
+  }
+}
+
+
+@mixin track-table {
+  @include table;
+
+  a.Track {
+    font-weight: bold;
+  }
+  .album-image, .header-Cover {
+    width: 5.5em;
+  }
+  .header-Length, .duration {
+    width: 4.5em;
+  }
 }

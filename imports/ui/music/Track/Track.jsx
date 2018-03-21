@@ -26,7 +26,7 @@ class Track extends React.Component {
   }
 
   render() {
-    const { loading, loadingPlayLists, playLists, track, viewType, noImage, noLinks } = this.props;
+    const { loading, loadingPlayLists, playLists, track, viewType, noImage, noLinks, onClick } = this.props;
 
     if (loading) return (<Loading />);
     if (!track) return (<NotFound />);
@@ -38,7 +38,7 @@ class Track extends React.Component {
     )
 
     if (viewType == 'list') return (
-      <div className={"Track " + viewType + "-viewtype"}>
+      <div className={"Track " + viewType + "-viewtype"} onClick={(e) => { if (onClick) onClick(e, track)}}>
         { noImage ? '' :
           <div className="album album-image image">
             { !track.albumId ? '' : <Album albumId={track.albumId} viewType="track" viewType="image-small" /> }
@@ -98,7 +98,7 @@ class Track extends React.Component {
 }
 
 
-export default withTracker(({ match, trackId, track, viewType, noImage, noLinks }) => {
+export default withTracker(({ match, trackId, track, viewType, noImage, noLinks, onClick }) => {
   trackId = trackId || track && track._id || match.params.trackId
 
   viewType = viewType || "page";

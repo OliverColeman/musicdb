@@ -69,3 +69,19 @@ input, textarea, .form-control {
     margin-top: 20px;
   }
 }
+
+.modal-dialog {
+  width: 900px;
+  max-width: 95%;
+  color: #fff;
+
+  .modal-content {
+    background-color: rgba(0,0,0,0.85);
+    border: solid 1px #aaa;
+    border-radius: $default-border-radius;
+
+    .modal-header {
+      border-bottom: solid 1px #aaa;
+    }
+  }
+}
