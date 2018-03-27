@@ -6,6 +6,7 @@ import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 import moment from 'moment';
+import update from 'immutability-helper';
 
 import PlayListCollection from '../../../api/PlayList/PlayList';
 import TrackCollection from '../../../api/Track/Track';
@@ -26,13 +27,14 @@ class PlayList extends React.Component {
     super(props);
     this.state = {
       showSearchTracks: false,
+      draggedTrackIndex: -1,
+      insertIndex: -1,
     }
     autoBind(this);
   }
 
 
   handleTrackAdd(track) {
-    console.log(track);
     const { playList } = this.props;
     Meteor.call('PlayList.addTracks', playList._id, [track._id], (error, list) => {
       if (error) {
@@ -43,9 +45,28 @@ class PlayList extends React.Component {
   }
 
 
+  handleTrackDrag(draggedTrackIndex, insertIndex) {
+    this.setState({draggedTrackIndex, insertIndex});
+  }
+  handleTrackDrop() {
+    const { draggedTrackIndex, insertIndex } = this.state;
+
+    this.setState({draggedTrackIndex: -1, insertIndex: -1});
+
+    if (draggedTrackIndex != insertIndex && draggedTrackIndex + 1 != insertIndex) {
+      const trackId = this.props.playList.trackIds[draggedTrackIndex];
+      Meteor.call('PlayList.moveTrack', this.props.playList._id, trackId, insertIndex, (error, list) => {
+        if (error) {
+          Bert.alert(error.reason ? error.reason : error.message, 'danger');
+        }
+      });
+    }
+  }
+
+
   render() {
     const { loading, loadingTracks, playList, viewType, showDate, noLinks } = this.props;
-    const { showSearchTracks } = this.state;
+    const { showSearchTracks, draggedTrackIndex, insertIndex } = this.state;
 
     if (loading) return (<Loading />);
     if (!playList && viewType == 'page') return (  <NotFound /> );
@@ -58,7 +79,9 @@ class PlayList extends React.Component {
 
     const showTracks = viewType == "page";
     // Get Tracks in order (when/if available and applicable).
-    const tracks = !loadingTracks && showTracks && playList.trackIds.map(trackId => TrackCollection.findOne(trackId)).filter(t => t);
+    let tracks = showTracks && !loadingTracks && playList.trackIds.map((trackId, idx) => {
+      return { indexInPlaylist: idx, ...TrackCollection.findOne(trackId)}
+    });
 
     return (
       <div className={"PlayList " + viewType + "-viewtype"}>
@@ -109,8 +132,17 @@ class PlayList extends React.Component {
                 ))}
               </div>
 
-              { loadingTracks ? (<Loading />) : tracks.map(track => (
-                <Track track={track} viewType="list" noLinks={noLinks} key={track._id} />
+              { loadingTracks ? (<Loading />) : tracks.map((track, index) => (
+                <Track
+                  track={track}
+                  viewType="list"
+                  noLinks={noLinks}
+                  onDrag={this.handleTrackDrag}
+                  onDrop={this.handleTrackDrop}
+                  key={track._id}
+                  hoveredTop={index==insertIndex}
+                  hoveredBottom={index==insertIndex-1}
+                />
               ))}
             </div>
           </div>
@@ -129,7 +161,6 @@ class PlayList extends React.Component {
     );
   }
 }
-
 
 export default withTracker(({match, playList, playListId, spotifyId, viewType, showDate, noLinks}) => {
   viewType = viewType || "page";
@@ -150,4 +181,4 @@ export default withTracker(({match, playList, playListId, spotifyId, viewType, s
     showDate,
     noLinks,
   };
-})(PlayList);
+}) (PlayList);

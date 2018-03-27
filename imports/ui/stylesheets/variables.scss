@@ -82,6 +82,7 @@ $default-border-radius: 4px;
   display: table;
   table-layout:fixed;
   width: 100%;
+  border-collapse: collapse;
   @include seperator-top;
   text-align: left;
 
@@ -90,6 +91,7 @@ $default-border-radius: 4px;
 
     & > * {
       display: table-cell;
+      @include seperator-bottom-light;
       margin: 0;
       padding: 5px;
       &:first-child {
@@ -102,7 +104,6 @@ $default-border-radius: 4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      @include seperator-bottom-light;
 
       &.inline-list > * {
         display: inline-block;
@@ -136,6 +137,7 @@ $default-border-radius: 4px;
   }
 }
 
+$small-music-image: 5.5em;
 
 @mixin track-table {
   @include table;
@@ -144,7 +146,7 @@ $default-border-radius: 4px;
     font-weight: bold;
   }
   .album-image, .header-Cover {
-    width: 5.5em;
+    width: $small-music-image;
   }
   .header-Length, .duration {
     width: 4.5em;

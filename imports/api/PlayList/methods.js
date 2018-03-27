@@ -29,6 +29,26 @@ Meteor.methods({
     }
   },
 
+  'PlayList.moveTrack': function PlayListMoveTrack(playListId, trackId, insertIndex) {
+    check(playListId, String);
+    check(trackId, String);
+    check(insertIndex, Number);
+
+    try {
+      const playList = PlayList.findOne(playListId);
+      if (!playList) throw "Play list does not exist.";
+      const trackIds = playList.trackIds;
+      const currentIndex = trackIds.indexOf(trackId);
+      if (currentIndex == -1) throw "Track is not in play list.";
+      const movedTrackIndex = trackIds.splice(currentIndex, 1);
+      if (insertIndex > currentIndex) insertIndex--;
+      trackIds.splice(insertIndex, 0, movedTrackIndex[0]);
+      PlayList.update(playListId, {$set: {trackIds}});
+    } catch (exception) {
+      throwMethodException(exception);
+    }
+  },
+
 
   'PlayList.remove': function PlayListRemove(id) {
     check(id, String);

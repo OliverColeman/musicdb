@@ -20,6 +20,23 @@
   .playLists {
     @include playlist-table;
   }
+
+  &.dragging {
+    opacity: 0.5;
+  }
+  &.hovered-top {
+    border-top: 4px solid $cb-aqua !important;
+    & > * {
+      padding-top: 4px !important;
+    }
+  }
+  &.hovered-bottom {
+    border-bottom: 4px solid $cb-aqua !important;
+    & > * {
+      border-bottom-style: none;
+      padding-bottom: 4px !important;
+    }
+  }
 }
 
 
