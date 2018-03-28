@@ -1,24 +1,23 @@
 @import '../../stylesheets/variables';
 
 body {
-  background-color: #000;
+  background: #000 url('/bg.jpg') no-repeat center center fixed;
+  -webkit-background-size: 100%; /* For WebKit*/
+  -moz-background-size: 100%;    /* Mozilla*/
+  -o-background-size: 100%;      /* Opera*/
+  background-size: 100%;         /* Generic*/
   margin: 0;
   padding: 0;
 }
 
 .App {
-  background: url('/bg.jpg') no-repeat center center fixed;
-  -webkit-background-size: 100%; /* For WebKit*/
-  -moz-background-size: 100%;    /* Mozilla*/
-  -o-background-size: 100%;      /* Opera*/
-  background-size: 100%;         /* Generic*/
+  background-color: rgba(0,0,0,0.85);
   height: 100vh;
   overflow: auto;
 
   > * {
-    background-color: rgba(0,0,0,0.9);
     color: #fff;
-
+    background-color: transparent;
     > * {
       background-color: transparent;
     }
