@@ -24,7 +24,7 @@ Meteor.methods({
 
     // Check user is allowed to put list in specified group.
     const user = Meteor.users.findOne(this.userId);
-    const userGroups = Object.keys(user.roles);
+    const userGroups = (user && user.roles) ? Object.keys(user.roles) : [];
     if (insertMetadata.groupId &&
         !Roles.userIsInRole(this.userId, ['admin'], Roles.GLOBAL_GROUP) &&
         !userGroups.includes(insertMetadata.groupId)) {

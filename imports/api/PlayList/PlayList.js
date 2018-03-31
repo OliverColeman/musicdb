@@ -31,6 +31,16 @@ PlayList.schema = {
     type: Number,
     defaultValue: 0,
   },
+  userId: {
+    type: String,
+    autoValue: function() {
+      if (this.isInsert) {
+        return this.userId;
+      } else {
+        this.unset();  // Prevent user from supplying their own value
+      }
+    },
+  },
   groupId: { type: String, optional: true },
   tagIds: { type: Array, optional: true },
   'tagIds.$': { type: String },

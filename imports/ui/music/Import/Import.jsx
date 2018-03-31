@@ -304,14 +304,14 @@ class Import extends React.Component {
 export default withTracker(({ match, roles }) => {
   const subCompilers = Meteor.subscribe('Compiler.all');
   const user = Meteor.user();
-  const groupSelector = user && (roles.includes('admin') ? {} : {name: {$in: Object.keys(user.roles)}});
+  const groupSelector = user && user.roles && (roles.includes('admin') ? {} : {name: {$in: Object.keys(user.roles)}});
 
   Session.setDefault("Import_toImport", []);
 
   return {
     loading: !subCompilers.ready(),
     compilers: CompilerCollection.find().fetch(),
-    groups: user ? Meteor.groups.find(groupSelector).fetch() : [],
+    groups: user && user.roles ? Meteor.groups.find(groupSelector).fetch() : [],
     toImport: Session.get("Import_toImport"),
   };
 })(Import);
