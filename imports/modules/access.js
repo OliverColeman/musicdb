@@ -1,3 +1,5 @@
+// Module to provide access control for collections and items therein.
+
 // TODO This should probably be pulled out into a Mateor package eventually.
 
 import { Meteor } from 'meteor/meteor';
@@ -10,7 +12,17 @@ const AUTHENTICATED = '__auth__';
 const UNAUTHENTICATED = '__unauth__';
 const OWN = '__own__';
 
-
+/**
+ * Determine if access is allowed.
+ * @param {Object} collection - The collection to check for. At the moment all
+ *   that is required is that the given object has an 'access' property.
+ * @param {string} op - The operation to check for, typically one of 'view', 'create',
+ *   'update', 'delete' but depends on the access rules specified by the collection.
+ * @param {Object} item - The item to check, if applicable.
+ * @param {Object|String} user - The user or users id to check for.
+ *   If not given the current user is used if possible.
+ * @return {boolean} Whether access is allowed.
+ */
 const allowed = (collection, op, item, user) => {
   // If no access control defined for this collection or specific op.
   if (!collection.access) throw new Error("Access rules are not defined for given collection.");
@@ -58,7 +70,10 @@ const allowed = (collection, op, item, user) => {
 }
 
 
-// Maintain a 'groups' collection synced with alanning:meteor-roles groups.
+// Maintain a 'groups' collection synced with the alanning:meteor-roles groups.
+// (alanning:meteor-roles maintains a collection for roles but not for the groups).
+// Create a reference to the collection at Meteor.groups to be consistent with
+// alanning:meteor-roles. The groups collection is published in server/access-server.js.
 if (!Meteor.groups) {
   Meteor.groups = new Mongo.Collection("__groups__");
 

@@ -12,7 +12,7 @@ Initially being built for [Just Dance](https://www.facebook.com/groups/166298646
 1. [Install Meteor](https://www.meteor.com/install).
 * Run `meteor --settings settings-development.json` from the root folder.
 * Go to http://localhost:3000
-* To import play lists you have to create an account/login first.
+* To import and edit play lists you have to create an account/login first. An admin account is automatically created with email `admin@admin.admin` and password `admin`.
 
 Run `meteor reset` to reset the DB.
 
