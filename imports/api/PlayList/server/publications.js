@@ -28,3 +28,8 @@ Meteor.publish('PlayList.withTagId', function withId(tagId) {
   check(tagId, String);
   return PlayList.find({tagIds: tagId});
 });
+
+Meteor.publish('PlayList.withGroupId', function withId(groupId) {
+  check(groupId, String);
+  return PlayList.find({groupId});
+});

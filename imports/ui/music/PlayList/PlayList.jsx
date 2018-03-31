@@ -8,11 +8,13 @@ import { Bert } from 'meteor/themeteorchef:bert';
 import moment from 'moment';
 import update from 'immutability-helper';
 
+import Access from '../../../modules/access';
 import PlayListCollection from '../../../api/PlayList/PlayList';
 import TrackCollection from '../../../api/Track/Track';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
 import Track from '../Track/Track';
 import Compiler from '../Compiler/Compiler';
+import Group from '../Group/Group';
 import Tag from '../Tag/Tag';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
@@ -65,12 +67,14 @@ class PlayList extends React.Component {
 
 
   render() {
-    const { loading, loadingTracks, playList, viewType, showDate, noLinks } = this.props;
+    const { loading, loadingTracks, playList, viewType, showDate, noLinks, user } = this.props;
     const { showSearchTracks, draggedTrackIndex, insertIndex } = this.state;
 
     if (loading) return (<Loading />);
     if (!playList && viewType == 'page') return (  <NotFound /> );
     if (!playList) return ( <div className="PlayList not-found" /> );
+
+    const editable = Access.allowed(PlayListCollection, 'update', playList, user);
 
     if (viewType == 'inline') return (
       <LinkOrNot link={!noLinks} to={`/list/${playList._id}`} title={playList.name} className={"PlayList inline-viewtype name"}>
@@ -112,14 +116,21 @@ class PlayList extends React.Component {
           <span className="data">{convertSecondsToHHMMSS(playList.duration)}, {playList.trackIds.length}&nbsp;tracks</span>
         </div>
 
-        { viewType != 'page' ? '' : <div className="tags inline-list">
-          <Label>Tags:</Label>
+        { viewType != 'page' || !playList.groupId ? '' : <div className="group">
+          <Label>Group:</Label>
           <span className="data">
-            { playList.tagIds.map(tagId => (<Tag tagId={tagId} viewType="inline" key={tagId} />)) }
+            <Group groupId={playList.groupId} viewType="inline" />
           </span>
         </div>}
 
-        { viewType != 'page' ? '' :
+        { viewType != 'page' ? '' : <div className="tags inline-list">
+          <Label>Tags:</Label>
+          <span className="data">
+            { playList.tagIds && playList.tagIds.map(tagId => (<Tag tagId={tagId} viewType="inline" key={tagId} />)) }
+          </span>
+        </div>}
+
+        { viewType != 'page' || !editable ? '' :
           <Button className='btn btn-success' onClick={() => this.setState({showSearchTracks: true})}>Add track</Button>
         }
 
@@ -139,6 +150,7 @@ class PlayList extends React.Component {
                   noLinks={noLinks}
                   onDrag={this.handleTrackDrag}
                   onDrop={this.handleTrackDrop}
+                  dropAllowed={editable}
                   key={track._id}
                   hoveredTop={index==insertIndex}
                   hoveredBottom={index==insertIndex-1}
@@ -180,5 +192,6 @@ export default withTracker(({match, playList, playListId, spotifyId, viewType, s
     viewType,
     showDate,
     noLinks,
+    user: Meteor.user(),
   };
 }) (PlayList);

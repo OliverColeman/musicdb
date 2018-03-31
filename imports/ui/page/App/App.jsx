@@ -29,6 +29,7 @@ import VerifyEmailAlert from '../../account/VerifyEmailAlert/VerifyEmailAlert';
 import getUserName from '../../../modules/get-user-name';
 import Track from '../../music/Track/Track';
 import PlayList from '../../music/PlayList/PlayList';
+import Group from '../../music/Group/Group';
 import Tag from '../../music/Tag/Tag';
 import Artist from '../../music/Artist/Artist';
 import Album from '../../music/Album/Album';
@@ -46,7 +47,7 @@ class App extends React.Component {
 
   render() {
     const props = this.props;
-    
+
     return (
       <Router>
         {!props.loading ? (
@@ -62,7 +63,7 @@ class App extends React.Component {
               <Switch>
                 <Route exact name="index" path="/" component={Index} />
 
-                {/*<Route exact path="/lists/:tagId" component={Tag} {...props} />*/}
+                <Route exact path="/group/:groupId" component={Group} {...props} />
                 <Route exact path="/tag/:tagId" component={Tag} {...props} />
                 <Route exact path="/list/:playListId" component={PlayList} {...props} />
                 <Route exact path="/track/:trackId" component={Track} {...props} />
@@ -70,7 +71,7 @@ class App extends React.Component {
                 <Route exact path="/album/:albumId" component={Album} {...props} />
                 <Route exact path="/compiler/:compilerId" component={Compiler} {...props} />
 
-                <Route exact path="/search" component={SearchTracks} {...props} />
+                {/*<Route exact path="/search" component={SearchTracks} {...props} />*/}
 
                 <Authenticated exact path="/import" component={Import} {...props} />
 
@@ -113,11 +114,11 @@ export default flow(
     const loadingRoles = !Roles.subscription.ready();
     const name = user && user.profile && user.profile.name && getUserName(user.profile.name);
     const emailAddress = user && user.emails && user.emails[0].address;
-
+    const groupSub = Meteor.subscribe('Access.groups');
     const tagSub = Meteor.subscribe('Tag.all');
 
     return {
-      loading: loadingRoles || !tagSub.ready(),
+      loading: loadingRoles || !tagSub.ready() || !groupSub.ready(),
       loggingIn,
       authenticated: !loggingIn && !!userId,
       name: name || emailAddress,

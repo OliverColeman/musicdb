@@ -2,8 +2,9 @@
 
 import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
-import { commonMusicItemFields } from '../Utility/music';
+import { commonMusicItemFields, defaultAccessRules } from '../Utility/music';
 import { normaliseString, normaliseStringMatch } from '../../modules/util';
+import Access from '../../modules/access';
 import Track from '../Track/Track';
 
 
@@ -30,6 +31,7 @@ PlayList.schema = {
     type: Number,
     defaultValue: 0,
   },
+  groupId: { type: String, optional: true },
   tagIds: { type: Array, optional: true },
   'tagIds.$': { type: String },
   number: { type: Number, optional: true },
@@ -43,6 +45,12 @@ PlayList.schema = {
 };
 
 PlayList.attachSchema(new SimpleSchema(PlayList.schema));
+
+
+PlayList.access = {
+  ...defaultAccessRules,
+  [Access.AUTHENTICATED]: [ 'create', 'view' ],
+}
 
 
 PlayList.before.insert((userId, doc) => {

@@ -13,9 +13,8 @@ import Papa from 'papaparse';
 import autoBind from 'react-autobind';
 
 import CompilerCollection from '../../../api/Compiler/Compiler';
-import TagCollection from '../../../api/Tag/Tag';
 import PlayList from '../PlayList/PlayList';
-import Tag from '../Tag/Tag';
+import Group from '../Group/Group';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LoadingSmall from '../../misc/Loading/LoadingSmall';
@@ -43,7 +42,7 @@ class Import extends React.Component {
     super(props);
 
     this.state = {
-      tagIds: [],
+      groupId: null,
       singleName: '',
       singleNumber: 1,
       singleDate: moment().format('YYYY-MM-DD'),
@@ -69,22 +68,22 @@ class Import extends React.Component {
 
 
   render() {
-    const { loading, compilers, tags, toImport } = this.props;
+    const { loading, compilers, groups, toImport } = this.props;
 
     if (loading) return ( <div className="Import"><Loading /></div> );
 
-    const { inProgress, tagIds, importedPlayLists, importFile, massImportText, lastImportIndex,
+    const { inProgress, groupId, importedPlayLists, importFile, massImportText, lastImportIndex,
       singleName, singleNumber, singleDate, singleCompilers, singleURL } = this.state;
 
     return (
       <div className="Import">
         <div className="import-spec">
-          <div className="import-spec-tag">
-            <h4 title="Optionally select a tag to add to the imported list(s).">Add tag:</h4>
+          <div className="import-spec-group">
+            <h4 title="Optionally select a group to add to the imported list(s).">Add group:</h4>
 
-            <Select className="tag"
-              value={tagIds} onChange={ values => this.setState({tagIds: values.map(v => v._id)}) }
-              options={tags} valueKey={"_id"} labelKey={"name"} multi={true} />
+            <Select className="group"
+              value={groupId} onChange={ value => this.setState({groupId: value ? value._id : null}) }
+              options={groups} valueKey={"_id"} labelKey={"name"} />
           </div>
 
           <div className="import-spec-single">
@@ -167,20 +166,22 @@ class Import extends React.Component {
   importFromSingle() {
     const { toImport } = this.props;
 
-    const { tagIds, singleName, singleNumber, singleDate, singleCompilers, singleURL } = this.state;
+    const { groupId, singleName, singleNumber, singleDate, singleCompilers, singleURL } = this.state;
+
+    const singleURLNoQuery = singleURL.split('?')[0];
 
     // Ignore if already processed.
-    if (toImport.find(ti => ti.url == singleURL)) return;
+    if (toImport.find(ti => ti.url == singleURLNoQuery)) return;
 
     const insertMetadata = {};
-    if (tagIds) insertMetadata.tagIds = tagIds;
+    if (groupId) insertMetadata.groupId = groupId;
     if (singleName) insertMetadata.name = singleName;
     if (singleNumber) insertMetadata.number = singleNumber;
     if (singleDate) insertMetadata.date = moment(singleDate).unix();
     if (singleCompilers) insertMetadata.compilerIds = singleCompilers.map(c => c._id);
     const importData = {
       insertMetadata,
-      url: singleURL,
+      url: singleURLNoQuery,
     }
 
     toImport.push(importData);
@@ -217,7 +218,7 @@ class Import extends React.Component {
 
   massImport(rows) {
     const { toImport, compilers } = this.props;
-    const { tagIds } = this.state;
+    const { groupId } = this.state;
 
     rows = rows.filter(row => row.join('').trim().length > 0);
 
@@ -243,11 +244,12 @@ class Import extends React.Component {
 
     for (let ri = 1; ri < rows.length; ri++) {
       let row = rows[ri];
+      const urlNoQuery = row[headingIndices.url].split('?')[0];
       // Ignore if already processed.
-      if (toImport.find(ti => ti.url == row[headingIndices.url])) return;
+      if (toImport.find(ti => ti.url == urlNoQuery)) return;
 
       const insertMetadata = {};
-      if (tagIds) insertMetadata.tagIds = tagIds;
+      if (groupId) insertMetadata.groupId = groupId;
       if (headingIndices.name != -1 && row[headingIndices.name]) insertMetadata.name = row[headingIndices.name];
       if (headingIndices.number != -1 && row[headingIndices.number]) insertMetadata.number = parseInt(row[headingIndices.number]);
       if (headingIndices.date != -1 && row[headingIndices.date]) insertMetadata.date = moment(row[headingIndices.date]).unix();
@@ -260,7 +262,7 @@ class Import extends React.Component {
       }
       const importData = {
         insertMetadata,
-        url: row[headingIndices.url],
+        url: urlNoQuery,
       }
       console.log('importData', importData);
       toImport.push(importData);
@@ -299,16 +301,17 @@ class Import extends React.Component {
 }
 
 
-export default withTracker(({match}) => {
+export default withTracker(({ match, roles }) => {
   const subCompilers = Meteor.subscribe('Compiler.all');
-  const subTags = Meteor.subscribe('Tag.all');
+  const user = Meteor.user();
+  const groupSelector = user && (roles.includes('admin') ? {} : {name: {$in: Object.keys(user.roles)}});
 
   Session.setDefault("Import_toImport", []);
 
   return {
-    loading: !subCompilers.ready() || !subTags.ready(),
+    loading: !subCompilers.ready(),
     compilers: CompilerCollection.find().fetch(),
-    tags: TagCollection.find().fetch(),
+    groups: user ? Meteor.groups.find(groupSelector).fetch() : [],
     toImport: Session.get("Import_toImport"),
   };
 })(Import);

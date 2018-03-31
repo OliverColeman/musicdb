@@ -31,11 +31,15 @@ const dragSource = {
 			id: props.track._id,
 			indexInPlaylist: props.track.indexInPlaylist,
 		}
-	},
+	}
 }
 
 const dragTarget = {
+	canDrop(props) {
+		return props.dropAllowed;
+	},
 	hover(props, monitor, component) {
+		if (!props.dropAllowed) return;
     const draggedTrackIndex = monitor.getItem().indexInPlaylist;
 		const hoveredTrackIndex = props.track.indexInPlaylist;
 		// Determine rectangle on screen.
@@ -149,7 +153,7 @@ export default flow(
   DropTarget(dndTypes.TRACK, dragTarget, connect => ({
   	connectDropTarget: connect.dropTarget(),
   })),
-  withTracker(({ match, trackId, track, viewType, noImage, noLinks, onClick, onDrag, onDrop, hoveredTop, hoveredBottom }) => {
+  withTracker(({ match, trackId, track, viewType, noImage, noLinks, onClick, onDrag, onDrop, dropAllowed, hoveredTop, hoveredBottom }) => {
     trackId = trackId || track && track._id || match.params.trackId
 
     viewType = viewType || "page";
@@ -165,7 +169,7 @@ export default flow(
       viewType,
       noImage,
       noLinks,
-      onDrag, onDrop,
+      onDrag, onDrop, dropAllowed,
       hoveredTop, hoveredBottom,
     };
   })

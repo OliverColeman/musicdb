@@ -1,4 +1,5 @@
 import { normaliseString, normaliseStringMatch, soundex, doubleMetaphone } from '../../modules/util';
+import Access from '../../modules/access';
 
 
 /**
@@ -80,4 +81,16 @@ const commonMusicItemFields = {
   },
 }
 
-export { commonMusicItemFields };
+
+const defaultAccessRules = {
+  [Access.UNAUTHENTICATED]: [ 'view' ],
+  [Access.AUTHENTICATED]: [ 'view' ],
+  [Access.OWN]: [ 'view', 'update', 'delete' ],
+  admin: [ 'view', 'update', 'delete', 'create' ],
+  // Note: If a user has the 'admin' role in the Roles.GLOBAL_GROUP then these
+  // rules apply across all groups, otherwise they appy only for the groups the
+  // user and (if applicable) item is in .
+}
+
+
+export { commonMusicItemFields, defaultAccessRules };

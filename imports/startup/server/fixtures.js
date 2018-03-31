@@ -1,15 +1,24 @@
 import moment from 'moment';
 
 import { importFromURL } from '../../modules/server/music/music_service';
-import Tag from '../../api/Tag/Tag';
 import PlayList from '../../api/PlayList/PlayList';
 
+// Add an admin user if no users defined.
+if (Meteor.users.find().count() == 0) {
+  const adminId = Accounts.createUser({
+    email: "admin@admin.admin",
+    password: "admin",
+    profile: { name: { first : "Admin", "last" : "" } }
+  });
+  Roles.addUsersToRoles(adminId, ['admin'], Roles.GLOBAL_GROUP);
+}
 
-// Add JD track list list if necessary.
-let jdList = Tag.findOne({name: "JD"});
-if (!jdList) {
-  const tagId = Tag.insert({name: "JD"});
-  jdList = Tag.findOne(tagId);
+
+// Add JD group if necessary.
+let jdGroup = Meteor.groups.findOne({name: "JD"});
+if (!jdGroup) {
+  const groupId = Meteor.groups.insert({name: "JD"});
+  jdGroup = Meteor.groups.findOne(groupId);
 }
 
 
@@ -21,7 +30,7 @@ if (!jdList) {
 //       'playlist',
 //       "https://open.spotify.com/user/petapieinthesky/playlist/67YquHJyGJabxbFnB9Yn4Y",
 //       {
-//         tagIds: [jdList._id],
+//         groupId: jdGroup._id,
 //         name: "JD 1",
 //         number: 1,
 //         date: moment().startOf('day').unix(),
@@ -33,7 +42,7 @@ if (!jdList) {
 //       'playlist',
 //       "https://open.spotify.com/user/1270621250/playlist/38VMSVnvuwhS6xLRNrc3DX",
 //       {
-//         tagIds: [jdList._id],
+//         groupId: jdGroup._id,
 //         name: "JD 2",
 //         number: 2,
 //         date: moment().startOf('day').subtract('1 weeks').unix(),

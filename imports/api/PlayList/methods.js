@@ -1,7 +1,8 @@
 import { Meteor } from 'meteor/meteor';
 import { check } from 'meteor/check';
-import rateLimit from '../../modules/rate-limit';
 
+import rateLimit from '../../modules/rate-limit';
+import Access from '../../modules/access';
 import PlayList from './PlayList';
 import Track from '../Track/Track';
 import { getSchemaFieldTypes, throwMethodException } from '../Utility/methodutils';
@@ -12,8 +13,11 @@ Meteor.methods({
     check(playListId, String);
     check(trackIds, [String]);
 
+    const playList = PlayList.findOne(playListId);
+
+    if (!Access.allowed(PlayList, 'update', playList, this.userId)) throwMethodException("Not allowed.");
+
     try {
-      const playList = PlayList.findOne(playListId);
       if (!playList) throw "Play list does not exist.";
       const tracks = Track.find({_id: {$in: trackIds}}).fetch();
       if (tracks.length != trackIds.length) throw "Invalid track id(s) provided.";
@@ -34,8 +38,11 @@ Meteor.methods({
     check(trackId, String);
     check(insertIndex, Number);
 
+    const playList = PlayList.findOne(playListId);
+
+    if (!Access.allowed(PlayList, 'update', playList, this.userId)) throwMethodException("Not allowed.");
+
     try {
-      const playList = PlayList.findOne(playListId);
       if (!playList) throw "Play list does not exist.";
       const trackIds = playList.trackIds;
       const currentIndex = trackIds.indexOf(trackId);
@@ -49,24 +56,13 @@ Meteor.methods({
     }
   },
 
-
-  'PlayList.remove': function PlayListRemove(id) {
-    check(id, String);
-
-    try {
-      return PlayList.remove(id);
-    } catch (exception) {
-      throwMethodException(exception);
-    }
-  },
 });
 
 
 rateLimit({
   methods: [
-    'PlayList.insert',
-    'PlayList.update',
-    'PlayList.remove',
+    'PlayList.addTracks',
+    'PlayList.moveTrack',
   ],
   limit: 5,
   timeRange: 1000,

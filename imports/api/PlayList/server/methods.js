@@ -3,6 +3,7 @@ import { check, Match } from 'meteor/check';
 import { Jobs } from 'meteor/msavin:sjobs';
 
 import rateLimit from '../../../modules/rate-limit';
+import Access from '../../../modules/access';
 import PlayList from '../PlayList';
 import { importFromURL } from '../../../modules/server/music/music_service';
 import { getSchemaFieldTypes, throwMethodException } from '../../Utility/methodutils';
@@ -14,10 +15,21 @@ Meteor.methods({
     check(insertMetadata, {
       name: Match.Maybe(String),
       compilerIds: Match.Maybe([String]),
-      tagIds: Match.Maybe([String]),
+      groupId: Match.Maybe(String),
       number: Match.Maybe(Number),
       date: Match.Maybe(Number),
     });
+
+    if (!Access.allowed(PlayList, 'create', null, this.userId)) throwMethodException("Not allowed.");
+
+    // Check user is allowed to put list in specified group.
+    const user = Meteor.users.findOne(this.userId);
+    const userGroups = Object.keys(user.roles);
+    if (insertMetadata.groupId &&
+        !Roles.userIsInRole(this.userId, ['admin'], Roles.GLOBAL_GROUP) &&
+        !userGroups.includes(insertMetadata.groupId)) {
+      throwMethodException("Not allowed.");
+    }
 
     try {
       const promise = importFromURL('playlist', url, insertMetadata);

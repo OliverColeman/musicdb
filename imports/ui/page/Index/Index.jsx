@@ -3,8 +3,7 @@ import React from 'react';
 import { Button } from 'react-bootstrap';
 import ReactMarkdown from 'react-markdown';
 
-import TagCollection from '../../../api/Tag/Tag';
-import Tag from '../../music/Tag/Tag';
+import Group from '../../music/Group/Group';
 
 import './Index.scss';
 
@@ -15,7 +14,7 @@ const Index = () => (
 
     <div className="previous-set-lists">
       <h3>Previous Set Lists</h3>
-      <Tag tag={TagCollection.findOne({name: "JD"})} />
+      <Group group={Meteor.groups.findOne({name: "JD"})} />
     </div>
   </div>
 );

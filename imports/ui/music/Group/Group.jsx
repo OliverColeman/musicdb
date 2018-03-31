@@ -6,7 +6,6 @@ import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 
-import TagCollection from '../../../api/Tag/Tag';
 import PlayListCollection from '../../../api/PlayList/PlayList';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
 import PlayList from '../PlayList/PlayList';
@@ -14,23 +13,23 @@ import Compiler from '../Compiler/Compiler';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 
-import './Tag.scss';
+import './Group.scss';
 
 
-class Tag extends React.Component {
+class Group extends React.Component {
   constructor(props) {
     super(props);
   }
 
   render() {
-    const { loading, loadingLists, tag, playLists, viewType } = this.props;
+    const { loading, loadingLists, group, playLists, viewType } = this.props;
 
     if (loading) return (<Loading />);
-    if (!tag) return (<NotFound />);
+    if (!group) return (<NotFound />);
 
     if (viewType == 'inline') return (
-      <Link to={`/tag/${tag._id}`} title={tag.name} className={"Tag inline-viewtype name"}>
-        {tag.name}
+      <Link to={`/group/${group._id}`} title={group.name} className={"Group inline-viewtype name"}>
+        {group.name}
       </Link>);
 
     const showLists = viewType == "page";
@@ -39,9 +38,9 @@ class Tag extends React.Component {
     const headers = hasDates ? ["Name", "Date", "Compiler(s)", "Length"] : ["Name", "Compiler(s)", "Length"];
 
     return (
-      <div className={"Tag " + viewType + "-viewtype"}>
+      <div className={"Group " + viewType + "-viewtype"}>
         <div className="item-header">
-          <Link className="name" to={`/tag/${tag._id}`}>{tag.name}</Link>
+          <Link className="name" to={`/group/${group._id}`}>{group.name}</Link>
         </div>
 
         { !showLists ? '' :
@@ -63,12 +62,12 @@ class Tag extends React.Component {
 }
 
 
-export default withTracker(({match, tag, tagId, viewType}) => {
+export default withTracker(({match, group, groupId, viewType}) => {
   viewType = viewType || "page";
-  const id = tagId || (tag && tag._id) || match && match.params.tagId;
+  const id = groupId || (group && group._id) || match && match.params.groupId;
 
-  const sub = tag ? false : Meteor.subscribe('Tag.withId', id);
-  const subLists = viewType == 'page' && Meteor.subscribe('PlayList.withTagId', id);
+  const sub = group ? false : Meteor.subscribe('Access.group', id);
+  const subLists = viewType == 'page' && Meteor.subscribe('PlayList.withGroupId', id);
 
   const sortOptions = {
     number: -1,
@@ -79,8 +78,8 @@ export default withTracker(({match, tag, tagId, viewType}) => {
   return {
     loading: sub && !sub.ready(),
     loadingLists: subLists && !subLists.ready(),
-    tag: tag || TagCollection.findOne(id),
-    playLists: subLists && PlayListCollection.find({tagIds: id}, {sort: sortOptions}).fetch(),
+    group: group || Meteor.groups.findOne(id),
+    playLists: subLists && PlayListCollection.find({groupId: id}, {sort: sortOptions}).fetch(),
     viewType,
   };
-})(Tag);
+})(Group);
