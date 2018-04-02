@@ -103,7 +103,7 @@ class Track extends React.Component {
           { track.artistIds && track.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" noLinks={noLinks} />)) }
         </div>
 
-        { track.albumId && <Album albumId={track.albumId} viewType="track" viewType="inline" noLinks={noLinks} /> }
+        { track.albumId ? <Album albumId={track.albumId} viewType="inline" noLinks={noLinks} /> : <div /> }
 
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
 
@@ -128,7 +128,7 @@ class Track extends React.Component {
           { track.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" noLinks={noLinks} />)) }
         </div>
 
-        { track.albumId && <Album albumId={track.albumId} viewType="inline" noLinks={noLinks} /> }
+        { track.albumId ? <Album albumId={track.albumId} viewType="inline" noLinks={noLinks} /> : <div /> }
 
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
 

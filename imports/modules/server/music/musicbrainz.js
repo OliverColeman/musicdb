@@ -26,8 +26,6 @@ const typeMapping = {
   'playlist':  false,
 }
 
-const durationMatchMargin = 4;
-
 
 /**
  * Functions to import items from MusicBrainz.
@@ -428,7 +426,7 @@ const getTrack = async (ids, details, insertMetadata) => {
     }
 
     track = Track.findByName(name, artist, album)
-      .filter(t => Math.abs(t.duration - duration) < durationMatchMargin)
+      .filter(t => Math.abs(t.duration - duration) < MusicService.durationMatchMargin)
       .find(t=>!!t);
   }
 
@@ -447,14 +445,14 @@ const getTrack = async (ids, details, insertMetadata) => {
           artist: normaliseString(details.artistNames[0]),
           limit: 50,
         }
-        if (details.albumName) query.release = details.albumName;
+        if (details.albumName) query.release = normaliseString(details.albumName);
         const results = await mbAPI.searchAsync('recording', query);
 
         // See if any results match across track name, (first) artist name,
         // album name, and are within 1 second duration.
         mbTrack = results.recordings && results.recordings.find(mbt =>
           normaliseStringMatch(mbt.title, details.trackName) &&
-          (Math.abs(mbt.length / 1000 - details.duration) < durationMatchMargin) &&
+          (Math.abs(mbt.length / 1000 - details.duration) < MusicService.durationMatchMargin) &&
           mbt['artist-credit'].find(ac => normaliseStringMatch(ac.artist.name, details.artistNames[0])) &&
           (!details.albumName || mbt.releases.find(r => normaliseStringMatch(r.title, details.albumName)))
         );
@@ -543,7 +541,7 @@ const getTrack = async (ids, details, insertMetadata) => {
       }
 
       // Determine if the specified duration matches the duration of the MB track.
-      const durationMatch = !details.duration || (Math.abs(mbTrack.length / 1000 - details.duration) < durationMatchMargin);
+      const durationMatch = !details.duration || (Math.abs(mbTrack.length / 1000 - details.duration) < MusicService.durationMatchMargin);
 
       // Create the Track.
       track = {

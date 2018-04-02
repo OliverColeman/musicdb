@@ -14,7 +14,7 @@ import ProgressMonitor from '../../../api/ProgressMonitor/ProgressMonitor';
  * Subclasses should override one or both of importFromURL and importFromIds.
  * TODO this is a first bash at this API, likely to change.
  */
-export default class MusicService  {
+class MusicService  {
   constructor(name, machineName, url) {
     this.name = name;
     this.machineName = machineName;
@@ -84,3 +84,9 @@ export default class MusicService  {
     throw `Link not supported by ${this.name}.`;
   }
 }
+
+
+MusicService.durationMatchMargin = 4;
+
+
+export default MusicService;

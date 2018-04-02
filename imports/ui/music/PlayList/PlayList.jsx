@@ -178,7 +178,7 @@ class PlayList extends React.Component {
           <ScrollArea speed={0.8} horizontal={false} className="tracks-wrapper">
             <div className="tracks">
               <div className="header-row">
-                { ["Cover", "Title", "Artist", "Album", "Length"].map(h => (
+                { ["Cover", "Title", "Artist", "Album", "Length", "Links"].map(h => (
                   <div className={"header-cell header-" + h} key={h}>{h}</div>
                 ))}
               </div>
@@ -188,6 +188,7 @@ class PlayList extends React.Component {
                   track={track}
                   viewType="list"
                   noLinks={noLinks}
+                  showServiceLinks={true}
                   onDrag={this.handleTrackDrag}
                   onDrop={this.handleTrackDrop}
                   dropAllowed={editable}

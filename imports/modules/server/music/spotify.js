@@ -15,9 +15,6 @@ import Track from '/imports/api/Track/Track';
 // TODO REMOVE market specification in searches when this is resolved: https://github.com/spotify/web-api/issues/813
 
 
-const durationMatchMargin = 4;
-
-
 /**
  * Functions to import items from spotify.
  * @see MusicService
@@ -480,7 +477,7 @@ const getTrack = async (ids, details, insertMetadata) => {
     }
 
     track = Track.findByName(name, artist, album)
-      .filter(t => Math.abs(t.duration - duration) < durationMatchMargin)
+      .filter(t => Math.abs(t.duration - duration) < MusicService.durationMatchMargin)
       .find(t=>!!t);
   }
 
@@ -505,7 +502,7 @@ const getTrack = async (ids, details, insertMetadata) => {
           normaliseStringMatch(track.name, details.trackName) &&
           normaliseStringMatch(track.album.name, details.albumName) &&
           track.artists.find(artist => normaliseStringMatch(artist.name, details.artistNames[0])) &&
-          (Math.abs(track.duration_ms / 1000 - details.duration) < durationMatchMargin)
+          (Math.abs(track.duration_ms / 1000 - details.duration) < MusicService.durationMatchMargin)
         );
 
         // If we didn't find an exact matching track, see if we can find one with different duration.
@@ -580,7 +577,7 @@ const getTrack = async (ids, details, insertMetadata) => {
       artists = Artist.find({spotifyId: {$in: spotifyArtistIds}});
 
       // Determine if the specified duration matches the duration of the Spotify track.
-      const durationMatch = !details.duration || (Math.abs(spotifyTrack.duration_ms / 1000 - details.duration) < durationMatchMargin);
+      const durationMatch = !details.duration || (Math.abs(spotifyTrack.duration_ms / 1000 - details.duration) < MusicService.durationMatchMargin);
       // Create the Track.
       track = {
         name: spotifyTrack.name,

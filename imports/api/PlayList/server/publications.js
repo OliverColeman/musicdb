@@ -22,7 +22,7 @@ publishComposite('PlayList.withId', function withId(documentId, includeTracks) {
       {
         find(playList) {
           if (includeTracks) return Track.find({ _id: {$in: playList.trackIds }});
-          return [];
+          return null;
         }
       }
     ]

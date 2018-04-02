@@ -15,7 +15,12 @@ const convertSecondsToHHMMSS = (time, omitHoursIfZero) => {
 }
 
 // For matching names ignoring case, punctuation, multiple and start/end white space characters.
-const normaliseString = s => s.trim().toLowerCase().replace(/[^a-z0-9\s]*/g, '').replace(/\s+/g, ' ');
+const normaliseString = s => s.toLowerCase()
+                              .replace(/\(.*\)/g, '') // remove anything in brackets
+                              .replace(/[^a-z0-9\s]*/g, '') // alphanumeric only
+                              .replace(/\s+/g, ' ') // remove multiple spaces
+                              .replace(/(\s\d{4,4})?\sremaster(ed)?(\sversion)?(\s\d{4,4})?/g, '') //remove "remastered" and variants.
+                              .trim();
 const normaliseStringMatch = (s1, s2) => normaliseString(s1) == normaliseString(s2);
 
 /**

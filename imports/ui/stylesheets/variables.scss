@@ -148,7 +148,8 @@ $small-music-image: 5.5em;
   .album-image, .header-Cover {
     width: $small-music-image;
   }
-  .header-Length, .duration, .ServiceLinks {
+  .header-Length, .duration,
+  .header-Links, .ServiceLinks {
     width: 4.5em;
   }
 }
