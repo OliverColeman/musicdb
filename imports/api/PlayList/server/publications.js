@@ -1,26 +1,31 @@
 import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
+import { publishComposite } from 'meteor/reywood:publish-composite';
+
 import PlayList from '../PlayList';
 import Track from '../../Track/Track';
+
 
 Meteor.publish('PlayList.all', function all() {
   return PlayList.find();
 });
 
-Meteor.publish('PlayList.withId', function withId(documentId, spotifyId) {
-  check(documentId, Match.Maybe(String));
-  check(spotifyId,  Match.Maybe(String));
+publishComposite('PlayList.withId', function withId(documentId, includeTracks) {
+  check(documentId, String);
+  check(includeTracks, Match.Maybe(Boolean));
 
-  return PlayList.find(documentId ? { _id: documentId } : {spotifyId});
-});
-
-Meteor.publish('PlayList.tracks', function withId(documentId, spotifyId) {
-  check(documentId, Match.Maybe(String));
-  check(spotifyId,  Match.Maybe(String));
-
-  const list = PlayList.findOne(documentId ? { _id: documentId } : {spotifyId});
-  if (list) {
-    return Track.find({ _id: {$in: list.trackIds }});
+  return {
+    find() {
+      return PlayList.find({_id: documentId});
+    },
+    children: [
+      {
+        find(playList) {
+          if (includeTracks) return Track.find({ _id: {$in: playList.trackIds }});
+          return [];
+        }
+      }
+    ]
   }
 });
 

@@ -34,7 +34,7 @@ class SearchTrackResults extends React.Component {
 
     const tracksScored = tracks.map(t => {
       let scores = [levenshteinScore(trackName, t.name)];
-      if (albumName) scores.push(levenshteinScore(albumName, AlbumCollection.findOne({_id: t.albumId}).name));
+      if (albumName && t.albumId) scores.push(levenshteinScore(albumName, AlbumCollection.findOne({_id: t.albumId}).name));
       // Use best scoring artist for the track.
       if (artistName) scores.push(Math.min(ArtistCollection.find({_id: {$in: t.artistIds}}).map(a => levenshteinScore(artistName, a.name))));
       return { ...t, score: _.mean(scores)};
@@ -48,7 +48,7 @@ class SearchTrackResults extends React.Component {
           :
           <div className="track-list">
             { tracksSorted.map(trk => (
-              <Track track={trk} viewType="list" noImage={true} noLinks={true} key={trk._id} onClick={() => onSelect(trk)} />
+              <Track track={trk} viewType="list" noImage={true} noLinks={true} showServiceLinks={true} key={trk._id} onClick={() => onSelect(trk)} />
             ))}
           </div>
         }

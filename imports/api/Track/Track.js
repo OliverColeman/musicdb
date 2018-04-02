@@ -48,22 +48,25 @@ Track.attachSchema(new SimpleSchema(Track.schema));
  *
  * @param {string} name - The name of the track.
  * @param {string|Object} artist - Either an artist name or Artist document.
- * @param {string|Object} album - Either an album name or an Album document.
+ * @param {string|Object} album - Either an album name or an Album document. Optional.
  * @return {Array} The matching Tracks.
  */
 Track.findByName = (name, artist, album) => {
   name = normaliseString(name);
   const artistNameGiven = typeof artist == 'string';
   artist = artistNameGiven ? normaliseString(artist) : artist._id;
-  const albumNameGiven = typeof album == 'string';
-  album = albumNameGiven ? normaliseString(album) : album._id;
+  const albumNameGiven = album && typeof album == 'string';
+  if (album) album = albumNameGiven ? normaliseString(album) : album._id;
 
   // Search Track collection by track name then filter for album and artists.
   const tracks = Track.find({nameNormalised: name}).fetch();
   return tracks.filter(t => {
-    // Check album.
-    if (albumNameGiven && Album.findOne(t.albumId).nameNormalised != album) return false;
-    if (!albumNameGiven && t.albumId != album) return false;
+    // Check album if given.
+    if (album) {
+      if (!t.albumId) return false;
+      if (albumNameGiven && Album.findOne(t.albumId).nameNormalised != album) return false;
+      if (!albumNameGiven && t.albumId != album) return false;
+    }
 
     // Check artist.
     const trackArtists = artistNameGiven ? t.artistIds.map(aid => Artist.findOne(aid).nameNormalised) : t.artistIds;

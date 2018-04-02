@@ -123,13 +123,13 @@ export { importFromURL, importFromIds, importFromSearch };
 
 // Link to (other) music services upon insert.
 Track.after.insert((userId, track) => {
-  Jobs.run("music.linkTrackToAllServices", track);
+  Jobs.run("music.linkTrackToAllServices", track._id);
 });
 
 Jobs.register({
-  "music.linkTrackToAllServices": function (track) {
+  "music.linkTrackToAllServices": function (trackId) {
     try {
-      linkTrackToAllServices(track).await();
+      linkTrackToAllServices(Track.findOne(trackId)).await();
     }
     catch(error) {
       console.error(error);
@@ -138,6 +138,7 @@ Jobs.register({
   }
 });
 
+linkTrackToAllServices(Track.findOne('pCP76Gk95XppqLewn'));
 
 //importFromURL('playlist', "https://open.spotify.com/user/1255543442/playlist/3daHzs65o0T2vzWBIZdab9").await();
 

@@ -9,6 +9,7 @@ import ArtistCollection from '../../../api/Artist/Artist';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
+import ServiceLinks from '../ServiceLinks/ServiceLinks';
 
 import './Artist.scss';
 
@@ -42,9 +43,7 @@ class Artist extends React.Component {
         <div className="item-header">
           <LinkOrNot link={!noLinks} className="name" to={`/artist/${artist._id}`}>{artist.name}</LinkOrNot>
 
-          {viewType != 'page' || !artist.spotifyId ? '' :
-            <a className="link spotify" title="Show in Spotify" target="_blank" href={`https://open.spotify.com/artist/${artist.spotifyId}`} />
-          }
+          {viewType == 'page' && <ServiceLinks type='artist' item={artist} />}
         </div>
       </div>
     );

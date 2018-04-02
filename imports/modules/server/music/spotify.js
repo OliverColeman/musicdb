@@ -64,10 +64,33 @@ export default class Spotify extends MusicService {
   /**
    * @see MusicService
    */
-  importFromSearch(type, names) {
+  async importFromSearch(type, names) {
     switch (type) {
-      case 'album':     return getAlbum(null, names);
-      case 'track':     return getTrack(null, names);
+      // TODO should be returning multiple but this isn't actually used at the moment.
+      case 'album': return getAlbum(null, names);
+
+      case 'track':
+        //console.log(" s search");
+        let query = `track:"${normaliseString(names.trackName)}"`;
+        if (names.artistNames && names.artistNames.length) {
+          query += ` artist:"${normaliseString(names.artistNames[0])}"`;
+        }
+        if (names.albumName) {
+          query += ` album:"${normaliseString(names.albumName)}"`;
+        }
+        const spotifyAPI = await getSpotifyAPI();
+        //console.log("s" + query);
+        const response = await spotifyAPI.search(query, ['track'], {market: 'AU', limit: 50});
+
+        //console.log("s found " + response.body.tracks.items.length);
+
+        const tracks = [];
+        for (let spotifyTrack of response.body.tracks.items) {
+          tracks.push(await getTrack({spotifyId: spotifyTrack.id}, {spotifyTrack}));
+        }
+        //console.log("s imported " + tracks.length);
+        return tracks;
+
     }
     throw "Unsupported music item type: " + type;
   }
@@ -83,13 +106,18 @@ export default class Spotify extends MusicService {
           artistIds: item.artistIds,
         });
       case 'track':
-        const artistNames = Artist.find({_id: {$in: item.artistIds}}).fetch().map(a => a.name);
-        return getTrack({_id: item._id}, {
+        //console.log("link ", item);
+        // All spotify tracks have an album, don't search on spotify if no album defined.
+        if (!item.albumId) return null;
+        const details = {
           trackName: item.name,
+          artistNames: Artist.find({_id: {$in: item.artistIds}}).fetch().map(a => a.name),
           albumName: Album.findOne(item.albumId).name,
-          artistNames,
           duration: item.duration,
-        });
+        };
+        //console.log("details ", details);
+
+        return getTrack({_id: item._id}, details);
     }
     throw "Unsupported music item type: " + type;
   }
@@ -330,10 +358,13 @@ const getAlbum = async (ids, details, insertMetadata) => {
           for (let sa of spotifyArtists) {
             newArtists.push(await getArtist({spotifyId: sa.id}, {spotifyArtist: sa}));
           }
-          Album.update(album._id, {
-            $push: {artistIds: newArtists.map(a => a._id)},
-            $set: {needsReview: true}
-          });
+
+          if (album) {
+            Album.update(album._id, {
+              $push: {artistIds: { $each: newArtists.map(a => a._id)}},
+              $set: {needsReview: true}
+            });
+          }
         }
 
         // Return the updated Album.
@@ -413,7 +444,7 @@ const getTrack = async (ids, details, insertMetadata) => {
   insertMetadata = insertMetadata || {};
 
   let spotifyTrack = details.spotifyTrack || null; //Spotify recording/track object.
-  let spotifyId = ids.spotifyId || spotifyTrack && spotifyAlbum.id;
+  let spotifyId = ids.spotifyId || spotifyTrack && spotifyTrack.id;
   let spotifyAlbums, spotifyArtists, spotifyArtist, spotifyAlbum;
   let name, artist, artists, album, duration;
   const spotifyAPI = await getSpotifyAPI();
@@ -463,6 +494,7 @@ const getTrack = async (ids, details, insertMetadata) => {
         spotifyTrack = response.body;
       }
       else {
+
         //console.log("searching for track data from spotify", details);
         const query = `track:"${normaliseString(details.trackName)}" artist:"${normaliseString(details.artistNames[0])}" album:"${normaliseString(details.albumName)}"`;
         response = await spotifyAPI.search(query, ['track'], {market: 'AU'});
@@ -484,7 +516,6 @@ const getTrack = async (ids, details, insertMetadata) => {
             normaliseStringMatch(track.album.name, details.albumName) &&
             track.artists.find(artist => normaliseStringMatch(artist.name, details.artistNames[0]))
           );
-
           //if (spotifyTrack) console.log("found diff duration: " + details.duration + " : " + (spotifyTrack.duration_ms / 1000));
         }
       }
@@ -527,10 +558,14 @@ const getTrack = async (ids, details, insertMetadata) => {
           for (let sa of spotifyArtists) {
             newArtists.push(await getArtist({spotifyId: sa.id}, {spotifyArtist: sa}));
           }
-          Track.update(track._id, {
-            $push: {artistIds: newArtists.map(a => a._id)},
-            $set: {needsReview: true}
-          });
+          try {
+            Track.update(track._id, {
+              $push: { artistIds: { $each: newArtists.map(a => a._id) } },
+              $set: {needsReview: true}
+            });
+          } catch (e) {
+            console.error(e.message, newArtists);
+          }
         }
 
         // Return the updated Track.

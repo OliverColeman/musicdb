@@ -51,16 +51,25 @@ publishComposite('search.track', function search(artistName, albumName, trackNam
   return {
     find() {
       const results = findBySoundexOrDoubleMetaphone(Track, soundex(trackName), doubleMetaphone(trackName), additionalSelectors, limit);
-      if (results.count() < 5) {
+
+      if (results.count() < limit) {
         Meteor.defer(async () => {
-        try {
+          try {
             await importFromSearch('musicbrainz', 'track', { trackName, albumName, artistNames: [artistName] });
+          }
+          catch(e) {
+            console.error(e);
+          }
+
+          try {
+            await importFromSearch('spotify', 'track', { trackName, albumName, artistNames: [artistName] });
           }
           catch(e) {
             console.error(e);
           }
         });
       }
+
       return results;
     },
     children: [

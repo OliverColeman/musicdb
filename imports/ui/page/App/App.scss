@@ -13,7 +13,8 @@ body {
 .App {
   background-color: rgba(0,0,0,0.85);
   height: 100vh;
-  overflow: auto;
+  display: flex;
+  flex-flow: column;
 
   > * {
     color: #fff;
@@ -24,12 +25,20 @@ body {
   }
 
   > .container {
+    flex: 1;
+    overflow: auto;
     margin-bottom: 20px;
     padding: 10px 10px 15px;
     border-radius: $default-border-radius;
+    width: 100%;
+
+    > * {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
   }
 
- .verify-email {
+  .verify-email {
     margin-bottom: 0;
     padding: 0;
     border-top: none;

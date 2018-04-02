@@ -9,6 +9,7 @@ import CompilerCollection from '../../../api/Compiler/Compiler';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
+import ServiceLinks from '../ServiceLinks/ServiceLinks';
 
 
 class Compiler extends React.Component {
@@ -34,9 +35,7 @@ class Compiler extends React.Component {
         <div className="item-header">
           <LinkOrNot link={!noLinks} className="name" to={`/compiler/${compiler._id}`}>{compiler.name}</LinkOrNot>
 
-          {viewType != 'page' || !compiler.spotifyId ? '' :
-            <a className="link spotify" title="Show in Spotify" target="_blank" href={`https://open.spotify.com/user/${compiler.spotifyId}`} />
-          }
+          {viewType == 'page' && <ServiceLinks type='compiler' item={compiler} />}
         </div>
       </div>
     );

@@ -20,6 +20,7 @@ import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
 import dndTypes from '../DnDTypes';
+import ServiceLinks from '../ServiceLinks/ServiceLinks';
 
 import './Track.scss';
 
@@ -67,7 +68,7 @@ class Track extends React.Component {
   }
 
   render() {
-    const { loading, loadingPlayLists, playLists, track, viewType, noImage, noLinks, onClick,
+    const { loading, loadingPlayLists, playLists, track, viewType, noImage, noLinks, showServiceLinks, onClick,
             isDragging, hoveredTop, hoveredBottom, connectDragSource, connectDropTarget, } = this.props;
 
     if (loading) return (<Loading />);
@@ -79,6 +80,7 @@ class Track extends React.Component {
     if (viewType == 'inline') return connectDragSource(connectDropTarget(
       <LinkOrNot link={!noLinks} to={`/track/${track._id}`} title={track.name} className="Track inline-viewtype name">
         {track.name}
+				{showServiceLinks && <ServiceLinks type='track' item={track} />}
       </LinkOrNot>
     ));
 
@@ -89,7 +91,7 @@ class Track extends React.Component {
       >
         { noImage ? '' :
           <div className="album album-image image">
-            { !track.albumId ? '' : <Album albumId={track.albumId} viewType="track" viewType="image-small" /> }
+            { track.albumId && <Album albumId={track.albumId} viewType="track" viewType="image-small" /> }
           </div>
         }
 
@@ -98,15 +100,14 @@ class Track extends React.Component {
         </LinkOrNot>
 
         <div className="artists inline-list">
-          { track.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" noLinks={noLinks} />)) }
+          { track.artistIds && track.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" noLinks={noLinks} />)) }
         </div>
 
-        { !track.albumId ?
-          <div>[unknown]</div>[unknown] :
-          <Album albumId={track.albumId} viewType="track" viewType="inline" noLinks={noLinks} />
-        }
+        { track.albumId && <Album albumId={track.albumId} viewType="track" viewType="inline" noLinks={noLinks} /> }
 
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
+
+				{showServiceLinks && <ServiceLinks type='track' item={track} />}
       </div>
     ));
 
@@ -115,17 +116,19 @@ class Track extends React.Component {
       <div className={"Track " + viewType + "-viewtype"}>
         <div className="item-header">
           <LinkOrNot link={!noLinks} className="name" to={`/track/${track._id}`}>{track.name}</LinkOrNot>
+
+					{showServiceLinks && <ServiceLinks type='track' item={track} />}
         </div>
 
         <div className="album album-image image">
-          { !track.albumId ? '' : <Album albumId={track.albumId} viewType="track" viewType="image-medium" /> }
+          { track.albumId && <Album albumId={track.albumId} viewType="track" viewType="image-medium" /> }
         </div>
 
         <div className="artists inline-list">
           { track.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" noLinks={noLinks} />)) }
         </div>
 
-        <Album albumId={track.albumId} viewType="inline" noLinks={noLinks} />
+        { track.albumId && <Album albumId={track.albumId} viewType="inline" noLinks={noLinks} /> }
 
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
 
@@ -153,10 +156,11 @@ export default flow(
   DropTarget(dndTypes.TRACK, dragTarget, connect => ({
   	connectDropTarget: connect.dropTarget(),
   })),
-  withTracker(({ match, trackId, track, viewType, noImage, noLinks, onClick, onDrag, onDrop, dropAllowed, hoveredTop, hoveredBottom }) => {
-    trackId = trackId || track && track._id || match.params.trackId
+  withTracker(({ match, trackId, track, viewType, noImage, noLinks, showServiceLinks, onClick, onDrag, onDrop, dropAllowed, hoveredTop, hoveredBottom }) => {
+    trackId = trackId || track && track._id || match && match.params.trackId
 
     viewType = viewType || "page";
+		if (typeof showServiceLinks == 'undefined') showServiceLinks = viewType == "page";
     const subscription = track ? null : Meteor.subscribe('Track.withId', trackId);
 
     const subPlayLists = viewType == 'page' && Meteor.subscribe('Track.playLists', trackId);
@@ -169,6 +173,7 @@ export default flow(
       viewType,
       noImage,
       noLinks,
+			showServiceLinks,
       onDrag, onDrop, dropAllowed,
       hoveredTop, hoveredBottom,
     };

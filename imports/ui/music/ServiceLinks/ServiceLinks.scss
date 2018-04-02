@@ -1,0 +1,16 @@
+.service-link {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background: transparent no-repeat center center;
+  background-size: contain;
+  margin-left: 8px;
+
+  &.spotify {
+    background-image: url('/spotify.png');
+  }
+
+  &.musicbrainz {
+    background-image: url('/musicbrainz.png');
+  }
+}

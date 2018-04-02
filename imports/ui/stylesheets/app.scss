@@ -45,14 +45,19 @@ a, a:hover, a:visited, a:active, a:focus {
   }
 }
 
-.link {
-  display: inline-block;
+.scrollarea {
+  .scrollbar-container {
+    background-color: #777;
 
-  &.spotify {
-    width: 16px;
-    height: 16px;
-    display: inline-block;
-    background: url('/spotify.png') no-repeat center center;
-    background-size: contain;
+    &.vertical {
+      width: 14px;
+      border-radius: 5px;
+
+      .scrollbar {
+        background-color: #fff;
+        width: 12px;
+        border-radius: 4px;
+      }
+    }
   }
 }

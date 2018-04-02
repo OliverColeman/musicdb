@@ -7,6 +7,7 @@ import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 import moment from 'moment';
 import update from 'immutability-helper';
+import ScrollArea from 'react-scrollbar';
 
 import Access from '../../../modules/access';
 import PlayListCollection from '../../../api/PlayList/PlayList';
@@ -20,6 +21,7 @@ import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
 import SearchTracks from '../Track/SearchTracks';
+import ServiceLinks from '../ServiceLinks/ServiceLinks';
 
 import './PlayList.scss';
 
@@ -67,7 +69,7 @@ class PlayList extends React.Component {
 
 
   render() {
-    const { loading, loadingTracks, playList, viewType, showDate, noLinks, user } = this.props;
+    const { loading, playList, viewType, showDate, noLinks, user, tracks } = this.props;
     const { showSearchTracks, draggedTrackIndex, insertIndex } = this.state;
 
     if (loading) return (<Loading />);
@@ -76,66 +78,104 @@ class PlayList extends React.Component {
 
     const editable = Access.allowed(PlayListCollection, 'update', playList, user);
 
+
     if (viewType == 'inline') return (
       <LinkOrNot link={!noLinks} to={`/list/${playList._id}`} title={playList.name} className={"PlayList inline-viewtype name"}>
         {playList.name}
       </LinkOrNot>);
 
-    const showTracks = viewType == "page";
-    // Get Tracks in order (when/if available and applicable).
-    let tracks = showTracks && !loadingTracks && playList.trackIds.map((trackId, idx) => {
-      return { indexInPlaylist: idx, ...TrackCollection.findOne(trackId)}
-    });
 
-    return (
+    if (viewType != 'page') return (
       <div className={"PlayList " + viewType + "-viewtype"}>
         <div className="item-header">
           <LinkOrNot link={!noLinks} className="name" to={`/list/${playList._id}`}>{playList.name}</LinkOrNot>
-
-          {viewType != 'page' || !playList.spotifyUserId || !playList.spotifyId ? '' :
-            <a className="link spotify" title="Show in Spotify" target="_blank" href={`https://open.spotify.com/user/${playList.spotifyUserId}/playlist/${playList.spotifyId}`} />
-          }
         </div>
 
-        { !showDate ? '' :
+        { showDate &&
           <div className="date">
-            { viewType == 'page' ? <Label>Date:</Label> : '' }
             <span className="data">{moment.unix(playList.date).format('YYYY-MM-DD')}</span>
           </div>
         }
 
         <div className="compilers inline-list">
-          { viewType == 'page' ? <Label>Created by:</Label> : '' }
           <span className="data">
             { playList.compilerIds.map(compilerId => (<Compiler compilerId={compilerId} viewType="inline" noLinks={noLinks} key={compilerId} />)) }
           </span>
         </div>
 
         <div className="duration">
-          { viewType == 'page' ? <Label>Duration:</Label> : '' }
           <span className="data">{convertSecondsToHHMMSS(playList.duration)}, {playList.trackIds.length}&nbsp;tracks</span>
         </div>
+      </div>
+    );
 
-        { viewType != 'page' || !playList.groupId ? '' : <div className="group">
-          <Label>Group:</Label>
-          <span className="data">
-            <Group groupId={playList.groupId} viewType="inline" />
-          </span>
-        </div>}
 
-        { viewType != 'page' ? '' : <div className="tags inline-list">
-          <Label>Tags:</Label>
-          <span className="data">
-            { playList.tagIds && playList.tagIds.map(tagId => (<Tag tagId={tagId} viewType="inline" key={tagId} />)) }
-          </span>
-        </div>}
+    const showTracks = tracks.length > 0;
+    // Get Tracks in order (when/if available and applicable).
+    const coveredTracks = [];
+    const tracksMod = showTracks && playList.trackIds.map((trackId, idx) => {
+      // We keep track of when tracks are duplicated, so we can make sure to provide a unique key for the React map below.
+      let isRepeat = coveredTracks.includes(trackId);
+      if (!isRepeat) coveredTracks.push(trackId);
+      let track = tracks.find(t => t._id == trackId);
+      if (!track) return null;
+      return {
+        indexInPlaylist: idx,
+        keyUniquifier: isRepeat ? idx : '',
+        ...track
+      }
+    }).filter(t => !!t);
 
-        { viewType != 'page' || !editable ? '' :
-          <Button className='btn btn-success' onClick={() => this.setState({showSearchTracks: true})}>Add track</Button>
-        }
+    return (
+      <div className={"PlayList " + viewType + "-viewtype"}>
+        <div className="playlist-details">
+          <div className="item-header">
+            <LinkOrNot link={!noLinks} className="name" to={`/list/${playList._id}`}>{playList.name}</LinkOrNot>
+            <ServiceLinks type='playlist' item={playList} />
+          </div>
 
-        { !showTracks ? '' :
-          <div className="tracks-wrapper">
+          { showDate &&
+            <div className="date">
+              <Label>Date:</Label>
+              <span className="data">{moment.unix(playList.date).format('YYYY-MM-DD')}</span>
+            </div>
+          }
+
+          <div className="compilers inline-list">
+            <Label>Created by:</Label>
+            <span className="data">
+              { playList.compilerIds.map(compilerId => (<Compiler compilerId={compilerId} viewType="inline" noLinks={noLinks} key={compilerId} />)) }
+            </span>
+          </div>
+
+          <div className="duration">
+            <Label>Duration:</Label>
+            <span className="data">{convertSecondsToHHMMSS(playList.duration)}, {playList.trackIds.length}&nbsp;tracks</span>
+          </div>
+
+          { playList.groupId &&
+            <div className="group">
+              <Label>Group:</Label>
+              <span className="data">
+                <Group groupId={playList.groupId} viewType="inline" />
+              </span>
+            </div>
+          }
+
+          <div className="tags inline-list">
+            <Label>Tags:</Label>
+            <span className="data">
+              { playList.tagIds && playList.tagIds.map(tagId => (<Tag tagId={tagId} viewType="inline" key={tagId} />)) }
+            </span>
+          </div>
+
+          { editable &&
+            <Button className='btn btn-success' onClick={() => this.setState({showSearchTracks: true})}>Add track</Button>
+          }
+        </div>
+
+        { showTracks &&
+          <ScrollArea speed={0.8} horizontal={false} className="tracks-wrapper">
             <div className="tracks">
               <div className="header-row">
                 { ["Cover", "Title", "Artist", "Album", "Length"].map(h => (
@@ -143,7 +183,7 @@ class PlayList extends React.Component {
                 ))}
               </div>
 
-              { loadingTracks ? (<Loading />) : tracks.map((track, index) => (
+              { tracksMod.map((track, index) => (
                 <Track
                   track={track}
                   viewType="list"
@@ -151,13 +191,13 @@ class PlayList extends React.Component {
                   onDrag={this.handleTrackDrag}
                   onDrop={this.handleTrackDrop}
                   dropAllowed={editable}
-                  key={track._id}
+                  key={track._id + track.keyUniquifier}
                   hoveredTop={index==insertIndex}
                   hoveredBottom={index==insertIndex-1}
                 />
               ))}
             </div>
-          </div>
+          </ScrollArea>
         }
 
         <Modal className="playlist-add-track" show={showSearchTracks}>
@@ -174,21 +214,21 @@ class PlayList extends React.Component {
   }
 }
 
-export default withTracker(({match, playList, playListId, spotifyId, viewType, showDate, noLinks}) => {
+export default withTracker(({match, playList, playListId, viewType, showDate, noLinks}) => {
   viewType = viewType || "page";
   playListId = playListId || (playList && playList._id) || (match && match.params && match.params.playListId);
 
   if (typeof showDate == 'undefined') showDate = viewType == 'page';
+  const showTracks = viewType == "page";
 
-  const subList = playList ? null : Meteor.subscribe('PlayList.withId', playListId, spotifyId);
-  const subTracks = viewType == 'page' && Meteor.subscribe('PlayList.tracks', playListId, spotifyId);
+  const subList = playList ? null : Meteor.subscribe('PlayList.withId', playListId, showTracks);
 
-  const listSelector = spotifyId ? { spotifyId } : { _id: playListId };
+  playList = playList || PlayListCollection.findOne(playListId);
 
   return {
     loading: subList && !subList.ready(),
-    loadingTracks: subTracks && !subTracks.ready(),
-    playList: playList || PlayListCollection.findOne(listSelector),
+    playList,
+    tracks: (!playList || !showTracks) ? [] : TrackCollection.find({_id: {$in: playList.trackIds}}).fetch(),
     viewType,
     showDate,
     noLinks,
