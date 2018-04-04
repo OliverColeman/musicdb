@@ -26,9 +26,12 @@ body {
     }
   }
 
-  .navbar .container {
-    width: 100%;
-    padding: 0;
+  .navbar {
+    margin-bottom: 10px;
+    .container {
+      width: 100%;
+      padding: 0;
+    }
   }
 
   > .container {

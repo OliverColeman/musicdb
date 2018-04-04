@@ -10,6 +10,10 @@ a, a:hover, a:visited, a:active, a:focus {
   color: #fff;
 }
 
+*:focus, a:focus {
+  outline: none;
+}
+
 .item-header, .item-header a, .header-cell, h1, h2, h3, h4, h5, h6 {
   color: $cb-blue;
   font-weight: bold;
@@ -41,23 +45,6 @@ a, a:hover, a:visited, a:active, a:focus {
 
     &:last-child {
       margin-right: 0;
-    }
-  }
-}
-
-.scrollarea {
-  .scrollbar-container {
-    background-color: #777;
-
-    &.vertical {
-      width: 14px;
-      border-radius: 5px;
-
-      .scrollbar {
-        background-color: #fff;
-        width: 12px;
-        border-radius: 4px;
-      }
     }
   }
 }
