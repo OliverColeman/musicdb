@@ -17,6 +17,8 @@ body {
   flex-flow: column;
 
   > * {
+    padding: 0 10px;
+
     color: #fff;
     background-color: transparent;
     > * {
@@ -24,16 +26,19 @@ body {
     }
   }
 
+  .navbar .container {
+    width: 100%;
+    padding: 0;
+  }
+
   > .container {
     flex: 1;
     overflow: auto;
-    margin-bottom: 20px;
-    padding: 10px 10px 15px;
     border-radius: $default-border-radius;
     width: 100%;
 
     > * {
-      max-width: 1200px;
+      width: 100% !important;
       margin: 0 auto;
     }
   }

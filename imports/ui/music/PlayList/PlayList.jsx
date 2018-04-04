@@ -7,7 +7,6 @@ import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 import moment from 'moment';
 import update from 'immutability-helper';
-import ScrollArea from 'react-scrollbar';
 
 import Access from '../../../modules/access';
 import PlayListCollection from '../../../api/PlayList/PlayList';
@@ -175,7 +174,7 @@ class PlayList extends React.Component {
         </div>
 
         { showTracks &&
-          <ScrollArea speed={0.8} horizontal={false} className="tracks-wrapper">
+          <div className="tracks-wrapper">
             <div className="tracks">
               <div className="header-row">
                 { ["Cover", "Title", "Artist", "Album", "Length", "Links"].map(h => (
@@ -198,7 +197,7 @@ class PlayList extends React.Component {
                 />
               ))}
             </div>
-          </ScrollArea>
+          </div>
         }
 
         <Modal className="playlist-add-track" show={showSearchTracks}>
