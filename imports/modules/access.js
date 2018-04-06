@@ -13,19 +13,27 @@ const UNAUTHENTICATED = '__unauth__';
 const OWN = '__own__';
 
 /**
- * Determine if access is allowed.
+ * Determine if access is allowed. Can be called in a 'collection' mode or
+ * 'role' mode. Single params object has properties:
  * @param {Object} collection - The collection to check for. At the moment all
  *   that is required is that the given object has an 'access' property.
- * @param {string} op - The operation to check for, typically one of 'view', 'create',
- *   'update', 'delete' but depends on the access rules specified by the collection.
- * @param {Object} item - The item to check, if applicable.
+ *   Mutually exclusive with the role param.
+ * @param {string} role - The role to check for. This may be a role defined via
+ *   the alanning:roles package or one of Access.AUTHENTICATED or
+ *   Access.UNAUTHENTICATED. Mutually exclusive with collection param.
+ * @param {string} op - For collection mode. The operation to check for,
+ *   typically one of 'view', 'create', 'update', 'delete' but depends on the
+ *   access rules specified by the collection.
+ * @param {Object} item - For collection mode. The item to check, if applicable.
+ *   The item should be an object/document with a userId and/or groupId field.
+ * @param {string} groupId - For role mode. The user group to check in, if applicable.
  * @param {Object|String} user - The user or users id to check for.
  *   If not given the current user is used if possible.
  * @return {boolean} Whether access is allowed.
  */
-const allowed = (collection, op, item, user) => {
+const allowed = ({collection, role, op, item, groupId, user}) => {
   // If no access control defined for this collection or specific op.
-  if (!collection.access) throw new Error("Access rules are not defined for given collection.");
+  if (!role && (!collection || !collection.access)) throw new Error("Neither role nor collection with valid access rules provided.");
 
   // If the user argument wasn't supplied (as opposed to supplied but null).
   if (typeof user == 'undefined') {
@@ -39,8 +47,14 @@ const allowed = (collection, op, item, user) => {
     user = Meteor.users.findOne(user);
     if (!user) throw new Error("Invalid user id provided.");
   }
-  else if (typeof user != 'object') {
+  else if (typeof user != 'object' && user !== null) {
     throw new Error("Invalid user argument provided.");
+  }
+
+  if (role) {
+    if (role == AUTHENTICATED) return user !== null;
+    if (role == UNAUTHENTICATED) return user === null;
+    return Roles.userIsInRole(user, role, groupId)
   }
 
   // For each role for which permissions are defined for the collection.
@@ -57,7 +71,7 @@ const allowed = (collection, op, item, user) => {
         else {
           // If the item belongs to a group and the the user has the role in that group
           // (or the user has the role in Roles.GLOBAL_GROUP).
-          if (Roles.userIsInRole(user, [role], item && item.groupId)) return true;
+          if (Roles.userIsInRole(user, role, item && item.groupId)) return true;
         }
       }
       else {

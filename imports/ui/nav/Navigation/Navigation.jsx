@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Meteor } from 'meteor/meteor';
 import { Navbar, Nav, NavItem } from 'react-bootstrap';
 import { withRouter, Link } from 'react-router-dom';
 
@@ -13,14 +12,14 @@ import './Navigation.scss';
 const menuItems = {
   left: [
     { title: "Import", url: "/import", access: {collection: PlayListCollection, op: 'create'} },
-    { title: "Library", url: "/library", access: {collection: Meteor.users, op: 'update'} },
+    { title: "Library", url: "/library", access: {role: Access.AUTHENTICATED} },
   ],
   right: [
-    { title: "Sign up", url: "/signup", access: {collection: Meteor.users, op: 'signup'} },
-    { title: "Log in", url: "/login", access: {collection: Meteor.users, op: 'login'} },
+    { title: "Sign up", url: "/signup", access: {role: Access.UNAUTHENTICATED} },
+    { title: "Log in", url: "/login", access: {role: Access.UNAUTHENTICATED} },
 
-    { title: "My profile", url: "/profile", access: {collection: Meteor.users, op: 'update'} },
-    { title: "Log out", url: "/logout", access: {collection: Meteor.users, op: 'logout'} },
+    { title: "My profile", url: "/profile", access: {role: Access.AUTHENTICATED} },
+    { title: "Log out", url: "/logout", access: {role: Access.AUTHENTICATED} },
   ]
 };
 
@@ -37,7 +36,7 @@ const Navigation = props => (
     <Navbar.Collapse>
       <Nav activeKey={props.history.location.pathname}>
         { menuItems.left
-          .filter(item => Access.allowed(item.access.collection, item.access.op))
+          .filter(item => Access.allowed(item.access))
           .map(item => (
             <NavItem eventKey={item.url} href={item.url} key={item.url}>{item.title}</NavItem>
           ))
@@ -45,7 +44,7 @@ const Navigation = props => (
       </Nav>
       <Nav activeKey={props.history.location.pathname} pullRight>
         { menuItems.right
-          .filter(item => Access.allowed(item.access.collection, item.access.op))
+          .filter(item => Access.allowed(item.access))
           .map(item => (
             <NavItem eventKey={item.url} href={item.url} key={item.url}>{item.title}</NavItem>
           ))

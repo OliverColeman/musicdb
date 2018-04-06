@@ -15,7 +15,7 @@ Meteor.methods({
 
     const playList = PlayList.findOne(playListId);
 
-    if (!Access.allowed(PlayList, 'update', playList, this.userId)) throwMethodException("Not allowed.");
+    if (!Access.allowed({collection: PlayList, op: 'update', item: playList, user: this.userId})) throwMethodException("Not allowed.");
 
     try {
       if (!playList) throw "Play list does not exist.";
@@ -40,7 +40,7 @@ Meteor.methods({
 
     const playList = PlayList.findOne(playListId);
 
-    if (!Access.allowed(PlayList, 'update', playList, this.userId)) throwMethodException("Not allowed.");
+    if (!Access.allowed({collection: PlayList, op: 'update', item: playList, user: this.userId})) throwMethodException("Not allowed.");
 
     try {
       if (!playList) throw "Play list does not exist.";

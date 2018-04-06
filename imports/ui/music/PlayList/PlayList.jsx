@@ -75,7 +75,7 @@ class PlayList extends React.Component {
     if (!playList && viewType == 'page') return (  <NotFound /> );
     if (!playList) return ( <div className="PlayList not-found" /> );
 
-    const editable = Access.allowed(PlayListCollection, 'update', playList, user);
+    const editable = Access.allowed({collection: PlayListCollection, op: 'update', item: playList, user});
 
 
     if (viewType == 'inline') return (
