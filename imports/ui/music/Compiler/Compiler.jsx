@@ -10,6 +10,7 @@ import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
 import ServiceLinks from '../ServiceLinks/ServiceLinks';
+import PlayListList from '../PlayListList/PlayListList';
 
 
 class Compiler extends React.Component {
@@ -18,7 +19,7 @@ class Compiler extends React.Component {
   }
 
   render() {
-    const { loading, compiler, viewType, noLinks } = this.props;
+    const { loading, loadingLists, compiler, viewType, noLinks } = this.props;
 
     if (loading) return (<Loading />);
     if (!compiler) return (<NotFound />);
@@ -26,9 +27,8 @@ class Compiler extends React.Component {
     if (viewType == 'inline') return (
       <LinkOrNot link={!noLinks} to={`/compiler/${compiler._id}`} title={compiler.name} className={"Compiler inline-viewtype name"}>
         {compiler.name}
-      </LinkOrNot>);
-
-    // TODO list of (known) albums, tracks, and playlists.
+      </LinkOrNot>
+    );
 
     return (
       <div className={"Compiler " + viewType + "-viewtype"}>
@@ -37,6 +37,13 @@ class Compiler extends React.Component {
 
           {viewType == 'page' && <ServiceLinks type='compiler' item={compiler} />}
         </div>
+
+        { viewType != "page" ? '' :
+          <div>
+            <h4>Playlists</h4>
+            <PlayListList loadingLists={loadingLists} selector={{compilerIds: compiler._id}} />
+          </div>
+        }
       </div>
     );
   }
@@ -45,11 +52,15 @@ class Compiler extends React.Component {
 
 export default withTracker(({match, compiler, compilerId, viewType, noLinks}) => {
   viewType = viewType || "page";
-  const subCompiler = compiler ? null : Meteor.subscribe('Compiler.withId', compilerId || match.params.compilerId);
+  const id = compilerId || (compiler && compiler._id) || match && match.params.compilerId;
+
+  const subCompiler = compiler ? null : Meteor.subscribe('Compiler.withId', id);
+  const subLists = viewType == 'page' && Meteor.subscribe('PlayList.withCompilerId', id);
 
   return {
     loading: subCompiler && !subCompiler.ready(),
-    compiler: compiler || CompilerCollection.findOne(compilerId || match.params.compilerId),
+    loadingLists: subLists && !subLists.ready(),
+    compiler: compiler || CompilerCollection.findOne(id),
     viewType,
     noLinks,
   };

@@ -1,6 +1,5 @@
 @import '../../stylesheets/variables';
 
-
 .Tag {
   &.page-viewtype {
     margin: 0.5em 0;
@@ -14,11 +13,5 @@
     & > * {
       margin: 0 1em;
     }
-  }
-
-  /* TODO Inline layout and remove some details on small screens */
-  .playlists {
-    @include playlist-table;
-    margin-top: 15px;
   }
 }

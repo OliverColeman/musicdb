@@ -34,6 +34,7 @@ import Tag from '../../music/Tag/Tag';
 import Artist from '../../music/Artist/Artist';
 import Album from '../../music/Album/Album';
 import Compiler from '../../music/Compiler/Compiler';
+import User from '../../music/User/User';
 import Import from '../../music/Import/Import';
 import SearchTracks from '../../music/Track/SearchTracks';
 
@@ -70,6 +71,8 @@ class App extends React.Component {
                 <Route exact path="/artist/:artistId" component={Artist} {...props} />
                 <Route exact path="/album/:albumId" component={Album} {...props} />
                 <Route exact path="/compiler/:compilerId" component={Compiler} {...props} />
+
+                <Route exact path="/library" component={User} {...props} />
 
                 {/*<Route exact path="/search" component={SearchTracks} {...props} />*/}
 

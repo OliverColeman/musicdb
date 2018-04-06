@@ -89,6 +89,11 @@ $default-border-radius: 4px;
   & > * {
     display: table-row;
 
+    &.header-row {
+      color: $gray-light;
+      font-weight: bold;
+    }
+
     & > * {
       display: table-cell;
       @include seperator-bottom-light;
@@ -104,26 +109,6 @@ $default-border-radius: 4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-
-      &.inline-list > * {
-        display: inline-block;
-        white-space: nowrap;
-        padding: 0;
-        margin-right: 0.3em;
-        border-style: none;
-
-        &:after {
-          content: ',';
-        }
-        &:last-child:after {
-          content: '';
-        }
-
-        & > * {
-          display: inline-block;
-          margin-right: 0;
-        }
-      }
     }
   }
 }

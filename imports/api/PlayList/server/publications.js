@@ -6,10 +6,6 @@ import PlayList from '../PlayList';
 import Track from '../../Track/Track';
 
 
-Meteor.publish('PlayList.all', function all() {
-  return PlayList.find();
-});
-
 publishComposite('PlayList.withId', function withId(documentId, includeTracks) {
   check(documentId, String);
   check(includeTracks, Match.Maybe(Boolean));
@@ -37,4 +33,14 @@ Meteor.publish('PlayList.withTagId', function withId(tagId) {
 Meteor.publish('PlayList.withGroupId', function withId(groupId) {
   check(groupId, String);
   return PlayList.find({groupId});
+});
+
+Meteor.publish('PlayList.withUserId', function withId(userId) {
+  check(userId, String);
+  return PlayList.find({userId});
+});
+
+Meteor.publish('PlayList.withCompilerId', function withId(compilerId) {
+  check(compilerId, String);
+  return PlayList.find({compilerIds: compilerId});
 });
