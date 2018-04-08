@@ -1,58 +1,80 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Navbar, Nav, NavItem } from 'react-bootstrap';
+import { Navbar, Nav, NavItem, NavDropdown, MenuItem } from 'react-bootstrap';
 import { withRouter, Link } from 'react-router-dom';
+import autoBind from 'react-autobind';
 
+import routes from '../../routes';
 import Access from '../../../modules/access';
-import PlayListCollection from '../../../api/PlayList/PlayList';
 
 import './Navigation.scss';
 
 
-const menuItems = {
-  left: [
-    { title: "Import", url: "/import", access: {collection: PlayListCollection, op: 'create'} },
-    { title: "Library", url: "/library", access: {role: Access.AUTHENTICATED} },
-  ],
-  right: [
-    { title: "Sign up", url: "/signup", access: {role: Access.UNAUTHENTICATED} },
-    { title: "Log in", url: "/login", access: {role: Access.UNAUTHENTICATED} },
-
-    { title: "My profile", url: "/profile", access: {role: Access.AUTHENTICATED} },
-    { title: "Log out", url: "/logout", access: {role: Access.AUTHENTICATED} },
-  ]
-};
+class Navigation extends React.Component {
+  constructor(props) {
+    super(props);
+    autoBind(this);
+  }
 
 
-const Navigation = props => (
-  <Navbar collapseOnSelect onSelect={key => props.history.push(key)}>
-    <Navbar.Header>
-      <Navbar.Brand>
-        <Link to="/">Home</Link>
-      </Navbar.Brand>
-      <Navbar.Toggle />
-    </Navbar.Header>
+  renderItem(item, depth) {
+    if (!item.children) {
+      if (depth == 1) return (
+        <NavItem eventKey={item.url} href={item.url} key={item.url}>{item.title}</NavItem>
+      );
+      return (
+        <MenuItem eventKey={item.url} key={item.url}>{item.title}</MenuItem>
+      );
+    }
 
-    <Navbar.Collapse>
-      <Nav activeKey={props.history.location.pathname}>
-        { menuItems.left
-          .filter(item => Access.allowed(item.access))
-          .map(item => (
-            <NavItem eventKey={item.url} href={item.url} key={item.url}>{item.title}</NavItem>
-          ))
-        }
+    return this.renderItems(item.children, depth+1, item.title);
+  }
+
+
+  renderItems(menuItems, depth, title, pullRight) {
+    const items = menuItems
+      .filter(item => Access.allowed(item.access))
+      .map(item => this.renderItem(item, depth+1));
+
+    if (depth == 0) return (
+      <Nav className={pullRight ? 'pull-right' : ''}>
+        { items }
       </Nav>
-      <Nav activeKey={props.history.location.pathname} pullRight>
-        { menuItems.right
-          .filter(item => Access.allowed(item.access))
-          .map(item => (
-            <NavItem eventKey={item.url} href={item.url} key={item.url}>{item.title}</NavItem>
-          ))
-        }
-      </Nav>
-    </Navbar.Collapse>
-  </Navbar>
-);
+    );
+
+    const key = title.replace(" ", "_");
+
+    return (
+      <NavDropdown eventKey={key} title={title} key={key} id={key + "-nav-dropdown"}>
+        { items }
+      </NavDropdown>
+    );
+  }
+
+
+  render() {
+    const props = this.props;
+
+    const leftItems = routes.filter(item => item.menu == 'left');
+    const rightItems = routes.filter(item => item.menu == 'right');
+
+    return (
+      <Navbar collapseOnSelect onSelect={key => props.history.push(key)}>
+        <Navbar.Header>
+          <Navbar.Brand>
+            <Link to="/">Home</Link>
+          </Navbar.Brand>
+          <Navbar.Toggle />
+        </Navbar.Header>
+
+        <Navbar.Collapse>
+          { this.renderItems(leftItems, 0) }
+          { this.renderItems(rightItems, 0, null, true) }
+        </Navbar.Collapse>
+      </Navbar>
+    );
+  }
+}
 
 
 Navigation.defaultProps = {

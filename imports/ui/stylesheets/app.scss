@@ -30,7 +30,8 @@ a, a:hover, a:visited, a:active, a:focus {
     &:after {
       content: ',';
     }
-    &:last-child:after {
+    &:last-child:after,
+    &.label:after {
       content: '';
     }
 
@@ -47,12 +48,14 @@ a, a:hover, a:visited, a:active, a:focus {
   > .item-details > .item-header {
     display: flex;
     justify-content: space-between;
-    margin: 0 -0.5em;
+    align-items: center;
+    margin: 0 -10px;
+
     @include seperator-bottom;
     font-size: 150%;
 
     &> * {
-      margin: 0 0.5em;
+      margin: 0 10px;
     }
   }
 }

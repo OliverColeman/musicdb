@@ -9,7 +9,7 @@ import CompilerCollection from '../../../api/Compiler/Compiler';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
-import ServiceLinks from '../ServiceLinks/ServiceLinks';
+import IconsAndLinks from '../IconsAndLinks/IconsAndLinks';
 import PlayListList from '../PlayListList/PlayListList';
 
 
@@ -35,7 +35,7 @@ class Compiler extends React.Component {
         <div className="item-header">
           <LinkOrNot link={!noLinks} className="name" to={`/compiler/${compiler._id}`}>{compiler.name}</LinkOrNot>
 
-          {viewType == 'page' && <ServiceLinks type='compiler' item={compiler} />}
+          {viewType == 'page' && <IconsAndLinks type='compiler' item={compiler} />}
         </div>
 
         { viewType != "page" ? '' :

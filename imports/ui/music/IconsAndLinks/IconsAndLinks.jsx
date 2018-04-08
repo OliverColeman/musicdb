@@ -1,13 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import './ServiceLinks.scss';
+import './IconsAndLinks.scss';
 
 
 const spotifyTypeMap = {compiler: 'user'};
 const mbTypeMap = { compiler: 'user', album: 'release-group', track: 'recording' };
 
-const ServiceLinks = ({type, item}) => {
+const IconsAndLinks = ({type, item}) => {
   let spotifyLink;
   if (item.spotifyId) {
     if (type == 'playlist') {
@@ -19,22 +19,28 @@ const ServiceLinks = ({type, item}) => {
 
   let mbLink = item.mbId && `https://musicbrainz.org/${mbTypeMap[type] || type}/${item.mbId}`;
 
-  return (
-    <div className="ServiceLinks">
-      { spotifyLink &&
-        <a className="service-link spotify" title="Show in Spotify" target="_blank" href={spotifyLink} />
-      }
+  const needsReview = item.needsReview || item.dataMaybeMissing && item.dataMaybeMissing.length;
 
-      { mbLink &&
-        <a className="service-link musicbrainz" title="Show in MusicBrainz" target="_blank" href={mbLink} />
-      }
+  return (
+    <div className="IconsAndLinks">
+      <div className="wrapper">
+        { spotifyLink &&
+          <a className="service-link spotify" title="Show in Spotify" target="_blank" href={spotifyLink} />
+        }
+
+        { mbLink &&
+          <a className="service-link musicbrainz" title="Show in MusicBrainz" target="_blank" href={mbLink} />
+        }
+
+        { needsReview && <div className="service-link needsreview">🔧</div> }
+      </div>
     </div>
   )
 }
 
-ServiceLinks.propTypes = {
+IconsAndLinks.propTypes = {
   type: PropTypes.string.isRequired,
   item: PropTypes.object.isRequired,
 };
 
-export default ServiceLinks;
+export default IconsAndLinks;

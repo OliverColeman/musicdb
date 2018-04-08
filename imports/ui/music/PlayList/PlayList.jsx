@@ -12,7 +12,7 @@ import Access from '../../../modules/access';
 import PlayListCollection from '../../../api/PlayList/PlayList';
 import TrackCollection from '../../../api/Track/Track';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
-import Track from '../Track/Track';
+import TrackList from '../Track/TrackList';
 import Compiler from '../Compiler/Compiler';
 import Group from '../Group/Group';
 import Tag from '../Tag/Tag';
@@ -20,7 +20,7 @@ import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
 import SearchTracks from '../Track/SearchTracks';
-import ServiceLinks from '../ServiceLinks/ServiceLinks';
+import IconsAndLinks from '../IconsAndLinks/IconsAndLinks';
 
 import './PlayList.scss';
 
@@ -30,8 +30,6 @@ class PlayList extends React.Component {
     super(props);
     this.state = {
       showSearchTracks: false,
-      draggedTrackIndex: -1,
-      insertIndex: -1,
     }
     autoBind(this);
   }
@@ -48,14 +46,7 @@ class PlayList extends React.Component {
   }
 
 
-  handleTrackDrag(draggedTrackIndex, insertIndex) {
-    this.setState({draggedTrackIndex, insertIndex});
-  }
-  handleTrackDrop() {
-    const { draggedTrackIndex, insertIndex } = this.state;
-
-    this.setState({draggedTrackIndex: -1, insertIndex: -1});
-
+  handleTrackDrop(draggedTrackIndex, insertIndex) {
     if (draggedTrackIndex != insertIndex && draggedTrackIndex + 1 != insertIndex) {
       const trackId = this.props.playList.trackIds[draggedTrackIndex];
       Meteor.call('PlayList.moveTrack', this.props.playList._id, trackId, insertIndex, (error, list) => {
@@ -69,14 +60,13 @@ class PlayList extends React.Component {
 
   render() {
     const { loading, playList, viewType, showDate, noLinks, user, tracks } = this.props;
-    const { showSearchTracks, draggedTrackIndex, insertIndex } = this.state;
+    const { showSearchTracks } = this.state;
 
     if (loading) return (<Loading />);
     if (!playList && viewType == 'page') return (  <NotFound /> );
     if (!playList) return ( <div className="PlayList not-found" /> );
 
     const editable = Access.allowed({collection: PlayListCollection, op: 'update', item: playList, user});
-
 
     if (viewType == 'inline') return (
       <LinkOrNot link={!noLinks} to={`/list/${playList._id}`} title={playList.name} className={"PlayList inline-viewtype name"}>
@@ -105,32 +95,24 @@ class PlayList extends React.Component {
         <div className="duration">
           <span className="data">{convertSecondsToHHMMSS(playList.duration)}, {playList.trackIds.length}&nbsp;tracks</span>
         </div>
+
+        <IconsAndLinks type='playlist' item={playList} />
       </div>
     );
 
 
     const showTracks = tracks.length > 0;
     // Get Tracks in order (when/if available and applicable).
-    const coveredTracks = [];
-    const tracksMod = showTracks && playList.trackIds.map((trackId, idx) => {
-      // We keep track of when tracks are duplicated, so we can make sure to provide a unique key for the React map below.
-      let isRepeat = coveredTracks.includes(trackId);
-      if (!isRepeat) coveredTracks.push(trackId);
-      let track = tracks.find(t => t._id == trackId);
-      if (!track) return null;
-      return {
-        indexInPlaylist: idx,
-        keyUniquifier: isRepeat ? idx : '',
-        ...track
-      }
-    }).filter(t => !!t);
+    const tracksMod = showTracks && playList.trackIds
+      .map(trackId => tracks.find(t => t._id == trackId))
+      .filter(t => !!t);
 
     return (
       <div className={"PlayList " + viewType + "-viewtype"}>
         <div className="item-details">
           <div className="item-header">
             <LinkOrNot link={!noLinks} className="name" to={`/list/${playList._id}`}>{playList.name}</LinkOrNot>
-            <ServiceLinks type='playlist' item={playList} />
+            <IconsAndLinks type='playlist' item={playList} />
           </div>
 
           { showDate &&
@@ -175,28 +157,11 @@ class PlayList extends React.Component {
 
         { showTracks &&
           <div className="tracks-wrapper">
-            <div className="tracks">
-              <div className="header-row">
-                { ["Cover", "Title", "Artist", "Album", "Length", "Links"].map(h => (
-                  <div className={"header-cell header-" + h} key={h}>{h}</div>
-                ))}
-              </div>
-
-              { tracksMod.map((track, index) => (
-                <Track
-                  track={track}
-                  viewType="list"
-                  noLinks={noLinks}
-                  showServiceLinks={true}
-                  onDrag={this.handleTrackDrag}
-                  onDrop={this.handleTrackDrop}
-                  dropAllowed={editable}
-                  key={track._id + track.keyUniquifier}
-                  hoveredTop={index==insertIndex}
-                  hoveredBottom={index==insertIndex-1}
-                />
-              ))}
-            </div>
+            <TrackList
+              items={tracksMod}
+              noLinks={noLinks}
+              onDrop={editable && this.handleTrackDrop}
+            />
           </div>
         }
 

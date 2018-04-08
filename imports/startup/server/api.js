@@ -1,3 +1,4 @@
+import '../../api/Music/server/publications';
 import '../../api/Track/server/publications';
 import '../../api/PlayList/server/publications';
 import '../../api/PlayList/server/methods';

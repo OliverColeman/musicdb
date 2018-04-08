@@ -1,10 +1,22 @@
+.IconsAndLinks .wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -3px;
+}
+
 .service-link {
-  display: inline-block;
   width: 16px;
   height: 16px;
   background: transparent no-repeat center center;
   background-size: contain;
-  margin-left: 8px;
+  margin: 3px;
+
+  &.needsreview {
+    font-weight: bold;
+    color: #f22;
+    font-size: 15px;
+    margin-top: 0;
+  }
 
   &.spotify {
     background-image: url('/spotify.png');

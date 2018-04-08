@@ -1,5 +1,19 @@
 import { normaliseString, normaliseStringMatch, soundex, doubleMetaphone } from '../../modules/util';
 import Access from '../../modules/access';
+import Album from '../Album/Album';
+import Artist from '../Artist/Artist';
+import Compiler from '../Compiler/Compiler';
+import PlayList from '../PlayList/PlayList';
+import Track from '../Track/Track';
+
+
+const musicItemCollection = {
+  album: Album,
+  artist: Artist,
+  compiler: Compiler,
+  playlist: PlayList,
+  track: Track
+}
 
 
 /**
@@ -31,14 +45,20 @@ const commonMusicItemFields = {
   'dataMaybeMissing.$': {
     type: String, // The name of the field that may be missing data.
   },
+
   potentialDuplicate: {
     type: Boolean,
     optional: true,
+    // This isn't actually set anywhere, still required?
   },
 
   needsReview: {
     type: Boolean,
     optional: true,
+    // This is used to manually indicate that the item needs review.
+    // An item also "needs review" if the dataMaybeMissing field is populated,
+    // and probably if it is not linked to a music service,
+    // and if there appear to be duplicates.
   },
 
   imageURLs: {
@@ -93,4 +113,4 @@ const defaultAccessRules = {
 }
 
 
-export { commonMusicItemFields, defaultAccessRules };
+export { commonMusicItemFields, defaultAccessRules, musicItemCollection };

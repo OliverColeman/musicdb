@@ -20,7 +20,7 @@ import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
 import dndTypes from '../DnDTypes';
-import ServiceLinks from '../ServiceLinks/ServiceLinks';
+import IconsAndLinks from '../IconsAndLinks/IconsAndLinks';
 
 import './Track.scss';
 
@@ -30,7 +30,7 @@ const dragSource = {
 	beginDrag(props) {
 		return {
 			id: props.track._id,
-			indexInPlaylist: props.track.indexInPlaylist,
+			indexInList: props.track.indexInList,
 		}
 	}
 }
@@ -41,8 +41,8 @@ const dragTarget = {
 	},
 	hover(props, monitor, component) {
 		if (!props.dropAllowed) return;
-    const draggedTrackIndex = monitor.getItem().indexInPlaylist;
-		const hoveredTrackIndex = props.track.indexInPlaylist;
+    const draggedTrackIndex = monitor.getItem().indexInList;
+		const hoveredTrackIndex = props.track.indexInList;
 		// Determine rectangle on screen.
 		const hoverBoundingRect = findDOMNode(component).getBoundingClientRect();
 		// Get vertical middle.
@@ -53,6 +53,7 @@ const dragTarget = {
 		const hoverClientY = clientOffset.y - hoverBoundingRect.top;
 		// insert index depends on position of mouse cursor relative to hovered track.
     const insertIndex = hoveredTrackIndex + (hoverClientY > hoverMiddleY ? 1 : 0);
+
 		props.onDrag(draggedTrackIndex, insertIndex);
 	},
 	drop(props, monitor, component) {
@@ -68,7 +69,7 @@ class Track extends React.Component {
   }
 
   render() {
-    const { loading, loadingPlayLists, playLists, track, viewType, noImage, noLinks, showServiceLinks, onClick,
+    const { loading, loadingPlayLists, playLists, track, viewType, noImage, noLinks, showIconsAndLinks, onClick,
             isDragging, hoveredTop, hoveredBottom, connectDragSource, connectDropTarget, } = this.props;
 
     if (loading) return (<Loading />);
@@ -80,7 +81,7 @@ class Track extends React.Component {
     if (viewType == 'inline') return connectDragSource(connectDropTarget(
       <LinkOrNot link={!noLinks} to={`/track/${track._id}`} title={track.name} className="Track inline-viewtype name">
         {track.name}
-				{showServiceLinks && <ServiceLinks type='track' item={track} />}
+				{showIconsAndLinks && <IconsAndLinks type='track' item={track} />}
       </LinkOrNot>
     ));
 
@@ -107,7 +108,7 @@ class Track extends React.Component {
 
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
 
-				{showServiceLinks && <ServiceLinks type='track' item={track} />}
+				{showIconsAndLinks ? <IconsAndLinks type='track' item={track} /> : <div />}
       </div>
     ));
 
@@ -117,7 +118,7 @@ class Track extends React.Component {
         <div className="item-header">
           <LinkOrNot link={!noLinks} className="name" to={`/track/${track._id}`}>{track.name}</LinkOrNot>
 
-					{showServiceLinks && <ServiceLinks type='track' item={track} />}
+					{showIconsAndLinks && <IconsAndLinks type='track' item={track} />}
         </div>
 
         <div className="album album-image image">
@@ -156,11 +157,11 @@ export default flow(
   DropTarget(dndTypes.TRACK, dragTarget, connect => ({
   	connectDropTarget: connect.dropTarget(),
   })),
-  withTracker(({ match, trackId, track, viewType, noImage, noLinks, showServiceLinks, onClick, onDrag, onDrop, dropAllowed, hoveredTop, hoveredBottom }) => {
-    trackId = trackId || track && track._id || match && match.params.trackId
+  withTracker(({ match, trackId, track, viewType, noImage, noLinks, showIconsAndLinks, onClick, onDrag, onDrop, dropAllowed, hoveredTop, hoveredBottom }) => {
+		trackId = trackId || track && track._id || match && match.params.trackId
 
     viewType = viewType || "page";
-		if (typeof showServiceLinks == 'undefined') showServiceLinks = viewType == "page";
+		if (typeof showIconsAndLinks == 'undefined') showIconsAndLinks = viewType == "page";
     const subscription = track ? null : Meteor.subscribe('Track.withId', trackId);
 
     const subPlayLists = viewType == 'page' && Meteor.subscribe('Track.playLists', trackId);
@@ -173,7 +174,7 @@ export default flow(
       viewType,
       noImage,
       noLinks,
-			showServiceLinks,
+			showIconsAndLinks,
       onDrag, onDrop, dropAllowed,
       hoveredTop, hoveredBottom,
     };

@@ -109,7 +109,16 @@ $default-border-radius: 4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      vertical-align: middle;
     }
+  }
+
+  .header-Icons {
+    width: 4em;
+    color: transparent; /* display: none  breaks table column width */
+  }
+  .ServiceLinks {
+    width: 4em;
   }
 }
 
@@ -133,8 +142,7 @@ $small-music-image: 5.5em;
   .album-image, .header-Cover {
     width: $small-music-image;
   }
-  .header-Length, .duration,
-  .header-Links, .ServiceLinks {
+  .header-Length, .duration {
     width: 4.5em;
   }
 }

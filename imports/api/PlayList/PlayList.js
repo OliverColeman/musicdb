@@ -2,7 +2,7 @@
 
 import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
-import { commonMusicItemFields, defaultAccessRules } from '../Utility/music';
+import { commonMusicItemFields, defaultAccessRules } from '../Music/music';
 import { normaliseString, normaliseStringMatch } from '../../modules/util';
 import Access from '../../modules/access';
 import Track from '../Track/Track';

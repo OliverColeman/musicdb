@@ -48,7 +48,7 @@ class SearchTrackResults extends React.Component {
           :
           <div className="track-list">
             { tracksSorted.map(trk => (
-              <Track track={trk} viewType="list" noImage={true} noLinks={true} showServiceLinks={true} key={trk._id} onClick={() => onSelect(trk)} />
+              <Track track={trk} viewType="list" noImage={true} noLinks={true} showIconsAndLinks={true} key={trk._id} onClick={() => onSelect(trk)} />
             ))}
           </div>
         }

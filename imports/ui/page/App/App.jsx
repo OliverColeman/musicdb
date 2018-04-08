@@ -11,21 +11,15 @@ import { Roles } from 'meteor/alanning:roles';
 import { DragDropContext } from 'react-dnd'
 import HTML5Backend from 'react-dnd-html5-backend'
 import flow from 'lodash/flow';
+import _ from 'lodash';
 
 import Navigation from '../../nav/Navigation/Navigation';
 import Authenticated from '../../nav/Authenticated/Authenticated';
 import Public from '../../nav/Public/Public';
 import Index from '../Index/Index';
-import Signup from '../../account/Signup/Signup';
-import Login from '../../account/Login/Login';
-import Logout from '../../account/Logout/Logout';
 import VerifyEmail from '../../account/VerifyEmail/VerifyEmail';
-import RecoverPassword from '../../account/RecoverPassword/RecoverPassword';
-import ResetPassword from '../../account/ResetPassword/ResetPassword';
-import Profile from '../../account/Profile/Profile';
 import NotFound from '../../nav/NotFound/NotFound';
 import Footer from '../Footer/Footer';
-import VerifyEmailAlert from '../../account/VerifyEmailAlert/VerifyEmailAlert';
 import getUserName from '../../../modules/get-user-name';
 import Track from '../../music/Track/Track';
 import PlayList from '../../music/PlayList/PlayList';
@@ -34,9 +28,9 @@ import Tag from '../../music/Tag/Tag';
 import Artist from '../../music/Artist/Artist';
 import Album from '../../music/Album/Album';
 import Compiler from '../../music/Compiler/Compiler';
-import User from '../../music/User/User';
-import Import from '../../music/Import/Import';
 import SearchTracks from '../../music/Track/SearchTracks';
+import Access from '../../../modules/access';
+import routes from '../../routes';
 
 import './App.scss';
 
@@ -72,16 +66,15 @@ class App extends React.Component {
                 <Route exact path="/album/:albumId" component={Album} {...props} />
                 <Route exact path="/compiler/:compilerId" component={Compiler} {...props} />
 
-                <Route exact path="/library" component={User} {...props} />
+                { _.flatMap(routes, route => route.children || route)
+                  .filter(route => Access.allowed(route.access))
+                  .map(route =>
+                    React.createElement(route.routerComponent, {
+                      exact: true, path: route.url, component: route.renderComponent, key: route.url, ...props
+                    })
+                  )
+                }
 
-                {/*<Route exact path="/search" component={SearchTracks} {...props} />*/}
-
-                <Authenticated exact path="/import" component={Import} {...props} />
-
-                <Authenticated exact path="/profile" component={Profile} {...props} />
-                <Public path="/signup" component={Signup} {...props} />
-                <Public path="/login" component={Login} {...props} />
-                <Route path="/logout" component={Logout} {...props} />
                 <Route component={NotFound} />
               </Switch>
             </Grid>

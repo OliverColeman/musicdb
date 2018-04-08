@@ -10,7 +10,7 @@ import Artist from '../Artist/Artist';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
-import ServiceLinks from '../ServiceLinks/ServiceLinks';
+import IconsAndLinks from '../IconsAndLinks/IconsAndLinks';
 
 import './Album.scss';
 
@@ -63,7 +63,7 @@ class Album extends React.Component {
             <div className="item-header">
               <LinkOrNot link={!noLinks} className="name" to={`/album/${album._id}`}>{album.name}</LinkOrNot>
 
-              {viewType == 'page' && <ServiceLinks type='album' item={album} />}
+              {viewType == 'page' && <IconsAndLinks type='album' item={album} />}
             </div>
 
             <div className="artists inline-list">

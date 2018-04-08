@@ -1,0 +1,17 @@
+@import '../../stylesheets/variables';
+
+.User {
+  &.page-viewtype {
+    margin: 0.5em 0;
+
+    & > * {
+      margin: 0.5em 0;
+    }
+  }
+
+  &.inline-viewtype {
+    & > * {
+      margin: 0 1em;
+    }
+  }
+}
