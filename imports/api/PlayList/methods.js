@@ -38,12 +38,11 @@ Meteor.methods({
     check(trackId, String);
     check(insertIndex, Number);
 
-    const playList = PlayList.findOne(playListId);
-
-    if (!Access.allowed({collection: PlayList, op: 'update', item: playList, user: this.userId})) throwMethodException("Not allowed.");
-
     try {
+      const playList = PlayList.findOne(playListId);
       if (!playList) throw "Play list does not exist.";
+      if (!Access.allowed({collection: PlayList, op: 'update', item: playList, user: this.userId})) throw "Not allowed.";
+
       const trackIds = playList.trackIds;
       const currentIndex = trackIds.indexOf(trackId);
       if (currentIndex == -1) throw "Track is not in play list.";
@@ -56,6 +55,22 @@ Meteor.methods({
     }
   },
 
+  'PlayList.removeTrack': function PlayListMoveTrack(playListId, index) {
+    check(playListId, String);
+    check(index, Number);
+
+    try {
+      const playList = PlayList.findOne(playListId);
+      if (!playList) throw "Play list does not exist.";
+      if (!Access.allowed({collection: PlayList, op: 'update', item: playList, user: this.userId})) throw "Not allowed.";
+
+      const trackIds = playList.trackIds;
+      trackIds.splice(index, 1);
+      PlayList.update(playListId, {$set: {trackIds}});
+    } catch (exception) {
+      throwMethodException(exception);
+    }
+  },
 });
 
 
@@ -63,6 +78,7 @@ rateLimit({
   methods: [
     'PlayList.addTracks',
     'PlayList.moveTrack',
+    'PlayList.removeTrack',
   ],
   limit: 5,
   timeRange: 1000,

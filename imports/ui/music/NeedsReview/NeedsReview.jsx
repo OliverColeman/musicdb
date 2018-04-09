@@ -47,7 +47,7 @@ class NeedsReview extends React.Component {
 
 export default withTracker(({match}) => {
   const type = match.path.split('/').pop().replace(/s$/, '');
-  const collection = musicItemCollection[type];
+  const collection = musicItemCollection(type);
   const sub = Meteor.subscribe('NeedsReview', type);
 
   return {

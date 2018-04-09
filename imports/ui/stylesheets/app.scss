@@ -19,6 +19,17 @@ a, a:hover, a:visited, a:active, a:focus {
   font-weight: bold;
 }
 
+.item-header {
+  .header-right {
+    display: flex;
+    align-items: center;
+    margin: -10px;
+    > * {
+      margin: 10px;
+    }
+  }
+}
+
 .inline-list {
   > *, > .data > * {
     display: inline-block;
@@ -39,6 +50,31 @@ a, a:hover, a:visited, a:active, a:focus {
       display: inline-block;
       margin-right: 0;
     }
+  }
+}
+
+
+.context-menu {
+  height: auto !important;
+  overflow: visible !important;
+
+  .dropdown:not(.open) ul.dropdown-menu {
+      display:block !important;
+      opacity:0;
+      pointer-events:none;
+  }
+  ul.dropdown-menu {
+    right: 0;
+    left: auto;
+    border: 1px solid $gray;
+  }
+
+  .btn-default {
+    background: transparent;
+    color: #fff;
+    border: none;
+    padding: 1px 6px;
+    font-size: 20px;
   }
 }
 

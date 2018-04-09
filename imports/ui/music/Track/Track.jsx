@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import autoBind from 'react-autobind';
-import { ButtonToolbar, ButtonGroup, Button } from 'react-bootstrap';
+import { ButtonToolbar, ButtonGroup, Button, DropdownButton, MenuItem } from 'react-bootstrap';
 import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
@@ -75,13 +75,20 @@ class Track extends React.Component {
     if (loading) return (<Loading />);
     if (!track) return (<NotFound />);
 
+		const iconsAndLinks = showIconsAndLinks && viewType != 'list' ? (
+			<div className="header-right">
+				<IconsAndLinks type='track' item={track} />
+				{this.renderMenu()}
+			</div>
+		) : '';
+
     // Note that connectDragSource and connectDropTarget are inluded in all contexts even though
     // not all contexts support drag and drop, because otherwise react-dnd gets sad.
 
     if (viewType == 'inline') return connectDragSource(connectDropTarget(
       <LinkOrNot link={!noLinks} to={`/track/${track._id}`} title={track.name} className="Track inline-viewtype name">
         {track.name}
-				{showIconsAndLinks && <IconsAndLinks type='track' item={track} />}
+				{iconsAndLinks}
       </LinkOrNot>
     ));
 
@@ -109,6 +116,8 @@ class Track extends React.Component {
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
 
 				{showIconsAndLinks ? <IconsAndLinks type='track' item={track} /> : <div />}
+
+				{this.renderMenu()}
       </div>
     ));
 
@@ -117,8 +126,7 @@ class Track extends React.Component {
       <div className={"Track " + viewType + "-viewtype"}>
         <div className="item-header">
           <LinkOrNot link={!noLinks} className="name" to={`/track/${track._id}`}>{track.name}</LinkOrNot>
-
-					{showIconsAndLinks && <IconsAndLinks type='track' item={track} />}
+					{iconsAndLinks}
         </div>
 
         <div className="album album-image image">
@@ -147,7 +155,28 @@ class Track extends React.Component {
       </div>
     ));
   }
+
+
+	renderMenu() {
+		const {track, onRemove} = this.props;
+
+		// Only action at the moment is remove from playlist.
+		// TODO add stuff like "add to (other) playlist".
+		if (!onRemove) return '';
+
+		return (
+			<div className="context-menu">
+		    <DropdownButton title="☰" id={"menu-" + track._id} noCaret={true}>
+					{ onRemove && <MenuItem eventKey="1" onClick={() => onRemove(track)}>
+							Remove
+						</MenuItem>
+					}
+		    </DropdownButton>
+			</div>
+	  );
+	}
 }
+
 
 export default flow(
   DragSource(dndTypes.TRACK, dragSource, (connect, monitor) => ({
@@ -157,7 +186,7 @@ export default flow(
   DropTarget(dndTypes.TRACK, dragTarget, connect => ({
   	connectDropTarget: connect.dropTarget(),
   })),
-  withTracker(({ match, trackId, track, viewType, noImage, noLinks, showIconsAndLinks, onClick, onDrag, onDrop, dropAllowed, hoveredTop, hoveredBottom }) => {
+  withTracker(({ match, trackId, track, viewType, noImage, noLinks, showIconsAndLinks, onClick, onDrag, onDrop, dropAllowed, hoveredTop, hoveredBottom, onRemove }) => {
 		trackId = trackId || track && track._id || match && match.params.trackId
 
     viewType = viewType || "page";
@@ -177,6 +206,7 @@ export default flow(
 			showIconsAndLinks,
       onDrag, onDrop, dropAllowed,
       hoveredTop, hoveredBottom,
+			onRemove,
     };
   })
 ) (Track);

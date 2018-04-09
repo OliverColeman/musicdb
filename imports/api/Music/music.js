@@ -7,12 +7,18 @@ import PlayList from '../PlayList/PlayList';
 import Track from '../Track/Track';
 
 
-const musicItemCollection = {
-  album: Album,
-  artist: Artist,
-  compiler: Compiler,
-  playlist: PlayList,
-  track: Track
+/**
+ * Get the Collection for the specified music item type.
+ */
+const musicItemCollection = (type) => {
+  // This is a function rather than an object to avoid es6 module loading dependency issues.
+  switch(type) {
+    case 'album': return Album;
+    case 'artist': return Artist;
+    case 'compiler': return Compiler;
+    case 'playlist': return PlayList;
+    case 'track': return Track;
+  }
 }
 
 

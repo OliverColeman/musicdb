@@ -46,6 +46,15 @@ class PlayList extends React.Component {
   }
 
 
+  handleTrackRemove(track) {
+    Meteor.call('PlayList.removeTrack', this.props.playList._id, track.indexInList, (error, list) => {
+      if (error) {
+        Bert.alert(error.reason ? error.reason : error.message, 'danger');
+      }
+    });
+  }
+
+
   handleTrackDrop(draggedTrackIndex, insertIndex) {
     if (draggedTrackIndex != insertIndex && draggedTrackIndex + 1 != insertIndex) {
       const trackId = this.props.playList.trackIds[draggedTrackIndex];
@@ -161,6 +170,7 @@ class PlayList extends React.Component {
               items={tracksMod}
               noLinks={noLinks}
               onDrop={editable && this.handleTrackDrop}
+              onRemove={editable && this.handleTrackRemove}
             />
           </div>
         }

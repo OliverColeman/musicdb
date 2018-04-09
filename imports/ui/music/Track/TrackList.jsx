@@ -37,7 +37,7 @@ class TrackList extends React.Component {
 
 
   render() {
-    const { tracks, noLinks, onDrop } = this.props;
+    const { tracks, noLinks, onDrop, onRemove } = this.props;
     const { draggedTrackIndex, insertIndex } = this.state;
 
     // We keep track of when tracks are duplicated, so we can make sure to
@@ -56,7 +56,7 @@ class TrackList extends React.Component {
     return (
       <div className="TrackList">
         <div className="header-row">
-          { ["Cover", "Title", "Artist", "Album", "Length", "Icons"].map(h => (
+          { ["Cover", "Title", "Artist", "Album", "Length", "Icons", "Menu"].map(h => (
             <div className={"header-cell header-" + h} key={h}>{h}</div>
           ))}
         </div>
@@ -73,6 +73,7 @@ class TrackList extends React.Component {
             key={track._id + track.keyUniquifier}
             hoveredTop={index==insertIndex}
             hoveredBottom={index==insertIndex-1}
+            onRemove={onRemove}
           />
         ))}
       </div>
@@ -80,10 +81,11 @@ class TrackList extends React.Component {
   }
 }
 
-export default withTracker(({items, noLinks, onDrop}) => {
+export default withTracker(({items, noLinks, onDrop, onRemove}) => {
   return {
     tracks: items,
     noLinks,
-    onDrop
+    onDrop,
+    onRemove
   };
 }) (TrackList);

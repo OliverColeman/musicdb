@@ -120,6 +120,10 @@ $default-border-radius: 4px;
   .ServiceLinks {
     width: 4em;
   }
+  .header-Menu {
+    width: 5em;
+    color: transparent; /* display: none  breaks table column width */
+  }
 }
 
 

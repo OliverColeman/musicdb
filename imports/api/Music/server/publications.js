@@ -5,8 +5,8 @@ import { musicItemCollection } from '../music';
 
 Meteor.publish('NeedsReview', function needsReview(type) {
   check(type, String);
-  check(type, Match.Where((type) => Object.keys(musicItemCollection).includes(type)));
-  const collection = musicItemCollection[type];
+  const collection = musicItemCollection(type);
+  if (!collection) throw "Invalid type in NeedsReview pub."
 
   return collection.find({$or: [
     {needsReview: true},
