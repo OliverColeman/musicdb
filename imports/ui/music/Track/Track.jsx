@@ -168,7 +168,7 @@ class Track extends React.Component {
 			<div className="context-menu">
 		    <DropdownButton title="☰" id={"menu-" + track._id} noCaret={true}>
 					{ onRemove && <MenuItem eventKey="1" onClick={() => onRemove(track)}>
-							Remove
+							Remove from playlist
 						</MenuItem>
 					}
 		    </DropdownButton>
