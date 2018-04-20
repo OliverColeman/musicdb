@@ -69,7 +69,7 @@ class Track extends React.Component {
   }
 
   render() {
-    const { loading, loadingPlayLists, playLists, track, viewType, noImage, noLinks, showIconsAndLinks, onClick,
+    const { loading, loadingPlayLists, playLists, track, viewType, noLinks, showIconsAndLinks, onClick,
             isDragging, hoveredTop, hoveredBottom, connectDragSource, connectDropTarget, } = this.props;
 
     if (loading) return (<Loading />);
@@ -77,10 +77,13 @@ class Track extends React.Component {
 
 		const iconsAndLinks = showIconsAndLinks && viewType != 'list' ? (
 			<div className="header-right">
-				<IconsAndLinks type='track' item={track} />
+				<IconsAndLinks type='track' item={track} showPlayer={viewType=='page'} />
 				{this.renderMenu()}
 			</div>
 		) : '';
+
+		const isCompactView = viewType.includes('compact');
+		const isListView = viewType.includes('list');
 
     // Note that connectDragSource and connectDropTarget are inluded in all contexts even though
     // not all contexts support drag and drop, because otherwise react-dnd gets sad.
@@ -92,12 +95,12 @@ class Track extends React.Component {
       </LinkOrNot>
     ));
 
-    if (viewType == 'list') return connectDragSource(connectDropTarget(
+    if (isListView) return connectDragSource(connectDropTarget(
       <div
         className={classNames("Track", viewType + "-viewtype", {"dragging": isDragging}, {"hovered-top": hoveredTop}, {"hovered-bottom": hoveredBottom})}
         onClick={(e) => { if (onClick) onClick(e, track)}}
       >
-        { noImage ? '' :
+        { isCompactView ? '' :
           <div className="album album-image image">
             { track.albumId && <Album albumId={track.albumId} viewType="track" viewType="image-small" /> }
           </div>
@@ -115,7 +118,7 @@ class Track extends React.Component {
 
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
 
-				{showIconsAndLinks ? <IconsAndLinks type='track' item={track} /> : <div />}
+				{showIconsAndLinks ? <IconsAndLinks type='track' item={track} showPlayer={false} /> : <div />}
 
 				{this.renderMenu()}
       </div>
@@ -201,7 +204,6 @@ export default flow(
       loadingPlayLists: subPlayLists && !subPlayLists.ready(),
       playLists: subPlayLists && PlayListCollection.find({ trackIds: trackId}).fetch(),
       viewType,
-      noImage,
       noLinks,
 			showIconsAndLinks,
       onDrag, onDrop, dropAllowed,

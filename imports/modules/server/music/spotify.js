@@ -238,6 +238,10 @@ const getArtist = async (ids, details, insertMetadata) => {
     }
     catch (err) {
       console.error("Error retrieving artist info from Spotify:", err);
+      console.log('ids', ids);
+      console.log('details', details);
+      console.log('insertMetadata', insertMetadata);
+      console.log('artist', artist);
       throw "Error retrieving artist info from Spotify."
     }
   }

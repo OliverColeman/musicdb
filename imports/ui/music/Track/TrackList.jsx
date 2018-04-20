@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import autoBind from 'react-autobind';
 import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
+import { DropdownButton, MenuItem, Checkbox } from 'react-bootstrap';
 
 import Access from '../../../modules/access';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
@@ -37,7 +38,7 @@ class TrackList extends React.Component {
 
 
   render() {
-    const { tracks, noLinks, noImage, onDrop, onRemove } = this.props;
+    const { tracks, noLinks, noMenu, compactView, onDrop, onRemove, onClick } = this.props;
     const { draggedTrackIndex, insertIndex } = this.state;
 
     // We keep track of when tracks are duplicated, so we can make sure to
@@ -53,7 +54,7 @@ class TrackList extends React.Component {
       }
     });
 
-    const headers = (noImage ? [] : ["Cover"]).concat(["Title", "Artist", "Album", "Length", "Icons", "Menu"]);
+    const headers = (compactView ? [] : ["Cover"]).concat(["Title", "Artist", "Album", "Length", "Icons"]);
 
     return (
       <div className="TrackList">
@@ -61,14 +62,23 @@ class TrackList extends React.Component {
           { headers.map(h => (
             <div className={"header-cell header-" + h} key={h}>{h}</div>
           ))}
+
+          { !noMenu && <div className={"header-cell header-Menu context-menu"}>
+            <DropdownButton title="☰" id="menu-tracklist" noCaret={true}>
+    					<MenuItem eventKey="1">
+  							<Checkbox checked={compactView} onChange={() => Session.set('TrackList-compactView', !compactView)}>
+                  Compact view
+  							</Checkbox>
+  						</MenuItem>
+  					</DropdownButton>
+    			</div> }
         </div>
 
         { tracksMod.map((track, index) => (
           <Track
             track={track}
-            viewType="list"
+            viewType={"list" + (compactView ? '-compact' : '')}
             noLinks={noLinks}
-            noImage={noImage}
             showIconsAndLinks={true}
             onDrag={this.handleTrackDrag}
             onDrop={this.handleTrackDrop}
@@ -77,6 +87,7 @@ class TrackList extends React.Component {
             hoveredTop={index==insertIndex}
             hoveredBottom={index==insertIndex-1}
             onRemove={onRemove}
+            onClick={() => onClick && onClick(track)}
           />
         ))}
       </div>
@@ -84,11 +95,14 @@ class TrackList extends React.Component {
   }
 }
 
-export default withTracker(({items, noLinks, noImage, onDrop, onRemove}) => {
+export default withTracker(({items, noLinks, noMenu, compactView, onDrop, onRemove, onClick}) => {
+  Session.setDefault('TrackList-compactView', false);
+
   return {
     tracks: items,
     noLinks,
-    noImage: typeof noImage == 'undefined' ? true : noImage,
+    noMenu,
+    compactView: typeof compactView != 'undefined' ? compactView : Session.get('TrackList-compactView'),
     onDrop,
     onRemove
   };

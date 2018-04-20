@@ -12,9 +12,7 @@ import { soundex, doubleMetaphone, findBySoundexOrDoubleMetaphone, levenshteinSc
 import TrackCollection from '../../../api/Track/Track';
 import ArtistCollection from '../../../api/Artist/Artist';
 import AlbumCollection from '../../../api/Album/Album';
-import Track from './Track';
-import Album from '../Album/Album';
-import Artist from '../Artist/Artist';
+import TrackList from './TrackList';
 import Loading from '../../misc/Loading/Loading';
 
 import './Track.scss';
@@ -46,10 +44,14 @@ class SearchTrackResults extends React.Component {
         { (trackName && tracks.length == 0) ?
           <div className="no-results">No tracks found.</div>
           :
-          <div className="track-list">
-            { tracksSorted.map(trk => (
-              <Track track={trk} viewType="list" noImage={true} noLinks={true} showIconsAndLinks={true} key={trk._id} onClick={() => onSelect(trk)} />
-            ))}
+          <div className="tracks-wrapper">
+            <TrackList
+              items={tracksSorted}
+              noLinks={true}
+              noMenu={true}
+              compactView={true}
+              onClick={onSelect}
+            />
           </div>
         }
       </div>

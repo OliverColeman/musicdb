@@ -121,7 +121,7 @@ class PlayList extends React.Component {
         <div className="item-details">
           <div className="item-header">
             <LinkOrNot link={!noLinks} className="name" to={`/list/${playList._id}`}>{playList.name}</LinkOrNot>
-            <IconsAndLinks type='playlist' item={playList} />
+            <IconsAndLinks type='playlist' item={playList} showPlayer={true} />
           </div>
 
           { showDate &&

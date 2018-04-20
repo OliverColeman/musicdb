@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import SpotifyPlayer from 'react-spotify-player';
 
 import './IconsAndLinks.scss';
 
@@ -7,7 +8,7 @@ import './IconsAndLinks.scss';
 const spotifyTypeMap = {compiler: 'user'};
 const mbTypeMap = { compiler: 'user', album: 'release-group', track: 'recording' };
 
-const IconsAndLinks = ({type, item}) => {
+const IconsAndLinks = ({type, item, showPlayer}) => {
   let spotifyLink;
   if (item.spotifyId) {
     if (type == 'playlist') {
@@ -24,6 +25,10 @@ const IconsAndLinks = ({type, item}) => {
   return (
     <div className="IconsAndLinks">
       <div className="wrapper">
+        { showPlayer && spotifyLink && <div className="spotify-player-wrapper">
+          <SpotifyPlayer uri={spotifyLink} size={{width:250, height:80}} view="list" theme="black" />
+        </div> }
+
         { spotifyLink &&
           <a className="service-link spotify" title="Show in Spotify" target="_blank" href={spotifyLink} />
         }
@@ -37,10 +42,5 @@ const IconsAndLinks = ({type, item}) => {
     </div>
   )
 }
-
-IconsAndLinks.propTypes = {
-  type: PropTypes.string.isRequired,
-  item: PropTypes.object.isRequired,
-};
 
 export default IconsAndLinks;
