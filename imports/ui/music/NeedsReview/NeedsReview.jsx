@@ -6,7 +6,11 @@ import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 
-import { musicItemCollection } from '../../../api/Music/music';
+import AlbumCollection from '../Album/Album';
+import ArtistCollection from '../Artist/Artist';
+import CompilerCollection from '../Compiler/Compiler';
+import PlayListCollection from '../PlayList/PlayList';
+import TrackCollection from '../Track/Track';
 
 import PlayListList from '../PlayListList/PlayListList';
 import TrackList from '../Track/TrackList';
@@ -22,6 +26,14 @@ const typeMap = {
   // compiler: Compiler,
   playlist: PlayListList,
   track: TrackList
+}
+
+const musicItemCollection = {
+  album: AlbumCollection,
+  artist: ArtistCollection,
+  compiler: CompilerCollection,
+  playlist: PlayListCollection,
+  track: TrackCollection,
 }
 
 
@@ -47,7 +59,7 @@ class NeedsReview extends React.Component {
 
 export default withTracker(({match}) => {
   const type = match.path.split('/').pop().replace(/s$/, '');
-  const collection = musicItemCollection(type);
+  const collection = musicItemCollection[type];
   const sub = Meteor.subscribe('NeedsReview', type);
 
   return {

@@ -2,7 +2,7 @@
 
 import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
-import { commonMusicItemFields } from '../Music/music';
+import { getCommonMusicItemFields } from '../Music/music';
 import { normaliseString, normaliseStringMatch } from '../../modules/util';
 import Album from '../Album/Album';
 import Artist from '../Artist/Artist';
@@ -21,8 +21,10 @@ Track.deny({
   remove: () => true,
 });
 
+const commonFields = getCommonMusicItemFields();
+
 Track.schema = {
-  ...commonMusicItemFields,
+  ...commonFields,
   artistIds: [String],
   albumId: {
     type: String,

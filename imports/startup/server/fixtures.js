@@ -8,7 +8,7 @@ if (Meteor.users.find().count() == 0) {
   const adminId = Accounts.createUser({
     email: "admin@admin.admin",
     password: "admin",
-    profile: { name: { first : "Admin", "last" : "" } }
+    profile: { name: { first : "Ad", last : "Min" } }
   });
   Roles.addUsersToRoles(adminId, ['admin'], Roles.GLOBAL_GROUP);
 }

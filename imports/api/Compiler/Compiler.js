@@ -2,7 +2,7 @@
 
 import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
-import { commonMusicItemFields } from '../Music/music';
+import { getCommonMusicItemFields } from '../Music/music';
 import { normaliseString, normaliseStringMatch } from '../../modules/util';
 
 const Compiler = new Mongo.Collection('Compiler');
@@ -19,8 +19,10 @@ Compiler.deny({
   remove: () => true,
 });
 
+const commonFields = getCommonMusicItemFields();
+
 Compiler.schema = {
-  ...commonMusicItemFields,
+  ...commonFields,
 };
 Compiler.attachSchema(new SimpleSchema(Compiler.schema));
 

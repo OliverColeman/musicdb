@@ -37,6 +37,18 @@ class TrackList extends React.Component {
   }
 
 
+  updateCompactView() {
+    const { user, compactView } = this.props;
+    if (user) {
+      user.profile.settings.ui.compactView = !compactView;
+      Meteor.call('users.updateProfile', user.profile);
+    }
+    else {
+      Session.set('TrackList-compactView', !compactView)
+    }
+  }
+
+
   render() {
     const { tracks, noLinks, noMenu, compactView, onDrop, onRemove, onClick } = this.props;
     const { draggedTrackIndex, insertIndex } = this.state;
@@ -66,7 +78,7 @@ class TrackList extends React.Component {
           { !noMenu && <div className={"header-cell header-Menu context-menu"}>
             <DropdownButton title="☰" id="menu-tracklist" noCaret={true}>
     					<MenuItem eventKey="1">
-  							<Checkbox checked={compactView} onChange={() => Session.set('TrackList-compactView', !compactView)}>
+  							<Checkbox checked={compactView} onChange={this.updateCompactView}>
                   Compact view
   							</Checkbox>
   						</MenuItem>
@@ -96,13 +108,24 @@ class TrackList extends React.Component {
 }
 
 export default withTracker(({items, noLinks, noMenu, compactView, onDrop, onRemove, onClick}) => {
-  Session.setDefault('TrackList-compactView', false);
+  const user = Meteor.user();
+
+  if (typeof compactView == 'undefined') {
+    if (user) {
+      compactView = user.profile.settings.ui.compactView;
+    }
+    else {
+      Session.setDefault('TrackList-compactView', false);
+      compactView = Session.get('TrackList-compactView');
+    }
+  }
 
   return {
+    user,
     tracks: items,
     noLinks,
     noMenu,
-    compactView: typeof compactView != 'undefined' ? compactView : Session.get('TrackList-compactView'),
+    compactView,
     onDrop,
     onRemove
   };

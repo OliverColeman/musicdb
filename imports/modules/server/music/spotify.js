@@ -188,6 +188,9 @@ const getCompiler = async (ids, insertMetadata) => {
     }
     catch (err) {
       console.error("Error retrieving user info from Spotify:", err);
+      console.log('ids', ids);
+      console.log('insertMetadata', insertMetadata);
+      console.log('compiler', compiler);
       throw "Error retrieving user info from Spotify."
     }
   }
