@@ -1,4 +1,5 @@
 import React from 'react';
+import autoBind from 'react-autobind';
 import { createContainer } from 'meteor/react-meteor-data';
 import { ButtonToolbar, ButtonGroup, Button, Alert, DropdownButton, SplitButton, MenuItem } from 'react-bootstrap';
 
@@ -8,8 +9,7 @@ import './Pager.scss';
 class Pager extends React.Component {
   constructor(props) {
     super(props);
-
-    this.flip = this.flip.bind(this);
+    autoBind(this);
   }
 
 
