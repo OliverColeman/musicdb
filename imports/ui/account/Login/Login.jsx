@@ -7,39 +7,38 @@ import { Bert } from 'meteor/themeteorchef:bert';
 
 import OAuthLoginButtons from '../OAuthLoginButtons/OAuthLoginButtons';
 import AccountPageFooter from '..//AccountPageFooter/AccountPageFooter';
-import validate from '../../../modules/validate';
 
 class Login extends React.Component {
   constructor(props) {
     super(props);
     autoBind(this);
   }
-
-  componentDidMount() {
-    const component = this;
-
-    validate(component.form, {
-      rules: {
-        emailAddress: {
-          required: true,
-          email: true,
-        },
-        password: {
-          required: true,
-        },
-      },
-      messages: {
-        emailAddress: {
-          required: 'Need an email address here.',
-          email: 'Is this email address correct?',
-        },
-        password: {
-          required: 'Need a password here.',
-        },
-      },
-      submitHandler() { component.handleSubmit(); },
-    });
-  }
+  //
+  // componentDidMount() {
+  //   const component = this;
+  //
+  //   validate(component.form, {
+  //     rules: {
+  //       emailAddress: {
+  //         required: true,
+  //         email: true,
+  //       },
+  //       password: {
+  //         required: true,
+  //       },
+  //     },
+  //     messages: {
+  //       emailAddress: {
+  //         required: 'Need an email address here.',
+  //         email: 'Is this email address correct?',
+  //       },
+  //       password: {
+  //         required: 'Need a password here.',
+  //       },
+  //     },
+  //     submitHandler() { component.handleSubmit(); },
+  //   });
+  // }
 
   handleSubmit() {
     Meteor.loginWithPassword(this.emailAddress.value, this.password.value, (error) => {
@@ -90,7 +89,7 @@ class Login extends React.Component {
                   className="form-control"
                 />
               </FormGroup>
-              <Button type="submit" bsStyle="success">Log In</Button>
+              <Button type="submit" bsStyle="success" onClick={this.handleSubmit}>Log In</Button>
               <AccountPageFooter>
                 <p>{'Don\'t have an account?'} <Link to="/signup">Sign Up</Link>.</p>
               </AccountPageFooter>

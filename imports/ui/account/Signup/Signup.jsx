@@ -10,53 +10,52 @@ import { Bert } from 'meteor/themeteorchef:bert';
 import OAuthLoginButtons from '../OAuthLoginButtons/OAuthLoginButtons';
 import InputHint from '../../misc/InputHint/InputHint';
 import AccountPageFooter from '../AccountPageFooter/AccountPageFooter';
-import validate from '../../../modules/validate';
 
 class Signup extends React.Component {
   constructor(props) {
     super(props);
     autoBind(this);
   }
-
-  componentDidMount() {
-    const component = this;
-
-    validate(component.form, {
-      rules: {
-        firstName: {
-          required: true,
-        },
-        lastName: {
-          required: true,
-        },
-        emailAddress: {
-          required: true,
-          email: true,
-        },
-        password: {
-          required: true,
-          minlength: 6,
-        },
-      },
-      messages: {
-        firstName: {
-          required: 'What\'s your first name?',
-        },
-        lastName: {
-          required: 'What\'s your last name?',
-        },
-        emailAddress: {
-          required: 'Need an email address here.',
-          email: 'Is this email address correct?',
-        },
-        password: {
-          required: 'Need a password here.',
-          minlength: 'Please use at least six characters.',
-        },
-      },
-      submitHandler() { component.handleSubmit(); },
-    });
-  }
+  //
+  // componentDidMount() {
+  //   const component = this;
+  //
+  //   validate(component.form, {
+  //     rules: {
+  //       firstName: {
+  //         required: true,
+  //       },
+  //       lastName: {
+  //         required: true,
+  //       },
+  //       emailAddress: {
+  //         required: true,
+  //         email: true,
+  //       },
+  //       password: {
+  //         required: true,
+  //         minlength: 6,
+  //       },
+  //     },
+  //     messages: {
+  //       firstName: {
+  //         required: 'What\'s your first name?',
+  //       },
+  //       lastName: {
+  //         required: 'What\'s your last name?',
+  //       },
+  //       emailAddress: {
+  //         required: 'Need an email address here.',
+  //         email: 'Is this email address correct?',
+  //       },
+  //       password: {
+  //         required: 'Need a password here.',
+  //         minlength: 'Please use at least six characters.',
+  //       },
+  //     },
+  //     submitHandler() { component.handleSubmit(); },
+  //   });
+  // }
 
   handleSubmit() {
     const { history } = this.props;
@@ -142,7 +141,7 @@ class Signup extends React.Component {
                 />
                 <InputHint>Use at least six characters.</InputHint>
               </FormGroup>
-              <Button type="submit" bsStyle="success">Sign Up</Button>
+              <Button type="submit" bsStyle="success" onClick={this.handleSubmit}>Sign Up</Button>
               <AccountPageFooter>
                 <p>Already have an account? <Link to="/login">Log In</Link>.</p>
               </AccountPageFooter>

@@ -11,7 +11,6 @@ import { Bert } from 'meteor/themeteorchef:bert';
 import { withTracker } from 'meteor/react-meteor-data';
 
 import InputHint from '../../misc/InputHint/InputHint';
-import validate from '../../../modules/validate';
 
 import './Profile.scss';
 
@@ -20,56 +19,56 @@ class Profile extends React.Component {
     super(props);
     autoBind(this);
   }
-
-  componentDidMount() {
-    const component = this;
-
-    validate(component.form, {
-      rules: {
-        firstName: {
-          required: true,
-        },
-        lastName: {
-          required: true,
-        },
-        emailAddress: {
-          required: true,
-          email: true,
-        },
-        currentPassword: {
-          required() {
-            // Only required if newPassword field has a value.
-            return component.newPassword.value.length > 0;
-          },
-        },
-        newPassword: {
-          required() {
-            // Only required if currentPassword field has a value.
-            return component.currentPassword.value.length > 0;
-          },
-        },
-      },
-      messages: {
-        firstName: {
-          required: 'What\'s your first name?',
-        },
-        lastName: {
-          required: 'What\'s your last name?',
-        },
-        emailAddress: {
-          required: 'Need an email address here.',
-          email: 'Is this email address correct?',
-        },
-        currentPassword: {
-          required: 'Need your current password if changing.',
-        },
-        newPassword: {
-          required: 'Need your new password if changing.',
-        },
-      },
-      submitHandler() { component.handleSubmit(); },
-    });
-  }
+  //
+  // componentDidMount() {
+  //   const component = this;
+  //
+  //   validate(component.form, {
+  //     rules: {
+  //       firstName: {
+  //         required: true,
+  //       },
+  //       lastName: {
+  //         required: true,
+  //       },
+  //       emailAddress: {
+  //         required: true,
+  //         email: true,
+  //       },
+  //       currentPassword: {
+  //         required() {
+  //           // Only required if newPassword field has a value.
+  //           return component.newPassword.value.length > 0;
+  //         },
+  //       },
+  //       newPassword: {
+  //         required() {
+  //           // Only required if currentPassword field has a value.
+  //           return component.currentPassword.value.length > 0;
+  //         },
+  //       },
+  //     },
+  //     messages: {
+  //       firstName: {
+  //         required: 'What\'s your first name?',
+  //       },
+  //       lastName: {
+  //         required: 'What\'s your last name?',
+  //       },
+  //       emailAddress: {
+  //         required: 'Need an email address here.',
+  //         email: 'Is this email address correct?',
+  //       },
+  //       currentPassword: {
+  //         required: 'Need your current password if changing.',
+  //       },
+  //       newPassword: {
+  //         required: 'Need your new password if changing.',
+  //       },
+  //     },
+  //     submitHandler() { component.handleSubmit(); },
+  //   });
+  // }
 
   getUserType(user) {
     const userToCheck = user;
@@ -187,7 +186,7 @@ class Profile extends React.Component {
           />
           <InputHint>Use at least six characters.</InputHint>
         </FormGroup>
-        <Button type="submit" bsStyle="success">Save Profile</Button>
+        <Button type="submit" bsStyle="success" onClick={this.handleSubmit}>Save Profile</Button>
       </div>
     ) : <div />;
   }

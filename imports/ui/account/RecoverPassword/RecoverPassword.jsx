@@ -7,33 +7,32 @@ import { Accounts } from 'meteor/accounts-base';
 import { Bert } from 'meteor/themeteorchef:bert';
 
 import AccountPageFooter from '../AccountPageFooter/AccountPageFooter';
-import validate from '../../../modules/validate';
 
 class RecoverPassword extends React.Component {
   constructor(props) {
     super(props);
     autoBind(this);
   }
-
-  componentDidMount() {
-    const component = this;
-
-    validate(component.form, {
-      rules: {
-        emailAddress: {
-          required: true,
-          email: true,
-        },
-      },
-      messages: {
-        emailAddress: {
-          required: 'Need an email address here.',
-          email: 'Is this email address correct?',
-        },
-      },
-      submitHandler() { component.handleSubmit(); },
-    });
-  }
+  //
+  // componentDidMount() {
+  //   const component = this;
+  //
+  //   validate(component.form, {
+  //     rules: {
+  //       emailAddress: {
+  //         required: true,
+  //         email: true,
+  //       },
+  //     },
+  //     messages: {
+  //       emailAddress: {
+  //         required: 'Need an email address here.',
+  //         email: 'Is this email address correct?',
+  //       },
+  //     },
+  //     submitHandler() { component.handleSubmit(); },
+  //   });
+  // }
 
   handleSubmit() {
     const { history } = this.props;
@@ -68,7 +67,7 @@ class RecoverPassword extends React.Component {
                   className="form-control"
                 />
               </FormGroup>
-              <Button type="submit" bsStyle="success">Recover Password</Button>
+              <Button type="submit" bsStyle="success" onClick={this.handleSubmit}>Recover Password</Button>
               <AccountPageFooter>
                 <p>Remember your password? <Link to="/login">Log In</Link>.</p>
               </AccountPageFooter>
