@@ -264,7 +264,7 @@ class Import extends React.Component {
         insertMetadata,
         url: urlNoQuery,
       }
-      console.log('importData', importData);
+      //console.log('importData', importData);
       toImport.push(importData);
     }
     Session.set("Import_toImport", toImport);

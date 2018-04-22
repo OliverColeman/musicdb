@@ -123,7 +123,7 @@ class PlayList extends React.Component {
           <div className="item-header">
             <LinkOrNot link={!noLinks && viewType != 'page'} className="name" to={`/list/${playList._id}`}>
               {viewType == 'page' && editable ?
-                <EditInline doc={playList} field="name" updateMethod="PlayList.update" inputType={EditInline.types.textfield} />
+                <EditInline doc={playList} field="name" updateMethod="playlist.update" inputType={EditInline.types.textfield} />
                 :
                 playList.name
               }

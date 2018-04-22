@@ -4,7 +4,7 @@ import { getCompiler, getArtist, getAlbum, getTrack, getPlayList } from '../../.
 
 Jobs.register({
   "PlayList.import": function (ids, insertMetadata) {
-    console.log('job import', ids, insertMetadata)
+    //console.log('job import', ids, insertMetadata)
 
     const errHandler = (err) => {
       console.error("Import list job error", err.message);

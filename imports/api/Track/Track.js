@@ -2,7 +2,9 @@
 
 import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
-import { getCommonMusicItemFields } from '../Music/music';
+import { check, Match } from 'meteor/check';
+
+import { getCommonMusicItemFields, defaultAccessRules } from '../Music/music';
 import { normaliseString, normaliseStringMatch } from '../../modules/util';
 import Album from '../Album/Album';
 import Artist from '../Artist/Artist';
@@ -39,9 +41,13 @@ Track.schema = {
     optional: true,
   },
 }
+Track.schemaInstance = new SimpleSchema(Track.schema, { check });
+Track.attachSchema(Track.schemaInstance);
 
-Track.attachSchema(new SimpleSchema(Track.schema));
 
+Track.access = {
+  ...defaultAccessRules,
+}
 
 /**
  * Find Tracks by name and the name or id of an artist and the album.

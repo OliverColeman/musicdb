@@ -5,6 +5,8 @@ import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 
+import Access from '../../../modules/access';
+import EditInline from '../../misc/EditInline/EditInline.jsx';
 import CompilerCollection from '../../../api/Compiler/Compiler';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
@@ -24,6 +26,8 @@ class Compiler extends React.Component {
     if (loading) return (<Loading />);
     if (!compiler) return (<NotFound />);
 
+    const editable = !compiler.spotifyId && !compiler.mbId;
+
     if (viewType == 'inline') return (
       <LinkOrNot link={!noLinks} to={`/compiler/${compiler._id}`} title={compiler.name} className={"Compiler inline-viewtype name"}>
         {compiler.name}
@@ -33,7 +37,13 @@ class Compiler extends React.Component {
     return (
       <div className={"Compiler " + viewType + "-viewtype"}>
         <div className="item-header">
-          <LinkOrNot link={!noLinks} className="name" to={`/compiler/${compiler._id}`}>{compiler.name}</LinkOrNot>
+          <LinkOrNot link={!noLinks && viewType != "page"} className="name" to={`/compiler/${compiler._id}`}>
+            {viewType == 'page' && editable ?
+              <EditInline doc={compiler} field="name" updateMethod="compiler.update" inputType={EditInline.types.textfield} />
+              :
+              compiler.name
+            }
+          </LinkOrNot>
 
           {viewType == 'page' && <IconsAndLinks type='compiler' item={compiler} />}
         </div>

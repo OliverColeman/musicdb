@@ -3,31 +3,13 @@ import { check, Match } from 'meteor/check';
 
 import rateLimit from '../../modules/rate-limit';
 import Access from '../../modules/access';
-import { defaultAccessRules } from '../Music/music';
+//import { defaultAccessRules } from '../Music/music';
 import PlayList from './PlayList';
 import Track from '../Track/Track';
 import { getSchemaFieldTypes, throwMethodException } from '../Utility/methodutils';
 
 
 Meteor.methods({
-  'PlayList.update': function PlayListAddTracks(playList) {
-    const playListId = playList._id;
-    delete(playList._id);
-    PlayList.schemaInstance.validate(playList);
-
-    try {
-      const user = this.userId, op = 'update', item = playList;
-      if (!Access.allowed({accessRules: PlayList.access, op, item, user})) throw "Not allowed.";
-      playList = Access.filterDocumentFields({op, item, user, schema: PlayList.schema, defaultAccessRules});
-
-      PlayList.update(playListId, {
-        $set: playList,
-      });
-    } catch (exception) {
-      throwMethodException(exception);
-    }
-  },
-
   'PlayList.addTracks': function PlayListAddTracks(playListId, trackIds) {
     check(playListId, String);
     check(trackIds, [String]);

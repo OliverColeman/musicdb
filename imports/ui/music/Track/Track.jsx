@@ -10,6 +10,8 @@ import { DragSource, DropTarget } from 'react-dnd';
 import flow from 'lodash/flow';
 import classNames from 'classnames';
 
+import Access from '../../../modules/access';
+import EditInline from '../../misc/EditInline/EditInline.jsx';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
 import TrackCollection from '../../../api/Track/Track';
 import PlayList from '../PlayList/PlayList';
@@ -75,6 +77,8 @@ class Track extends React.Component {
     if (loading) return (<Loading />);
     if (!track) return (<NotFound />);
 
+    const editable = !track.spotifyId && !track.mbId;
+
 		const iconsAndLinks = showIconsAndLinks && viewType != 'list' ? (
 			<div className="header-right">
 				<IconsAndLinks type='track' item={track} showPlayer={viewType=='page'} />
@@ -128,7 +132,13 @@ class Track extends React.Component {
     return connectDragSource(connectDropTarget(
       <div className={"Track " + viewType + "-viewtype"}>
         <div className="item-header">
-          <LinkOrNot link={!noLinks} className="name" to={`/track/${track._id}`}>{track.name}</LinkOrNot>
+          <LinkOrNot link={!noLinks && viewType != "page"} className="name" to={`/track/${track._id}`}>
+            {viewType == 'page' && editable ?
+              <EditInline doc={track} field="name" updateMethod="track.update" inputType={EditInline.types.textfield} />
+              :
+              track.name
+            }
+          </LinkOrNot>
 					{iconsAndLinks}
         </div>
 

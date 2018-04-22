@@ -2,7 +2,9 @@
 
 import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
-import { getCommonMusicItemFields } from '../Music/music';
+import { check, Match } from 'meteor/check';
+
+import { getCommonMusicItemFields, defaultAccessRules } from '../Music/music';
 import { normaliseString, normaliseStringMatch } from '../../modules/util';
 
 const Compiler = new Mongo.Collection('Compiler');
@@ -24,7 +26,13 @@ const commonFields = getCommonMusicItemFields();
 Compiler.schema = {
   ...commonFields,
 };
-Compiler.attachSchema(new SimpleSchema(Compiler.schema));
+Compiler.schemaInstance = new SimpleSchema(Compiler.schema, { check });
+Compiler.attachSchema(Compiler.schemaInstance);
+
+
+Compiler.access = {
+  ...defaultAccessRules,
+}
 
 
 /**

@@ -5,6 +5,8 @@ import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 
+import Access from '../../../modules/access';
+import EditInline from '../../misc/EditInline/EditInline.jsx';
 import AlbumCollection from '../../../api/Album/Album';
 import Artist from '../Artist/Artist';
 import NotFound from '../../nav/NotFound/NotFound';
@@ -25,6 +27,8 @@ class Album extends React.Component {
 
     if (loading) return (<Loading />);
     if (!album) return (<NotFound />);
+
+    const editable = !album.spotifyId && !album.mbId;
 
     if (viewType == 'inline') return (
       <LinkOrNot link={!noLinks} to={`/album/${album._id}`} title={album.name} className={"Album inline-viewtype name"}>
@@ -61,7 +65,13 @@ class Album extends React.Component {
             }
 
             <div className="item-header">
-              <LinkOrNot link={!noLinks} className="name" to={`/album/${album._id}`}>{album.name}</LinkOrNot>
+              <LinkOrNot link={!noLinks && viewType != "page"} className="name" to={`/album/${album._id}`}>
+                {viewType == 'page' && editable ?
+                  <EditInline doc={album} field="name" updateMethod="album.update" inputType={EditInline.types.textfield} />
+                  :
+                  album.name
+                }
+              </LinkOrNot>
 
               {viewType == 'page' && <IconsAndLinks type='album' item={album} />}
             </div>

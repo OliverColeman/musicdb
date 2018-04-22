@@ -5,6 +5,8 @@ import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 
+import Access from '../../../modules/access';
+import EditInline from '../../misc/EditInline/EditInline.jsx';
 import ArtistCollection from '../../../api/Artist/Artist';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
@@ -25,6 +27,8 @@ class Artist extends React.Component {
     if (loading) return (<Loading />);
     if (!artist) return (<NotFound />);
 
+    const editable = !artist.spotifyId && !artist.mbId;
+
     // TODO list of (known) albums, tracks, and playlists.
 
     if (viewType == 'inline') return (
@@ -41,7 +45,13 @@ class Artist extends React.Component {
         }
 
         <div className="item-header">
-          <LinkOrNot link={!noLinks} className="name" to={`/artist/${artist._id}`}>{artist.name}</LinkOrNot>
+          <LinkOrNot link={!noLinks && viewType != "page"} className="name" to={`/artist/${artist._id}`}>
+            {viewType == 'page' && editable ?
+              <EditInline doc={artist} field="name" updateMethod="artist.update" inputType={EditInline.types.textfield} />
+              :
+              artist.name
+            }
+          </LinkOrNot>
 
           {viewType == 'page' && <IconsAndLinks type='artist' item={artist} />}
         </div>
