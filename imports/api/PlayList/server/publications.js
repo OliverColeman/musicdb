@@ -4,6 +4,7 @@ import { publishComposite } from 'meteor/reywood:publish-composite';
 
 import PlayList from '../PlayList';
 import Track from '../../Track/Track';
+import Artist from '../../Artist/Artist';
 
 
 publishComposite('PlayList.withId', function withId(documentId, includeTracks) {
@@ -19,7 +20,15 @@ publishComposite('PlayList.withId', function withId(documentId, includeTracks) {
         find(playList) {
           if (includeTracks) return Track.find({ _id: {$in: playList.trackIds }});
           return null;
-        }
+        },
+        children: [
+          {
+            find(track) {
+              // Also publish first Artist so we can get the artist name for, eg, the youtube search links.
+              return Artist.find({ _id: track.artistIds[0]});
+            }
+          }
+        ]
       }
     ]
   }
