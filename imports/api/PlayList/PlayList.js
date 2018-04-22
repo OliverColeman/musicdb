@@ -2,7 +2,9 @@
 
 import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
-import { getCommonMusicItemFields, defaultAccessRules } from '../Music/music';
+import { check, Match } from 'meteor/check';
+
+import { getCommonMusicItemFields, defaultAccessRules, adminUpdateOnlyAccessRules } from '../Music/music';
 import { normaliseString, normaliseStringMatch } from '../../modules/util';
 import Access from '../../modules/access';
 import Track from '../Track/Track';
@@ -42,6 +44,7 @@ PlayList.schema = {
         this.unset();  // Prevent user from supplying their own value
       }
     },
+    access: adminUpdateOnlyAccessRules
   },
   groupId: { type: String, optional: true },
   tagIds: { type: Array, optional: true },
@@ -53,10 +56,12 @@ PlayList.schema = {
   spotifyUserId: {
     type: String,
     optional: true,
+    access: adminUpdateOnlyAccessRules,
   },
 };
 
-PlayList.attachSchema(new SimpleSchema(PlayList.schema));
+PlayList.schemaInstance = new SimpleSchema(PlayList.schema, { check });
+PlayList.attachSchema(PlayList.schemaInstance);
 
 
 PlayList.access = {

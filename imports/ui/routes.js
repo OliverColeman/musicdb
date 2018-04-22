@@ -20,7 +20,7 @@ export default [
     url: "/import",
     menu: 'left',
     title: "Import",
-    access: {collection: PlayListCollection, op: 'create'},
+    access: {accessRules: PlayListCollection.access, op: 'create'},
     renderComponent: Import,
     routerComponent: Authenticated
   },

@@ -20,7 +20,7 @@ Meteor.methods({
       date: Match.Maybe(Number),
     });
 
-    if (!Access.allowed({collection: PlayList, op: 'create', user: this.userId})) throwMethodException("Not allowed.");
+    if (!Access.allowed({accessRules: PlayList.access, op: 'create', user: this.userId})) throwMethodException("Not allowed.");
 
     // Check user is allowed to put list in specified group.
     const user = Meteor.users.findOne(this.userId);

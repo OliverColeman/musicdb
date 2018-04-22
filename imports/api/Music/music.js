@@ -51,6 +51,7 @@ const getCommonMusicItemFields = () => {
     imageURLs: {
       type: Object,
       optional: true,
+      access: adminUpdateOnlyAccessRules,
     },
     "imageURLs.small": { type: String, optional: true },
     "imageURLs.medium": { type: String, optional: true },
@@ -59,11 +60,13 @@ const getCommonMusicItemFields = () => {
     spotifyId: {
       type: String,
       optional: true,
+      access: adminUpdateOnlyAccessRules,
     },
     // MusicBrainz
     mbId: {
       type: String,
       optional: true,
+      access: adminUpdateOnlyAccessRules,
     },
 
     soundex: {
@@ -72,6 +75,7 @@ const getCommonMusicItemFields = () => {
         const name = this.field("name");
         if (name.value) return soundex(name.value);
       },
+      access: adminUpdateOnlyAccessRules,
     }, 'soundex.$': {
       type: String,
     },
@@ -83,6 +87,7 @@ const getCommonMusicItemFields = () => {
         const name = this.field("name");
         if (name.value) return doubleMetaphone(name.value);
       },
+      access: adminUpdateOnlyAccessRules,
     }, 'doubleMetaphone.$': {
       type: String,
     },
@@ -96,9 +101,20 @@ const defaultAccessRules = {
   [Access.OWN]: [ 'view', 'update', 'delete' ],
   admin: [ 'view', 'update', 'delete', 'create' ],
   // Note: If a user has the 'admin' role in the Roles.GLOBAL_GROUP then these
-  // rules apply across all groups, otherwise they appy only for the groups the
-  // user and (if applicable) item is in .
+  // rules apply across all groups, otherwise they apply only for the groups the
+  // user and (if applicable) item is in.
 }
 
 
-export { getCommonMusicItemFields, defaultAccessRules };
+const adminUpdateOnlyAccessRules = {
+  [Access.UNAUTHENTICATED]: [ 'view' ],
+  [Access.AUTHENTICATED]: [ 'view' ],
+  [Access.OWN]: [ 'view', 'delete' ],
+  admin: [ 'view', 'update', 'delete', 'create' ],
+  // Note: If a user has the 'admin' role in the Roles.GLOBAL_GROUP then these
+  // rules apply across all groups, otherwise they apply only for the groups the
+  // user and (if applicable) item is in.
+}
+
+
+export { getCommonMusicItemFields, defaultAccessRules, adminUpdateOnlyAccessRules };

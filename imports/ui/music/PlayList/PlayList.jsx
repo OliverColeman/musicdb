@@ -9,6 +9,7 @@ import moment from 'moment';
 import update from 'immutability-helper';
 
 import Access from '../../../modules/access';
+import EditInline from '../../misc/EditInline/EditInline.jsx';
 import PlayListCollection from '../../../api/PlayList/PlayList';
 import TrackCollection from '../../../api/Track/Track';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
@@ -75,7 +76,7 @@ class PlayList extends React.Component {
     if (!playList && viewType == 'page') return (  <NotFound /> );
     if (!playList) return ( <div className="PlayList not-found" /> );
 
-    const editable = Access.allowed({collection: PlayListCollection, op: 'update', item: playList, user});
+    const editable = Access.allowed({accessRules: PlayListCollection.access, op: 'update', item: playList, user});
 
     if (viewType == 'inline') return (
       <LinkOrNot link={!noLinks} to={`/list/${playList._id}`} title={playList.name} className={"PlayList inline-viewtype name"}>
@@ -120,7 +121,13 @@ class PlayList extends React.Component {
       <div className={"PlayList " + viewType + "-viewtype"}>
         <div className="item-details">
           <div className="item-header">
-            <LinkOrNot link={!noLinks} className="name" to={`/list/${playList._id}`}>{playList.name}</LinkOrNot>
+            <LinkOrNot link={!noLinks && viewType != 'page'} className="name" to={`/list/${playList._id}`}>
+              {viewType == 'page' && editable ?
+                <EditInline doc={playList} field="name" updateMethod="PlayList.update" inputType={EditInline.types.textfield} />
+                :
+                playList.name
+              }
+            </LinkOrNot>
             <IconsAndLinks type='playlist' item={playList} showPlayer={true} />
           </div>
 
