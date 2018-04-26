@@ -5,6 +5,7 @@ import _ from 'lodash';
 
 import { normaliseString, normaliseStringMatch } from '../../util';
 import MusicService from './music_service_class';
+import MusicBrainz from './musicbrainz';
 import Compiler from '../../../api/Compiler/Compiler';
 import Artist from '../../../api/Artist/Artist';
 import Album from '../../../api/Album/Album';
@@ -200,8 +201,9 @@ const getCompiler = async (ids, insertMetadata) => {
 /**
  * @summary Get/create an Artist.
  * @param {Object} ids An id field, such as _id or spotifyId.
- * @param {Object} details Artist details (not implemented yet, see TODO in getTrack),
-    or a full artist description from a music service, eg {spotifyArtist}. May be empty.
+ * @param {Object} details May include a full artist description from the Spotify
+ *   API {'spotifyArtist'} and/or the name of a track for disambiguation
+ *   {'trackName'}. May be empty.
  */
 const getArtist = async (ids, details, insertMetadata) => {
   ids = ids || {};
@@ -219,6 +221,32 @@ const getArtist = async (ids, details, insertMetadata) => {
         const spotifyAPI = await getSpotifyAPI();
         const response = await spotifyAPI.getArtist(spotifyId);
         spotifyArtist = response.body;
+      }
+
+      if (!artist) {
+        const artistNameNorm = normaliseString(spotifyArtist.name);
+        const artistRecords = Artist.find({nameNormalised: artistNameNorm}).fetch();
+
+        if (details.trackName) {
+          // See if we have a matching artist/track pair on record. The probability of two
+          // artists with the same name that have tracks with the same name is negligible.
+          const trackNameNorm = normaliseString(details.trackName);
+          artist = artistRecords.find(art => !!Track.findOne({artistIds: art._id, nameNormalised: trackNameNorm}));
+        }
+
+        // Otherwise if we have a single matching artist record, see if MusicBrainz
+        // has only one record of this artist name (exact match of normalised
+        // name). The chance that MB has only one matching artist when there are
+        // multiple artists out there that we're likely to reference is negligible.
+        if (!artist && artistRecords.length == 1) {
+          const results = await MusicBrainz.api.searchAsync('artist', { artist: artistNameNorm });
+          const mbArtistMatches = results.artists && results.artists.filter(mba =>
+            normaliseString(mba.name) == artistNameNorm
+          );
+          if (mbArtistMatches.length == 1) {
+            artist = artistRecords[0];
+          }
+        }
       }
 
       if (artist) {
@@ -257,7 +285,8 @@ const getArtist = async (ids, details, insertMetadata) => {
  * @summary Get/create an Album. Either by ids or by artist (ids) and name.
  * @param {Object} ids An id field, such as _id or spotifyId. May be empty.
  * @param {Object} details Album details including {albumName, artistIds (internal)
- *   or artistNames}, or a full album description {spotifyAlbum}. May be empty.
+ *   or artistNames}, or a full album description {spotifyAlbum}. May also
+ *   include 'trackName' for artist disambiguation. May be empty.
  */
 const getAlbum = async (ids, details, insertMetadata) => {
   details = details || {};
@@ -348,7 +377,7 @@ const getAlbum = async (ids, details, insertMetadata) => {
             // See if this artist appears in the artists listed for the recording on Spotify.
             spotifyArtist = spotifyArtists.find(sa => normaliseStringMatch(sa.name, artist.name));
             if (spotifyArtist) {
-              await getArtist({_id: artist._id}, { spotifyArtist });
+              await getArtist({_id: artist._id}, { spotifyArtist, trackName: details.trackName });
               spotifyArtists = spotifyArtists.filter(sa => sa.id != spotifyArtist.id);
             }
           }
@@ -360,7 +389,7 @@ const getAlbum = async (ids, details, insertMetadata) => {
         if (spotifyArtists.length) {
           let newArtists = [];
           for (let sa of spotifyArtists) {
-            newArtists.push(await getArtist({spotifyId: sa.id}, {spotifyArtist: sa}));
+            newArtists.push(await getArtist({spotifyId: sa.id}, {spotifyArtist: sa, trackName: details.trackName}));
           }
 
           if (album) {
@@ -378,7 +407,7 @@ const getAlbum = async (ids, details, insertMetadata) => {
       /////// We have a spotifyAlbum but no matching Album. Create the Album. ////////
       // Get Artists and Album.
       let spotifyArtistIds = spotifyAlbum.artists.map(sa => sa.id);
-      await ensureArtistsBySpotifyId(spotifyArtistIds);
+      await ensureArtistsBySpotifyId(spotifyArtistIds, details.trackName);
       artists = Artist.find({spotifyId: {$in: spotifyArtistIds}});
 
       // Create the Album.
@@ -538,7 +567,7 @@ const getTrack = async (ids, details, insertMetadata) => {
         if (!album.spotifyId) {
           // If our recorded album name and the spotify album name match.
           if (normaliseStringMatch(album.name, spotifyTrack.album.name)) {
-            album = await getAlbum({_id: album._id}, {spotifyAlbum: spotifyTrack.album});
+            album = await getAlbum({_id: album._id}, {spotifyAlbum: spotifyTrack.album, trackName: spotifyTrack.name});
           }
         }
 
@@ -548,7 +577,7 @@ const getTrack = async (ids, details, insertMetadata) => {
             // See if this artist appears in the artists listed for the recording on Spotify.
             spotifyArtist = spotifyArtists.find(sa => normaliseStringMatch(sa.name, artist.name));
             if (spotifyArtist) {
-              await getArtist({_id: artist._id}, { spotifyArtist });
+              await getArtist({_id: artist._id}, { spotifyArtist, trackName: spotifyTrack.name });
               spotifyArtists = spotifyArtists.filter(sa => sa.id != spotifyArtist.id);
             }
           }
@@ -560,7 +589,7 @@ const getTrack = async (ids, details, insertMetadata) => {
         if (spotifyArtists.length) {
           let newArtists = [];
           for (let sa of spotifyArtists) {
-            newArtists.push(await getArtist({spotifyId: sa.id}, {spotifyArtist: sa}));
+            newArtists.push(await getArtist({spotifyId: sa.id}, {spotifyArtist: sa, trackName: spotifyTrack.name}));
           }
           try {
             Track.update(track._id, {
@@ -578,9 +607,9 @@ const getTrack = async (ids, details, insertMetadata) => {
 
       /////// We have a spotifyTrack but no matching Track. Create the Track. ////////
       // Get Artists and Album.
-      album = await getAlbum({spotifyId: spotifyTrack.album.id}, {spotifyAlbum: spotifyTrack.album});
+      album = await getAlbum({spotifyId: spotifyTrack.album.id}, {spotifyAlbum: spotifyTrack.album, trackName: spotifyTrack.name});
       let spotifyArtistIds = spotifyTrack.artists.map(sa => sa.id);
-      await ensureArtistsBySpotifyId(spotifyArtistIds);
+      await ensureArtistsBySpotifyId(spotifyArtistIds, spotifyTrack.name);
       artists = Artist.find({spotifyId: {$in: spotifyArtistIds}});
 
       // Determine if the specified duration matches the duration of the Spotify track.
@@ -634,7 +663,7 @@ const getTrack = async (ids, details, insertMetadata) => {
         spotifyArtistIds.push(spotArtist.id);
       }
     }
-    await ensureArtistsBySpotifyId(spotifyArtistIds);
+    await ensureArtistsBySpotifyId(spotifyArtistIds, details.trackName);
     const artists = Artist.find({spotifyId: {$in: spotifyArtistIds}});
     const artistIds = artists.map(artist => artist._id);
 
@@ -642,6 +671,7 @@ const getTrack = async (ids, details, insertMetadata) => {
       {
         albumName: details.albumName,
         artistIds,
+        trackName: details.trackName,
       }, {
         // This isn't necessarily a complete list of artists for this album.
         dataMaybeMissing: ['artistIds'],
@@ -694,14 +724,16 @@ const getPlayList = async (ids, insertMetadata) => {
       // Avoids requesting many single artists and albums during track import.
       let artistSpotifyIds = [];
       let albumSpotifyIds = [];
+      let trackNames = []
       // Collate ids.
       for (spotifyTrack of listTracks) {
         if (!spotifyTrack.track.id) continue; // If not a spotify track.
         for (artist of spotifyTrack.track.artists) artistSpotifyIds.push(artist.id);
         for (artist of spotifyTrack.track.album.artists) artistSpotifyIds.push(artist.id);
         albumSpotifyIds.push(spotifyTrack.track.album.id);
+        trackNames.push(spotifyTrack.track.name);
       }
-      await ensureArtistsBySpotifyId(artistSpotifyIds);
+      await ensureArtistsBySpotifyId(artistSpotifyIds, trackNames);
       await ensureAlbumsBySpotifyId(albumSpotifyIds);
 
       // Then create track documents.
@@ -760,40 +792,51 @@ const getPlayList = async (ids, insertMetadata) => {
 
 
 // Utility method to ensure we have records for the given spotify artist IDs.
-// Uses minimum nuspotifyer of Spotify API requests.
-const ensureArtistsBySpotifyId = async (spotifyArtistIds) => {
+// Uses minimum number of Spotify API requests.
+const ensureArtistsBySpotifyId = async (spotifyArtistIds, trackNames) => {
+  if (!trackNames || typeof trackNames == 'string') trackNames = _.times(spotifyArtistIds.length, () => trackNames);
+  let joint = _.zip(spotifyArtistIds, trackNames);
   // Remove duplicates.
-  spotifyArtistIds = [ ...new Set(spotifyArtistIds) ];
+  joint = _.uniqBy(joint, j => j[0]);
   // Filter out those for which we already have a record.
-  spotifyArtistIds = spotifyArtistIds.filter(spotifyId => !Artist.findOne({spotifyId}));
+  joint = joint.filter(j => !Artist.findOne({spotifyId: j[0]}));
+
   // Get artist records from Spotify, respecting limit of 50 per request.
-  while (spotifyArtistIds.length) {
+  while (joint.length) {
+    const artIdTrackMap = joint.splice(0, 50);
+    const [spotifyIds, trackNames ] = _.unzip(artIdTrackMap);
     const spotifyAPI = await getSpotifyAPI();
-    response = await spotifyAPI.getArtists(spotifyArtistIds.splice(0, 50));
-    for (artist of response.body.artists) {
+    response = await spotifyAPI.getArtists(spotifyIds);
+    for (let artIdTrack of artIdTrackMap) {
+      const spotifyArtist = response.body.artists.find(a => a.id == artIdTrack[0]);
       await getArtist(
-        {spotifyId: artist.id},
-        {spotifyArtist: artist}
+        {spotifyId: spotifyArtist.id},
+        {spotifyArtist, trackName: artIdTrack[1]}
       );
     }
   }
 }
 
 // Utility method to ensure we have records for the given spotify album IDs.
-// Uses minimum nuspotifyer of Spotify API requests.
-const ensureAlbumsBySpotifyId = async (spotifyAlbumIds) => {
+// Uses minimum number of Spotify API requests.
+const ensureAlbumsBySpotifyId = async (spotifyAlbumIds, trackNames) => {
+  if (!trackNames || typeof trackNames == 'string') trackNames = _.times(spotifyAlbumIds.length, () => trackNames);
+  let joint = _.zip(spotifyAlbumIds, trackNames);
   // Remove duplicates.
-  spotifyAlbumIds = [ ...new Set(spotifyAlbumIds) ];
+  joint = _.uniqBy(joint, j => j[0]);
   // Filter out those for which we already have a record.
-  spotifyAlbumIds = spotifyAlbumIds.filter(spotifyId => !Album.findOne({spotifyId}));
-  // Get album records from Spotify, respecting limit of 50 per request.
-  while (spotifyAlbumIds.length) {
+  joint = joint.filter(j => !Album.findOne({spotifyId: j[0]}));
+  // Get album records from Spotify, respecting limit of 20 per request.
+  while (joint.length) {
+    const albumIdTrackMap = joint.splice(0, 20);
+    const [spotifyIds, trackNames ] = _.unzip(albumIdTrackMap);
     const spotifyAPI = await getSpotifyAPI();
-    response = await spotifyAPI.getAlbums(spotifyAlbumIds.splice(0, 20));
-    for (album of response.body.albums) {
+    response = await spotifyAPI.getAlbums(spotifyIds);
+    for (let albumIdTrack of albumIdTrackMap) {
+      const spotifyAlbum = response.body.albums.find(a => a.id == albumIdTrack[0]);
       await getAlbum(
-        {spotifyId: album.id},
-        {spotifyAlbum: album}
+        {spotifyId: spotifyAlbum.id},
+        {spotifyAlbum, trackName: albumIdTrack[1]}
       );
     }
   }

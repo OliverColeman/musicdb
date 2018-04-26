@@ -27,11 +27,18 @@ const typeMapping = {
 }
 
 
+const mbAPI = bluebird.promisifyAll(new NB({
+  userAgent:'musicdb/0.0.1 ( https://github.com/OliverColeman/musicdb )',
+  retryOn: true, retryDelay: 3000, retryCount: 3,
+  defaultLimit: 50
+}));
+
+
 /**
  * Functions to import items from MusicBrainz.
  * @see MusicService
  */
-export default class MusicBrainz extends MusicService {
+class MusicBrainz extends MusicService {
   constructor() {
     super("MusicBrainz", "mb", "https://mb.com");
   }
@@ -119,19 +126,17 @@ export default class MusicBrainz extends MusicService {
   }
 }
 
+MusicBrainz.api = mbAPI;
 
-const mbAPI = bluebird.promisifyAll(new NB({
-  userAgent:'musicdb/0.0.1 ( https://github.com/OliverColeman/musicdb )',
-  retryOn: true, retryDelay: 3000, retryCount: 3,
-  defaultLimit: 50
-}));
+export default MusicBrainz;
 
 
 /**
  * @summary Get/create an Artist.
  * @param {Object} ids One or more id fields, such as _id or mbId.
- * @param {Object} details Artist details (not implemented yet, see TODO in getTrack),
-    or a full artist description from the MB API {'mbArtist'}. May be empty.
+ * @param {Object} details May include a full artist description from the MB API
+ *   {'mbArtist'} and/or the name of a track for disambiguation {'trackName'}.
+ *   May be empty.
  */
 const getArtist = async (ids, details, insertMetadata) => {
   ids = ids || {};
@@ -150,6 +155,32 @@ const getArtist = async (ids, details, insertMetadata) => {
         mbArtist = await mbAPI.artistAsync(mbId);
       }
 
+      if (!artist) {
+        const artistNameNorm = normaliseString(mbArtist.name);
+        const artistRecords = Artist.find({nameNormalised: artistNameNorm}).fetch();
+
+        if (details.trackName) {
+          // See if we have a matching artist/track pair on record. The probability of two
+          // artists with the same name that have tracks with the same name is negligible.
+          const trackNameNorm = normaliseString(details.trackName);
+          artist = artistRecords.find(art => !!Track.findOne({artistIds: art._id, nameNormalised: trackNameNorm}));
+        }
+
+        // Otherwise if we have a single matching artist record, see if MB
+        // has only one record of this artist name (exact match of normalised
+        // name). The chance that MB has only one matching artist when there are
+        // multiple artists out there that we're likely to reference is negligible.
+        if (!artist && artistRecords.length == 1) {
+          const results = await mbAPI.searchAsync('artist', { artist: artistNameNorm });
+          const mbArtistMatches = results.artists && results.artists.filter(mba =>
+            normaliseString(mba.name) == artistNameNorm
+          );
+          if (mbArtistMatches.length == 1) {
+            artist = artistRecords[0];
+          }
+        }
+      }
+
       if (artist) {
         Artist.update(artist._id,  {$set :{
           mbId,
@@ -158,6 +189,7 @@ const getArtist = async (ids, details, insertMetadata) => {
         return Artist.findOne(artist._id);
       }
 
+      // If we couldn't match with an existing Artist record, create one.
       artist = {
         name: mbArtist.name,
         mbId,
@@ -186,7 +218,7 @@ const getArtist = async (ids, details, insertMetadata) => {
  * @param {Object} ids One or more id fields, such as _id or mbId. May be empty.
  * @param {Object} details Album details including {albumName, artistIds (internal)
  *   or artistNames}, or a full album description from the MB API
- *   {'mbAlbum'}. May be empty.
+ *   {'mbAlbum'}. May also include 'trackName' for artist disambiguation. May be empty.
  */
 const getAlbum = async (ids, details, insertMetadata) => {
   details = details || {};
@@ -286,7 +318,7 @@ const getAlbum = async (ids, details, insertMetadata) => {
             // See if this artist appears in the artists listed for the recording on MB.
             mbArtist = mbArtists.find(mba => normaliseStringMatch(mba.name, artist.name));
             if (mbArtist) {
-              await getArtist({_id: artist._id}, { mbArtist });
+              await getArtist({_id: artist._id}, { mbArtist, trackName: details.trackName });
               mbArtists = mbArtists.filter(mba => mba.id != mbArtist.id);
             }
           }
@@ -298,7 +330,7 @@ const getAlbum = async (ids, details, insertMetadata) => {
         if (mbArtists.length) {
           let newArtists = [];
           for (let mba of mbArtists) {
-            newArtists.push(await getArtist({mbId: mba.id}, {mbArtist: mba}));
+            newArtists.push(await getArtist({mbId: mba.id}, {mbArtist: mba, trackName: details.trackName}));
           }
           Album.update(album._id, {
             $push: {artistIds: {$each: newArtists.map(a => a._id)}},
@@ -317,7 +349,7 @@ const getAlbum = async (ids, details, insertMetadata) => {
       for (let mba of mbArtists) {
        artists.push(await getArtist(
           {mbId: mba.id},
-          {mbArtist: mba}
+          {mbArtist: mba, trackName: details.trackName}
         ));
       }
 
@@ -494,7 +526,7 @@ const getTrack = async (ids, details, insertMetadata) => {
           if (!album.mbId && mbReleaseGroups.length) {
             mbAlbum = matchReleaseGroup(mbReleaseGroups, album.name);
             if (mbAlbum) {
-              album = await getAlbum({_id: album._id}, {mbAlbum});
+              album = await getAlbum({_id: album._id}, {mbAlbum, trackName: mbTrack.title});
             }
           }
         }
@@ -505,7 +537,7 @@ const getTrack = async (ids, details, insertMetadata) => {
             // See if this artist appears in the artists listed for the recording on MB.
             mbArtist = mbArtists.find(mba => normaliseStringMatch(mba.name, artist.name));
             if (mbArtist) {
-              await getArtist({_id: artist._id}, { mbArtist });
+              await getArtist({_id: artist._id}, { mbArtist, trackName: mbTrack.title });
               mbArtists = mbArtists.filter(mba => mba.id != mbArtist.id);
             }
           }
@@ -517,7 +549,7 @@ const getTrack = async (ids, details, insertMetadata) => {
         if (mbArtists.length) {
           let newArtists = [];
           for (let mba of mbArtists) {
-            newArtists.push(await getArtist({mbId: mba.id}, {mbArtist: mba}));
+            newArtists.push(await getArtist({mbId: mba.id}, {mbArtist: mba, trackName: mbTrack.title}));
           }
           Track.update(track._id, {
             $push: {artistIds: {$each: newArtists.map(a => a._id)}},
@@ -532,7 +564,7 @@ const getTrack = async (ids, details, insertMetadata) => {
       /////// We have an mbTrack but no matching Track. Create the Track. ////////
       // Get Album.
       mbAlbum = mbReleaseGroups.length && matchReleaseGroup(mbReleaseGroups, details.albumName ? details.albumName : null);
-      album = mbAlbum ? await getAlbum({mbId: mbAlbum.id}, {mbAlbum}) : null;
+      album = mbAlbum ? await getAlbum({mbId: mbAlbum.id}, {mbAlbum, trackName: mbTrack.title}) : null;
 
       // Get Artists.
       mbArtists = mbTrack['artist-credit'].map(ac => ac.artist);
@@ -540,7 +572,7 @@ const getTrack = async (ids, details, insertMetadata) => {
       for (let mba of mbArtists) {
        artists.push(await getArtist(
           {mbId: mba.id},
-          {mbArtist: mba}
+          {mbArtist: mba, trackName: mbTrack.title}
         ));
       }
 
@@ -618,6 +650,7 @@ const getTrack = async (ids, details, insertMetadata) => {
       {
         albumName: details.albumName,
         artistIds,
+        trackName: details.trackName
       }, {
         // This isn't necessarily a complete list of artists for this album.
         dataMaybeMissing: ['artistIds'],

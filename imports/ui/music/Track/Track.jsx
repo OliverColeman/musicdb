@@ -10,12 +10,13 @@ import { DragSource, DropTarget } from 'react-dnd';
 import flow from 'lodash/flow';
 import classNames from 'classnames';
 
-import Access from '../../../modules/access';
-import EditInline from '../../misc/EditInline/EditInline.jsx';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
-import TrackCollection from '../../../api/Track/Track';
-import PlayList from '../PlayList/PlayList';
 import PlayListCollection from '../../../api/PlayList/PlayList';
+import LinkedTrackCollection from '../../../api/LinkedTrack/LinkedTrack';
+import TrackCollection from '../../../api/Track/Track';
+
+import EditInline from '../../misc/EditInline/EditInline.jsx';
+import PlayList from '../PlayList/PlayList';
 import Album from '../Album/Album';
 import Artist from '../Artist/Artist';
 import NotFound from '../../nav/NotFound/NotFound';
@@ -23,6 +24,8 @@ import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
 import dndTypes from '../DnDTypes';
 import IconsAndLinks from '../IconsAndLinks/IconsAndLinks';
+import PlayListList from '../PlayListList/PlayListList';
+import TrackList from '../Track/TrackList';
 
 import './Track.scss';
 
@@ -71,8 +74,9 @@ class Track extends React.Component {
   }
 
   render() {
-    const { loading, loadingPlayLists, playLists, track, viewType, noLinks, showIconsAndLinks, onClick,
-            isDragging, hoveredTop, hoveredBottom, connectDragSource, connectDropTarget, } = this.props;
+    const { loading, track, loadingPlayLists, loadingLinkedTracks, linkedTracks,
+						viewType, noLinks, showIconsAndLinks, onClick, isDragging, hoveredTop,
+						hoveredBottom, connectDragSource, connectDropTarget} = this.props;
 
     if (loading) return (<Loading />);
     if (!track) return (<NotFound />);
@@ -154,17 +158,17 @@ class Track extends React.Component {
 
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
 
-        <div className="playLists">
-          <div className="header-row">
-            { ["Name", "Date", "Compiler", "Length"].map(h => (
-              <div className={"header-cell header-" + h} key={h}>{h}</div>
-            ))}
-          </div>
+        <div className="play-lists">
+					<h4>Appears in play lists:</h4>
+					<PlayListList selector={{trackIds: track._id}} loadingLists={loadingPlayLists} />
+				</div>
 
-          { loadingPlayLists ? (<Loading />) : playLists.map(playlist => (
-            <PlayList playList={playlist} viewType="list" key={playlist._id} showDate={true} noLinks={noLinks} />
-          ))}
-        </div>
+				{ !loadingLinkedTracks && linkedTracks &&
+					<div className="linked-tracks">
+						<h4>Other versions of this track:</h4>
+						{ loadingLinkedTracks ? <Loading /> : <TrackList items={linkedTracks} /> }
+					</div>
+				}
       </div>
     ));
   }
@@ -208,11 +212,16 @@ export default flow(
 
     const subPlayLists = viewType == 'page' && Meteor.subscribe('Track.playLists', trackId);
 
+		const subLinkedTracks = viewType == 'page' && Meteor.subscribe('LinkedTracks.forTrackId', trackId);
+		const linkedTrackRecord = subLinkedTracks && LinkedTrackCollection.findOne({ trackIds: trackId });
+		const LinkedTrackIds = linkedTrackRecord && linkedTrackRecord.trackIds.filter(id => id != trackId);
+
     return {
       loading: subscription && !subscription.ready(),
       track: track || TrackCollection.findOne(trackId),
       loadingPlayLists: subPlayLists && !subPlayLists.ready(),
-      playLists: subPlayLists && PlayListCollection.find({ trackIds: trackId}).fetch(),
+			loadingLinkedTracks: subLinkedTracks && !subLinkedTracks.ready(),
+			linkedTracks: LinkedTrackIds && TrackCollection.find({_id: {$in: LinkedTrackIds}}).fetch(),
       viewType,
       noLinks,
 			showIconsAndLinks,

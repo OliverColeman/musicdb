@@ -8,17 +8,17 @@
     & > * {
       margin: 0.5em 0;
     }
+
+    h4 {
+      margin-top: 2.5em;
+      clear: both;
+    }
   }
 
   &.inline-viewtype {
     & > * {
       margin: 0 1em;
     }
-  }
-
-  /* TODO Inline layout and remove some details on small screens */
-  .playLists {
-    @include playlist-table;
   }
 
   &.dragging {

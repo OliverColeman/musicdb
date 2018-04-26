@@ -17,12 +17,12 @@
 }
 
 .Album.page-viewtype .album-image,
-.Track.page-viewtype .album-image {
+.Track.page-viewtype > .album-image {
   float: right;
   margin-left: 1em;
 
   & img {
     // TODO: remove when correct images are loaded
-    height: 300px;
+    //height: 300px;
   }
 }
