@@ -5,11 +5,13 @@ import { ButtonToolbar, ButtonGroup, Button, Label } from 'react-bootstrap';
 import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
+import _ from 'lodash';
 
 import { musicCollection } from '../../../api/Music/collections';
 
 import PlayListList from '../PlayListList/PlayListList';
 import TrackList from '../Track/TrackList';
+import ArtistList from '../Artist/ArtistList';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 
@@ -18,7 +20,7 @@ import './NeedsReview.scss';
 
 const typeMap = {
   // album: Album,
-  // artist: Artist,
+  artist: ArtistList,
   // compiler: Compiler,
   playlist: PlayListList,
   track: TrackList
@@ -34,10 +36,26 @@ class NeedsReview extends React.Component {
 
     if (loading) return ( <Loading /> );
 
+    const reviewItems = items.filter(item => item.needsReview || item.dataMaybeMissing && item.dataMaybeMissing.length);
+
+    let dupItems = _.groupBy(items, item => item.nameNormalised);
+    dupItems = _.pickBy(dupItems, groupedItems => groupedItems.length >= 2);
+    dupItems = _.flatten(_.values(dupItems));
+    //console.log(dupItems);
+
     return (
       <div className={"NeedsReview"}>
-        <h4>{type.charAt(0).toUpperCase() + type.slice(1)}s needing review</h4>
-        { React.createElement(typeMap[type], {items}) }
+        <div className="review-items">
+          <h4>{type.charAt(0).toUpperCase() + type.slice(1)}s needing review</h4>
+          { React.createElement(typeMap[type], {items: reviewItems}) }
+        </div>
+
+        { dupItems.length &&
+          <div className="duplicate-items">
+            <h4>Potential duplicate items</h4>
+            { React.createElement(typeMap[type], {items: dupItems}) }
+          </div>
+        }
       </div>
     );
   }
@@ -52,9 +70,10 @@ export default withTracker(({match}) => {
   return {
     type,
     loading: !sub.ready(),
-    items: collection.find({$or: [
-      {needsReview: true},
-      {dataMaybeMissing: {$exists: true, $ne: []}}
-    ]}).fetch()
+    items: collection.find({}).fetch(),
+    // items: collection.find({$or: [
+    //   {needsReview: true},
+    //   {dataMaybeMissing: {$exists: true, $ne: []}}
+    // ]}).fetch()
   };
 })(NeedsReview);

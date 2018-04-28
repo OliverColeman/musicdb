@@ -46,7 +46,7 @@ class PlayListList extends React.Component {
 }
 
 
-export default withTracker(({loadingLists, selector}) => {
+export default withTracker(({loadingLists, selector, items}) => {
   const sortOptions = {
     number: -1,
     date: -1,
@@ -55,6 +55,6 @@ export default withTracker(({loadingLists, selector}) => {
 
   return {
     loadingLists,
-    playLists: !loadingLists && PlayListCollection.find(selector, {sort: sortOptions}).fetch(),
+    playLists: items ? items : (!loadingLists && PlayListCollection.find(selector, {sort: sortOptions}).fetch()),
   };
 })(PlayListList);

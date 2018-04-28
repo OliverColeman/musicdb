@@ -1,6 +1,4 @@
-.Artist {
-  
-}
+@import '../../stylesheets/variables';
 
 .Artist.page-viewtype .artist-image {
   float: right;
@@ -10,4 +8,10 @@
     // TODO: remove when correct images are loaded
     height: 300px;
   }
+}
+
+
+.ArtistList {
+  @include playlist-table;
+  margin-top: 15px;
 }

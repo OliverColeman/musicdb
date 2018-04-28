@@ -53,7 +53,15 @@ export default [
         access: {role: 'admin'},
         renderComponent: NeedsReview,
         routerComponent: Authenticated
-      }
+      },
+      {
+        url: "/review/artists",
+        menu: 'left',
+        title: "Artists",
+        access: {role: 'admin'},
+        renderComponent: NeedsReview,
+        routerComponent: Authenticated
+      },
     ],
   },
 

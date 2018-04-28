@@ -143,19 +143,19 @@ Jobs.register({
 //importFromURL('playlist', "https://open.spotify.com/user/1255543442/playlist/3daHzs65o0T2vzWBIZdab9").await();
 
 
-Meteor.setTimeout(() => {
-  let tra;
-
-  tra = importFromURL('track', "https://open.spotify.com/track/0vhCcrN8ULryq1KuEEYlm2").await();
-  console.log('tra s', tra);
-
-  tra = importFromURL('track', "https://musicbrainz.org/recording/fc6e4946-581d-4fb0-af52-4ba5127553bb").await();
-  console.log('tra mb', tra);
-
-  tra = importFromURL('track', "https://open.spotify.com/track/1pzQSwqvKFz6rAPrGJmyBG").await();
-  console.log('tra s2', tra);
-
-}, 300);
+// Meteor.setTimeout(() => {
+//   let tra;
+//
+//   tra = importFromURL('track', "https://open.spotify.com/track/0vhCcrN8ULryq1KuEEYlm2").await();
+//   console.log('tra s', tra);
+//
+//   tra = importFromURL('track', "https://musicbrainz.org/recording/fc6e4946-581d-4fb0-af52-4ba5127553bb").await();
+//   console.log('tra mb', tra);
+//
+//   tra = importFromURL('track', "https://open.spotify.com/track/1pzQSwqvKFz6rAPrGJmyBG").await();
+//   console.log('tra s2', tra);
+//
+// }, 300);
 
 //
 // tra = importFromURL("track", "https://open.spotify.com/track/0Ry3vlDRNON0neCzTYnChh").await();

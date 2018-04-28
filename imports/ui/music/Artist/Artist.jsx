@@ -31,17 +31,32 @@ class Artist extends React.Component {
 
     // TODO list of (known) albums, tracks, and playlists.
 
-    if (viewType == 'inline') return (
-      <LinkOrNot link={!noLinks} to={`/artist/${artist._id}`} title={artist.name} className={"Artist inline-viewtype name"}>
-        {artist.name}
-      </LinkOrNot>);
+    if (viewType == 'inline') {
+      return (
+        <LinkOrNot link={!noLinks} to={`/artist/${artist._id}`} title={artist.name} className={"Artist inline-viewtype name"}>
+          {artist.name}
+        </LinkOrNot>
+      );
+    }
+
+    if (viewType == 'list') {
+      return (
+        <div className={"Artist " + viewType + "-viewtype"}>
+          <LinkOrNot link={!noLinks} to={`/artist/${artist._id}`} title={artist.name} className={"Artist inline-viewtype name"}>
+            {artist.name}
+          </LinkOrNot>
+
+          <IconsAndLinks type='artist' item={artist} />
+        </div>
+      );
+    }
 
     return (
       <div className={"Artist " + viewType + "-viewtype"}>
-        {viewType != "page" ? "" :
-        <div className="artist artist-image image">
-          <img src={artist.imageURLs.medium} className={"Artist image-viewtype image"} />
-        </div>
+        {(viewType == "page" && artist.imageURLs && artist.imageURLs.medium) &&
+          <div className="artist artist-image image">
+            <img src={artist.imageURLs.medium} className={"Artist image-viewtype image"} />
+          </div>
         }
 
         <div className="item-header">

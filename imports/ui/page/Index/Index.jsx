@@ -13,7 +13,7 @@ const Index = () => (
     <ReactMarkdown className="description" source={Meteor.settings.public.appDescription} />
 
     <div className="previous-set-lists">
-      <h3>Previous Set Lists</h3>
+      <h3>Previous Play Lists</h3>
       <Group group={Meteor.groups.findOne({name: "JD"})} />
     </div>
   </div>
