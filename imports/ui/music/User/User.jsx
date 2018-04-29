@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import autoBind from 'react-autobind';
 import { Link } from 'react-router-dom';
 import { ButtonToolbar, ButtonGroup, Button, Label } from 'react-bootstrap';
 import { withTracker } from 'meteor/react-meteor-data';
@@ -18,6 +19,15 @@ import './User.scss';
 class User extends React.Component {
   constructor(props) {
     super(props);
+    autoBind(this);
+  }
+
+  handleNewList() {
+    Meteor.call('PlayList.new', (error, list) => {
+      if (error) {
+        Bert.alert(error.reason ? error.reason : error.message, 'danger');
+      }
+    });
   }
 
   render() {
@@ -43,7 +53,11 @@ class User extends React.Component {
 
         { !showLists ? '' :
           <div>
-            <h4>Playlists</h4>
+            <div className="playlists-header">
+              <h4>Playlists</h4>
+              <Button className='btn btn-success new-playlist' onClick={this.handleNewList}>New Playlist</Button>
+            </div>
+
             <PlayListList loadingLists={loadingLists} selector={{userId: user._id}} />
           </div>
         }

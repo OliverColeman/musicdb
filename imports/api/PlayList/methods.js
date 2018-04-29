@@ -10,6 +10,10 @@ import { getSchemaFieldTypes, throwMethodException } from '../Utility/methodutil
 
 
 Meteor.methods({
+  'PlayList.new': function PlayListNew() {
+    PlayList.insert({name: "New playlist", compilerIds: [], trackIds: []});
+  },
+
   'PlayList.addTracks': function PlayListAddTracks(playListId, trackIds) {
     check(playListId, String);
     check(trackIds, [String]);
