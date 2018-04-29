@@ -69,6 +69,8 @@ const importFromIds = (service, type, ids, insertMetadata) => {
 }
 
 
+let importFromSearchInProgress = false;
+
 /**
  * Attempt to import an item from the service by name(s). If a matching item has
  * been imported previously this will be returned without searching for it on
@@ -84,13 +86,38 @@ const importFromIds = (service, type, ids, insertMetadata) => {
  *   appropriate collection.
  */
 const importFromSearch = (service, type, names) => {
-  if (service.toLowerCase() == 'spotify') {
-    return Spotify.importFromSearch(type, names);
-  }
-  if (service.toLowerCase() == 'musicbrainz') {
-    return MusicBrainz.importFromSearch(type, names);
-  }
-  throw "Unknown service: " + service;
+  return new Promise((resolve, reject) => {
+    const waitForCompletion = async (service, type, names) => {
+      if (importFromSearchInProgress) {
+        Meteor.setTimeout(() => {
+          waitForCompletion(service, type, names);
+        }, 100);
+      }
+      else {
+        importFromSearchInProgress = true;
+        try {
+          let result;
+          if (service.toLowerCase() == 'spotify') {
+            result = await Spotify.importFromSearch(type, names);
+          }
+          else if (service.toLowerCase() == 'musicbrainz') {
+            result = await MusicBrainz.importFromSearch(type, names);
+          }
+          else {
+            throw "Unknown service: " + service;
+          }
+          importFromSearchInProgress = false;
+          resolve(result);
+        }
+        catch (ex) {
+          importFromSearchInProgress = false;
+          reject(ex);
+        }
+      }
+    };
+
+    waitForCompletion(service, type, names);
+  });
 }
 
 

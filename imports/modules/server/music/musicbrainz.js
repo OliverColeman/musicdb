@@ -178,6 +178,9 @@ const getArtist = async (ids, details, insertMetadata) => {
           if (mbArtistMatches.length == 1) {
             artist = artistRecords[0];
           }
+          // else {
+          //   console.log('mba', mbArtistMatches);
+          // }
         }
       }
 
@@ -196,6 +199,14 @@ const getArtist = async (ids, details, insertMetadata) => {
         disambiguation: mbArtist.disambiguation,
         ...insertMetadata,
       };
+
+      // const existing = Artist.findByName(mbArtist.name);
+      // if (existing.length) {
+      //   console.log('mex', existing);
+      //   console.log('mia', artist);
+      //   console.trace('mt');
+      // }
+
       const id = Artist.insert(artist);
       return Artist.findOne(id);
     }

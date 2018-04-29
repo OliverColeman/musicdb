@@ -246,6 +246,9 @@ const getArtist = async (ids, details, insertMetadata) => {
           if (mbArtistMatches.length == 1) {
             artist = artistRecords[0];
           }
+          // else {
+          //   console.log('smba', mbArtistMatches);
+          // }
         }
       }
 
@@ -258,11 +261,20 @@ const getArtist = async (ids, details, insertMetadata) => {
         return Artist.findOne(artist._id);
       }
 
+
       artist = {
         name: spotifyArtist.name,
         spotifyId,
         ...insertMetadata,
       };
+
+      // const existing = Artist.findByName(spotifyArtist.name);
+      // if (existing.length) {
+      //   console.log('sex', existing);
+      //   console.log('sia', artist);
+      //   console.trace('st');
+      // }
+
       getImages(artist, spotifyArtist);
       const id = Artist.insert(artist);
       return Artist.findOne(id);
