@@ -78,7 +78,7 @@ export default class Spotify extends MusicService {
         }
         const spotifyAPI = await getSpotifyAPI();
         //console.log("s" + query);
-        const response = await spotifyAPI.search(query, ['track'], {market: 'AU', limit: 50});
+        const response = await spotifyAPI.search(query, ['track'], {market: 'AU', limit: 25});
 
         //console.log("s found " + response.body.tracks.items.length);
 

@@ -79,7 +79,7 @@ class MusicBrainz extends MusicService {
       case 'track':
         const query = {
           recording: normaliseString(names.trackName),
-          limit: 50,
+          limit: 25,
         };
         if (names.artistNames && names.artistNames.length) {
           query.artist = normaliseString(names.artistNames[0]);

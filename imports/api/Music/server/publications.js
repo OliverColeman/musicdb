@@ -33,23 +33,26 @@ publishComposite('search.track', function search(artistName, albumName, trackNam
   else if (limit <= 0) limit = 50;
 
   // Filter by artist and album.
-  const additionalSelectors = {};
-  artistIds = artistName ? findBySoundexOrDoubleMetaphone(Artist, soundex(artistName), doubleMetaphone(artistName)).map(a => a._id) : null;
-  albumIds = albumName ? findBySoundexOrDoubleMetaphone(Album, soundex(albumName), doubleMetaphone(albumName)).map(a => a._id) : null;
-  if (artistIds) additionalSelectors.artistIds = {$in: artistIds};
-  if (albumIds) additionalSelectors.albumId = {$in: albumIds};
+  let additionalSelectors = {};
+  let artistIds = artistName ? findBySoundexOrDoubleMetaphone(Artist, soundex(artistName), doubleMetaphone(artistName)).map(a => a._id) : null;
+  let albumIds = albumName ? findBySoundexOrDoubleMetaphone(Album, soundex(albumName), doubleMetaphone(albumName)).map(a => a._id) : null;
+  if (artistIds && artistIds.length) additionalSelectors.artistIds = {$in: artistIds};
+  if (albumIds && artistIds.length) additionalSelectors.albumId = {$in: albumIds};
 
   return {
     find() {
       const results = findBySoundexOrDoubleMetaphone(Track, soundex(trackName), doubleMetaphone(trackName), additionalSelectors, limit);
 
       if (results.count() < limit) {
-        // Note 1: importFromSearch is called asynchronously here, but the spotify and
-        // MB searches are actually run serially because it contains an internal locking
-        // mechanism to prevent parallel execution with itself (to avoid duplicate records).
-        // Note 2: Spotify search is run first because it's web service returns more quickly.
-        importFromSearch('spotify', 'track', { trackName, albumName, artistNames: [artistName] });
-        importFromSearch('musicbrainz', 'track', { trackName, albumName, artistNames: [artistName] });
+        Meteor.defer(() => {
+
+          // Note 1: importFromSearch is called asynchronously here, but the spotify and
+          // MB searches are actually run serially because it contains an internal locking
+          // mechanism to prevent parallel execution with itself (to avoid duplicate records).
+          // Note 2: Spotify search is run first because it's web service returns more quickly.
+          importFromSearch('spotify', 'track', { trackName, albumName, artistNames: [artistName] });
+          importFromSearch('musicbrainz', 'track', { trackName, albumName, artistNames: [artistName] });
+        }, 300);
       }
 
       return results;
