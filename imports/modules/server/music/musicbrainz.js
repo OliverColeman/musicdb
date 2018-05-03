@@ -29,7 +29,7 @@ const typeMapping = {
 
 const mbAPI = bluebird.promisifyAll(new NB({
   userAgent:'musicdb/0.0.1 ( https://github.com/OliverColeman/musicdb )',
-  retryOn: true, retryDelay: 3000, retryCount: 3,
+  retryOn: true, retryDelay: 5000, retryCount: 3,
   defaultLimit: 50
 }));
 

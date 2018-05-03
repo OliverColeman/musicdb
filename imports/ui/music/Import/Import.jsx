@@ -41,8 +41,11 @@ class Import extends React.Component {
   constructor(props) {
     super(props);
 
+    // TODO get group from logged in user or something.
+    const group = Meteor.groups.findOne({name: "JD"});
+
     this.state = {
-      groupId: null,
+      groupId: group._id,
       singleName: '',
       singleNumber: 1,
       singleDate: moment().format('YYYY-MM-DD'),
