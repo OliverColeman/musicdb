@@ -74,7 +74,7 @@ class Track extends React.Component {
   }
 
   render() {
-    const { loading, track, loadingPlayLists, loadingLinkedTracks, linkedTracks,
+    const { group, loading, track, loadingPlayLists, playLists, loadingLinkedTracks, linkedTracks,
 						viewType, noLinks, showIconsAndLinks, onClick, isDragging, hoveredTop,
 						hoveredBottom, connectDragSource, connectDropTarget} = this.props;
 
@@ -132,8 +132,9 @@ class Track extends React.Component {
       </div>
     ));
 
+
     // viewType == 'page'
-    return connectDragSource(connectDropTarget(
+		return connectDragSource(connectDropTarget(
       <div className={"Track " + viewType + "-viewtype"}>
         <div className="item-header">
           <LinkOrNot link={!noLinks && viewType != "page"} className="name" to={`/track/${track._id}`}>
@@ -159,8 +160,8 @@ class Track extends React.Component {
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
 
         <div className="play-lists">
-					<h4>Appears in play lists:</h4>
-					<PlayListList selector={{trackIds: track._id}} loadingLists={loadingPlayLists} />
+					<h4>Appears in {group.name} play lists:</h4>
+					<PlayListList items={playLists} loadingLists={loadingPlayLists} />
 				</div>
 
 				{ !loadingLinkedTracks && linkedTracks &&
@@ -210,18 +211,24 @@ export default flow(
 		if (typeof showIconsAndLinks == 'undefined') showIconsAndLinks = viewType == "page";
     const subscription = track ? null : Meteor.subscribe('Track.withId', trackId);
 
-    const subPlayLists = viewType == 'page' && Meteor.subscribe('Track.playLists', trackId);
+		// TODO get group from logged in user or something.
+		const group = Meteor.groups.findOne({name: "JD"});
+    const subPlayLists = viewType == 'page' && Meteor.subscribe('Track.playLists', trackId, group._id);
+		const playLists = subPlayLists && subPlayLists.ready() &&
+											PlayListCollection.find({trackIds: trackId, groupId: group._id}).fetch();
 
 		const subLinkedTracks = viewType == 'page' && Meteor.subscribe('LinkedTracks.forTrackId', trackId);
 		const linkedTrackRecord = subLinkedTracks && LinkedTrackCollection.findOne({ trackIds: trackId });
-		const LinkedTrackIds = linkedTrackRecord && linkedTrackRecord.trackIds.filter(id => id != trackId);
+		const linkedTrackIds = linkedTrackRecord && linkedTrackRecord.trackIds.filter(id => id != trackId);
 
     return {
+			group,
       loading: subscription && !subscription.ready(),
       track: track || TrackCollection.findOne(trackId),
       loadingPlayLists: subPlayLists && !subPlayLists.ready(),
+			playLists,
 			loadingLinkedTracks: subLinkedTracks && !subLinkedTracks.ready(),
-			linkedTracks: LinkedTrackIds && TrackCollection.find({_id: {$in: LinkedTrackIds}}).fetch(),
+			linkedTracks: linkedTrackIds && TrackCollection.find({_id: {$in: linkedTrackIds}}).fetch(),
       viewType,
       noLinks,
 			showIconsAndLinks,

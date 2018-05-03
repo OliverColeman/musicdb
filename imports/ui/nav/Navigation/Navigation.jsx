@@ -33,7 +33,7 @@ class Navigation extends React.Component {
 
   renderItems(menuItems, depth, title, pullRight) {
     const items = menuItems
-      .filter(item => Access.allowed(item.access))
+      .filter(item => !item.access || Access.allowed(item.access))
       .map(item => this.renderItem(item, depth+1));
 
     if (depth == 0) return (

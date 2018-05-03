@@ -22,11 +22,17 @@ Meteor.publish('search', function search(type, name, limit) {
 });
 
 
-publishComposite('search.track', function search(artistName, albumName, trackName, limit) {
-  check(artistName, String);
-  check(albumName, String);
-  check(trackName, String);
-  check(limit, Number);
+publishComposite('search.track', function search(args) {
+  check(args, {
+    artistName: String,
+    albumName: String,
+    trackName: String,
+    limit: Number,
+    importFromServices: Match.Maybe(Boolean),
+    inPlayListsWithGroupId: Match.Maybe(String),
+  });
+
+  let {artistName, albumName, trackName, limit, importFromServices, inPlayListsWithGroupId} = args;
 
   limit = Math.floor(limit);
   if (limit > 100) limit = 100;
@@ -37,15 +43,17 @@ publishComposite('search.track', function search(artistName, albumName, trackNam
   let artistIds = artistName ? findBySoundexOrDoubleMetaphone(Artist, soundex(artistName), doubleMetaphone(artistName)).map(a => a._id) : null;
   let albumIds = albumName ? findBySoundexOrDoubleMetaphone(Album, soundex(albumName), doubleMetaphone(albumName)).map(a => a._id) : null;
   if (artistIds && artistIds.length) additionalSelectors.artistIds = {$in: artistIds};
-  if (albumIds && artistIds.length) additionalSelectors.albumId = {$in: albumIds};
+  if (albumIds && albumIds.length) additionalSelectors.albumId = {$in: albumIds};
+  if (inPlayListsWithGroupId) {
+    additionalSelectors.appearsInPlayListGroups = inPlayListsWithGroupId;
+  }
 
   return {
     find() {
       const results = findBySoundexOrDoubleMetaphone(Track, soundex(trackName), doubleMetaphone(trackName), additionalSelectors, limit);
 
-      if (results.count() < limit) {
+      if (importFromServices && results.count() < limit) {
         Meteor.defer(() => {
-
           // Note 1: importFromSearch is called asynchronously here, but the spotify and
           // MB searches are actually run serially because it contains an internal locking
           // mechanism to prevent parallel execution with itself (to avoid duplicate records).

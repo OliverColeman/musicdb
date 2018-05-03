@@ -47,7 +47,7 @@ class SearchTrackResults extends React.Component {
           <div className="tracks-wrapper">
             <TrackList
               items={tracksSorted}
-              noLinks={true}
+              noLinks={!!onSelect}
               noMenu={true}
               compactView={true}
               onClick={onSelect}
@@ -60,19 +60,42 @@ class SearchTrackResults extends React.Component {
 }
 
 
-export default withTracker(({ artistName, albumName, trackName, onSelect, limit }) => {
+export default withTracker(({ artistName, albumName, trackName, onSelect, limit, importFromServices, inPlayListsWithGroupId }) => {
   artistName = artistName ? artistName.trim() : '';
   albumName = albumName ? albumName.trim() : '';
   trackName = trackName ? trackName.trim() : '';
+  importFromServices = !!importFromServices;
+
+  if (typeof inPlayListsWithGroupId == 'undefined') {
+  	// TODO get group from logged in user or something.
+  	const group = Meteor.groups.findOne({name: "JD"});
+    inPlayListsWithGroupId = group._id;
+  }
+  else {
+    // publication function only accepts strings or null, but allow passing truthy values to this component.
+    inPlayListsWithGroupId = inPlayListsWithGroupId ? inPlayListsWithGroupId : undefined;
+  }
+
   // We can't use Levenshtein score to order the search server-side, so collect more
-  // than we'll show and the sort by Levenshtein and then truncate to desired limit.
+  // than we'll show and then sort by Levenshtein and then truncate to desired limit.
   const searchLimit = 100;
-  const subscription = !trackName ? null : Meteor.subscribe('search.track', artistName, albumName, trackName, searchLimit);
+  const subscription = !trackName ? null : Meteor.subscribe('search.track', {artistName, albumName, trackName, limit: searchLimit, importFromServices, inPlayListsWithGroupId});
+
+  let additionalSelectors = {};
+  let artistIds = artistName ? findBySoundexOrDoubleMetaphone(ArtistCollection, soundex(artistName), doubleMetaphone(artistName)).map(a => a._id) : null;
+  let albumIds = albumName ? findBySoundexOrDoubleMetaphone(AlbumCollection, soundex(albumName), doubleMetaphone(albumName)).map(a => a._id) : null;
+  if (artistIds && artistIds.length) additionalSelectors.artistIds = {$in: artistIds};
+  if (albumIds && albumIds.length) additionalSelectors.albumId = {$in: albumIds};
+  if (inPlayListsWithGroupId) {
+    additionalSelectors.appearsInPlayListGroups = inPlayListsWithGroupId;
+  }
+
+  const tracks = subscription ? findBySoundexOrDoubleMetaphone(TrackCollection, soundex(trackName), doubleMetaphone(trackName), additionalSelectors, searchLimit).fetch() : []
 
   return {
     loading: subscription && !subscription.ready(),
     artistName, albumName, trackName, limit,
-    tracks: subscription ? findBySoundexOrDoubleMetaphone(TrackCollection, soundex(trackName), doubleMetaphone(trackName), null, searchLimit).fetch() : [],
+    tracks,
     onSelect,
   };
 })(SearchTrackResults);

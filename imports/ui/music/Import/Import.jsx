@@ -274,6 +274,7 @@ class Import extends React.Component {
   doImport() {
     const { importInProgress, lastImportIndex } = this.state;
     const { toImport } = this.props;
+    const self = this;
 
     if (importInProgress) return;
     if (toImport.length - 1 <= lastImportIndex) return;
@@ -292,7 +293,7 @@ class Import extends React.Component {
       }
       Session.set("Import_toImport", toImport);
 
-      this.setState({
+      self.setState({
         importInProgress: false,
         lastImportIndex: index,
       });

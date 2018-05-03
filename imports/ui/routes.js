@@ -14,8 +14,16 @@ import NotFound from './nav/NotFound/NotFound';
 import User from './music/User/User';
 import Import from './music/Import/Import';
 import NeedsReview from './music/NeedsReview/NeedsReview';
+import SearchTracks from './music/Track/SearchTracks';
 
 export default [
+  {
+    url: "/search/tracks",
+    menu: 'left',
+    title: "Search tracks",
+    renderComponent: SearchTracks,
+    routerComponent: Route,
+  },
   {
     url: "/import",
     menu: 'left',

@@ -32,6 +32,8 @@ Meteor.methods({
         $push: { trackIds: { $each: trackIds } },
         $inc: { duration: durationDelta },
       });
+
+      PlayList._handleTrackAdditions(playList, trackIds);
     } catch (exception) {
       throwMethodException(exception);
     }
@@ -69,8 +71,15 @@ Meteor.methods({
       if (!Access.allowed({accessRules: PlayList.access, op: 'update', item: playList, user: this.userId})) throw "Not allowed.";
 
       const trackIds = playList.trackIds;
-      trackIds.splice(index, 1);
+      const removed = trackIds.splice(index, 1);
       PlayList.update(playListId, {$set: {trackIds}});
+
+      // If there are no other instances of the removed track.
+      const trackId = removed[0];
+      if (!trackIds.includes(trackId)) {
+        PlayList._handleTrackRemoval(playList, trackId);
+      }
+
     } catch (exception) {
       throwMethodException(exception);
     }

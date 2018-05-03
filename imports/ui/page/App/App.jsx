@@ -67,10 +67,14 @@ class App extends React.Component {
                 <Route exact path="/compiler/:compilerId" component={Compiler} {...props} />
 
                 { _.flatMap(routes, route => route.children || route)
-                  .filter(route => Access.allowed(route.access))
+                  .filter(route => !route.access || Access.allowed(route.access))
                   .map(route =>
                     React.createElement(route.routerComponent, {
-                      exact: true, path: route.url, component: route.renderComponent, key: route.url, ...props
+                      exact: true,
+                      path: route.url,
+                      component: route.renderComponent,
+                      key: route.url,
+                      ...props
                     })
                   )
                 }

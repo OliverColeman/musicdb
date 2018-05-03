@@ -8,18 +8,13 @@ Meteor.publish('Track.all', function all() {
   return Track.find();
 });
 
-Meteor.publish('Track.withId', function withId(documentId) {
-  check(documentId, String);
-  return Track.find({ _id: documentId });
+Meteor.publish('Track.withId', function withId(trackId) {
+  check(trackId, String);
+  return Track.find({ _id: trackId });
 });
 
-Meteor.publish('Track.playLists', function playLists(documentId, spotifyTrackId) {
-  check(documentId, Match.Maybe(String));
-  check(spotifyTrackId,  Match.Maybe(String));
-
-  const track = Track.findOne(documentId ? { _id: documentId } : {spotifyTrackId});
-  if (track) {
-    const tl = PlayList.find({ trackIds: track._id });
-    return tl;
-  }
+Meteor.publish('Track.playLists', function playLists(trackId, groupId) {
+  check(trackId, Match.Maybe(String));
+  check(groupId,  Match.Maybe(String));
+  return PlayList.find({ trackIds: trackId, groupId });
 });

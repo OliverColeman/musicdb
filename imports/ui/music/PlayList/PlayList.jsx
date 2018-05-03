@@ -188,7 +188,12 @@ class PlayList extends React.Component {
             <Button className='btn btn-default' onClick={() => this.setState({showSearchTracks: false})}>Cancel</Button>
           </Modal.Title></Modal.Header>
           <Modal.Body>
-            <SearchTracks onSelect={this.handleTrackAdd} onCancel={() => this.setState({showSearchTracks: false})} />
+            <SearchTracks
+              importFromServices={true}
+              inPlayListsWithGroupId={false}
+              onSelect={this.handleTrackAdd}
+              onCancel={() => this.setState({showSearchTracks: false})}
+            />
           </Modal.Body>
         </Modal>
       </div>

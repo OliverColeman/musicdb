@@ -3,6 +3,7 @@
 import { Mongo } from 'meteor/mongo';
 import SimpleSchema from 'simpl-schema';
 import { check, Match } from 'meteor/check';
+import _ from 'lodash';
 
 import { getCommonMusicItemFields, defaultAccessRules, adminUpdateOnlyAccessRules } from '../Music/music';
 import { normaliseString, normaliseStringMatch } from '../../modules/util';
@@ -78,6 +79,46 @@ PlayList.before.insert((userId, doc) => {
 });
 // We don't use .after.update because it's a pain handling the various modifier types.
 // Methods that add or remove tracks must manually update the duration.
+
+
+PlayList.after.insert((userId, doc) => {
+  if (doc.trackIds.length) {
+    PlayList._handleTrackAdditions(doc, doc.trackIds);
+  }
+});
+
+PlayList.after.remove((userId, doc) => {
+  for (let trackId of _.uniq(doc.trackIds)) {
+    PlayList._handleTrackRemoval(doc, trackId);
+  }
+});
+
+
+// Update Track fields in response to the addition of Tracks to a PlayList.
+PlayList._handleTrackAdditions = (playList, trackIds) => {
+  const trackUpdate = { appearsInPlayLists: playList._id };
+  if (playList.groupId) trackUpdate.appearsInPlayListGroups = playList.groupId;
+  for (let trackId of trackIds) {
+    Track.update({_id: {$in: trackIds}}, { $addToSet: trackUpdate }, {multi: true});
+  }
+}
+
+// Update Track fields in response to the removal of a Track from a PlayList.
+// Should only be called when the track does not appear anywhere else in the playlist.
+PlayList._handleTrackRemoval = (playList, trackId) => {
+  const trackUpdate = { appearsInPlayLists: playList._id };
+
+  if (playList.groupId) {
+    // See if the track appears in any other playlists with the same group id.
+    // Pull the group id from the appearsInPlayListGroups field for the track if not.
+    const otherCount = PlayList.find({trackIds: trackId, groupId: playList.groupId}).count();
+    if (otherCount == 0) {
+      trackUpdate.appearsInPlayListGroups = playList.groupId;
+    }
+  }
+
+  Track.update({_id: trackId}, {$pull: trackUpdate});
+}
 
 
 export default PlayList;

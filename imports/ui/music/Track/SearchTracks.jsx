@@ -53,7 +53,7 @@ class SearchTracks extends React.Component {
 
 
   render() {
-    const { onSelect } = this.props;
+    const { importFromServices, inPlayListsWithGroupId, onSelect } = this.props;
     const { formValues, searchValues } = this.state;
 
     return (
@@ -71,6 +71,8 @@ class SearchTracks extends React.Component {
           albumName={searchValues.album}
           trackName={searchValues.track}
           limit={10}
+          importFromServices={importFromServices}
+          inPlayListsWithGroupId={inPlayListsWithGroupId}
           onSelect={onSelect}
         />
       </div>
@@ -79,8 +81,10 @@ class SearchTracks extends React.Component {
 }
 
 
-export default withTracker(({ onSelect }) => {
+export default withTracker(({ importFromServices, inPlayListsWithGroupId, onSelect }) => {
   return {
+    importFromServices,
+    inPlayListsWithGroupId,
     onSelect,
   };
 })(SearchTracks);

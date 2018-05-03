@@ -40,6 +40,18 @@ Track.schema = {
     type: Object,
     optional: true,
   },
+
+  appearsInPlayLists: {
+    type: Array,
+    defaultValue: [],
+  },
+  'appearsInPlayLists.$': String,
+
+  appearsInPlayListGroups: {
+    type: Array,
+    defaultValue: [],
+  },
+  'appearsInPlayListGroups.$': String,
 }
 Track.schemaInstance = new SimpleSchema(Track.schema, { check });
 Track.attachSchema(Track.schemaInstance);
