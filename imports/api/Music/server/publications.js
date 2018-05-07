@@ -50,20 +50,28 @@ publishComposite('search.track', function search(args) {
 
   return {
     find() {
-      const results = findBySoundexOrDoubleMetaphone(Track, soundex(trackName), doubleMetaphone(trackName), additionalSelectors, limit);
+      // If this is a search by track name.
+      if (trackName) {
+        const results = findBySoundexOrDoubleMetaphone(Track, soundex(trackName), doubleMetaphone(trackName), additionalSelectors, limit);
 
-      if (importFromServices && results.count() < limit) {
-        Meteor.defer(() => {
-          // Note 1: importFromSearch is called asynchronously here, but the spotify and
-          // MB searches are actually run serially because it contains an internal locking
-          // mechanism to prevent parallel execution with itself (to avoid duplicate records).
-          // Note 2: Spotify search is run first because it's web service returns more quickly.
-          importFromSearch('spotify', 'track', { trackName, albumName, artistNames: [artistName] });
-          importFromSearch('musicbrainz', 'track', { trackName, albumName, artistNames: [artistName] });
-        }, 300);
+        if (importFromServices && results.count() < limit) {
+          Meteor.defer(() => {
+            // Note 1: importFromSearch is called asynchronously here, but the spotify and
+            // MB searches are actually run serially because it contains an internal locking
+            // mechanism to prevent parallel execution with itself (to avoid duplicate records).
+            // Note 2: Spotify search is run first because it's web service returns more quickly.
+            importFromSearch('spotify', 'track', { trackName, albumName, artistNames: [artistName] });
+            importFromSearch('musicbrainz', 'track', { trackName, albumName, artistNames: [artistName] });
+          }, 300);
+        }
+
+        return results;
       }
-
-      return results;
+      // This is a search by artist name.
+      else {
+        if (!artistIds || !artistIds.length) return null;
+        return Track.find(additionalSelectors, {limit});
+      }
     },
     children: [
       {

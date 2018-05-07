@@ -79,7 +79,7 @@ export default withTracker(({ artistName, albumName, trackName, onSelect, limit,
   // We can't use Levenshtein score to order the search server-side, so collect more
   // than we'll show and then sort by Levenshtein and then truncate to desired limit.
   const searchLimit = 100;
-  const subscription = !trackName ? null : Meteor.subscribe('search.track', {artistName, albumName, trackName, limit: searchLimit, importFromServices, inPlayListsWithGroupId});
+  const subscription = (!trackName && !artistName) ? null : Meteor.subscribe('search.track', {artistName, albumName, trackName, limit: searchLimit, importFromServices, inPlayListsWithGroupId});
 
   let additionalSelectors = {};
   let artistIds = artistName ? findBySoundexOrDoubleMetaphone(ArtistCollection, soundex(artistName), doubleMetaphone(artistName)).map(a => a._id) : null;
@@ -90,7 +90,11 @@ export default withTracker(({ artistName, albumName, trackName, onSelect, limit,
     additionalSelectors.appearsInPlayListGroups = inPlayListsWithGroupId;
   }
 
-  const tracks = subscription ? findBySoundexOrDoubleMetaphone(TrackCollection, soundex(trackName), doubleMetaphone(trackName), additionalSelectors, searchLimit).fetch() : []
+  let tracks = [];
+  if (subscription) {
+    if (trackName) tracks = findBySoundexOrDoubleMetaphone(TrackCollection, soundex(trackName), doubleMetaphone(trackName), additionalSelectors, searchLimit).fetch();
+    else if (artistName) tracks = TrackCollection.find(additionalSelectors, {searchLimit}).fetch();
+  }
 
   return {
     loading: subscription && !subscription.ready(),
