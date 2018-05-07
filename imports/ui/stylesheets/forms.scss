@@ -14,3 +14,7 @@ form {
     color: $danger;
   }
 }
+
+.form-control.required:after {
+  content: "*";
+}

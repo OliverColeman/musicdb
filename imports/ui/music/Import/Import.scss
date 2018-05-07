@@ -1,7 +1,6 @@
 @import '../../stylesheets/variables';
 
-.Import {
-
+.ImportFromURL {
   .import-spec {
     &> * {
       @include seperator-bottom;
@@ -11,49 +10,6 @@
       &> * {
         margin: 0 1em 0.9em 0;
         max-width: 99%;
-      }
-
-      &> button {
-        float: right;
-        margin-right: 0;
-        @include button-green;
-      }
-    }
-
-    .import-spec-tag {
-      display: flex;
-      align-items:center;
-      flex-wrap: wrap;
-      .tag {
-        width: 20em;
-      }
-    }
-
-    .import-spec-single, .import-spec-file {
-      &> * {
-        float: left;
-      }
-      h4 {
-        float: none;
-      }
-
-      .listname {
-        width: 20em;
-      }
-      .listnumber {
-        width: 5em;
-      }
-      .listdate {
-        width: 10em;
-      }
-      .listcompilers {
-        width: 20em;
-      }
-      .listurl {
-        width: 40em;
-      }
-      .listfile {
-        padding: 0.25em;
       }
     }
   }
@@ -75,10 +31,88 @@
       }
       .error {
         color: $cb-red;
-      }      
+      }
       .PlayList {
         font-weight: bold;
       }
     }
+  }
+}
+
+.ImportFromText {
+  h4 {
+    margin-top: 20px;
+  }
+
+  &> * {
+    @include seperator-bottom;
+    border-bottom: 1px solid #fff;
+    &:after { @include clearfix }
+    margin-bottom: 1em;
+  }
+
+  .import-spec-single {
+    margin-top: 10px;
+
+    &> * {
+      margin: 0 1em 0.9em 0;
+      max-width: 99%;
+    }
+  }
+
+  .PlayList .tracks-wrapper {
+    overflow-y: visible;
+  }
+
+  .to-import {
+    @include table;
+
+    .duration {
+      width: 4.5em
+    }
+    .status {
+      width: 7.25em;
+    }
+    .error {
+      color: $danger;
+      font-weight: bold;
+    }
+  }
+}
+
+.ImportFromURL,
+.ImportFromText {
+  .import-spec-single,
+  .import-spec-file {
+    &> * {
+      float: left;
+    }
+    h4 {
+      float: none;
+    }
+
+    .listname {
+      width: 20em;
+    }
+    .listnumber {
+      width: 5em;
+    }
+    .listdate {
+      width: 10em;
+    }
+    .listcompilers {
+      width: 20em;
+    }
+    .listurl {
+      width: 40em;
+    }
+    .listfile {
+      padding: 0.25em;
+    }
+  }
+
+  button.import {
+    float: right;
+    @include button-green;
   }
 }

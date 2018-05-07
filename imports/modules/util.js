@@ -14,6 +14,14 @@ const convertSecondsToHHMMSS = (time, omitHoursIfZero) => {
   return `${padTime(h)}:${padTime(m)}:${padTime(s)}`;
 }
 
+const convertHHMMSSToSeconds = (time) => {
+  const parts = time.split(':');
+  const h = parts.length == 3 ? parseInt(parts.shift()) : 0;
+  const m = parseInt(parts.shift());
+  const s = parseInt(parts.shift());
+  return h * 3600 + m * 60 + s;
+}
+
 // For matching names ignoring case, punctuation, multiple and start/end white space characters.
 const normaliseString = s => s.toLowerCase()
                               .replace(/\(.*\)/g, '') // remove anything in brackets
@@ -61,4 +69,4 @@ const findBySoundexOrDoubleMetaphone = (collection, soundexCodes, doubleMetaphon
 }
 
 
-export { convertSecondsToHHMMSS, normaliseString, normaliseStringMatch, soundex, doubleMetaphone, levenshteinScore, findBySoundexOrDoubleMetaphone }
+export { convertSecondsToHHMMSS, convertHHMMSSToSeconds, normaliseString, normaliseStringMatch, soundex, doubleMetaphone, levenshteinScore, findBySoundexOrDoubleMetaphone }

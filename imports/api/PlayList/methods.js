@@ -1,5 +1,6 @@
 import { Meteor } from 'meteor/meteor';
 import { check, Match } from 'meteor/check';
+import _ from 'lodash';
 
 import rateLimit from '../../modules/rate-limit';
 import Access from '../../modules/access';
@@ -8,10 +9,15 @@ import PlayList from './PlayList';
 import Track from '../Track/Track';
 import { getSchemaFieldTypes, throwMethodException } from '../Utility/methodutils';
 
+const newPlaylistValidateKeys = Object.keys(PlayList.schema);
+delete(newPlaylistValidateKeys.userId);
 
 Meteor.methods({
-  'PlayList.new': function PlayListNew() {
-    PlayList.insert({name: "New playlist", compilerIds: [], trackIds: []});
+  'PlayList.new': function PlayListNew(playList) {
+    check(playList, Object); // Real validation occurs when we try to insert.
+    playList = _.assign({name: "New playlist", compilerIds: [], trackIds: []}, playList || {});
+    console.log('val');
+    return PlayList.insert(playList);
   },
 
   'PlayList.addTracks': function PlayListAddTracks(playListId, trackIds) {

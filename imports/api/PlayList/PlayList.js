@@ -30,12 +30,17 @@ const commonFields = getCommonMusicItemFields();
 PlayList.schema = {
   ...commonFields,
 
-  compilerIds: [String],
-  trackIds: [String],
+  compilerIds: { type: Array, defaultValue: [] },
+  'compilerIds.$': String,
+
+  trackIds: { type: Array, defaultValue: [] },
+  'trackIds.$': String,
+
   duration: {
     type: Number,
     defaultValue: 0,
   },
+
   userId: {
     type: String,
     autoValue: function() {
@@ -47,6 +52,7 @@ PlayList.schema = {
     },
     access: adminUpdateOnlyAccessRules
   },
+
   groupId: { type: String, optional: true },
   tagIds: { type: Array, optional: true },
   'tagIds.$': { type: String },

@@ -37,7 +37,7 @@ const fileImportPlaceholder =
 First row should be a list of headings and may include 'Name', 'Number', 'Date', 'Compilers', 'URL'`
 
 
-class Import extends React.Component {
+class ImportFromURL extends React.Component {
   constructor(props) {
     super(props);
 
@@ -73,13 +73,13 @@ class Import extends React.Component {
   render() {
     const { loading, compilers, groups, toImport } = this.props;
 
-    if (loading) return ( <div className="Import"><Loading /></div> );
+    if (loading) return ( <div className="ImportFromURL"><Loading /></div> );
 
     const { inProgress, groupId, importedPlayLists, importFile, massImportText, lastImportIndex,
       singleName, singleNumber, singleDate, singleCompilers, singleURL } = this.state;
 
     return (
-      <div className="Import">
+      <div className="ImportFromURL">
         <div className="import-spec">
           <div className="import-spec-group">
             <h4 title="Optionally select a group to add to the imported list(s).">Add group:</h4>
@@ -113,7 +113,7 @@ class Import extends React.Component {
               placeholder="List URL" title="List URL, like 'open.spotify.com/user/46554353/playlist/67YquHJGJabxbFnB9Yn4Y'"
               value={singleURL} onChange={ e => this.setState({singleURL: e.target.value}) } />
 
-            <Button onClick={this.importFromSingle}>Import!</Button>
+            <Button className='import' onClick={this.importFromSingle}>Import!</Button>
           </div>
 
           <div className="import-spec-textarea">
@@ -125,7 +125,7 @@ class Import extends React.Component {
               wrap="off"
             />
 
-            <Button onClick={this.importFromTextArea}>Import!</Button>
+            <Button className='import' onClick={this.importFromTextArea}>Import!</Button>
           </div>
 
           <div className="import-spec-file">
@@ -136,7 +136,7 @@ class Import extends React.Component {
               onChange={ e => this.setState({importFile: e.target.files[0]}) }
             />
 
-            <Button onClick={this.importFromFile}>Import!</Button>
+          <Button className='import' onClick={this.importFromFile}>Import!</Button>
           </div>
 
         </div>
@@ -147,7 +147,8 @@ class Import extends React.Component {
             ti.listId ?
               <div className="import-item" key={ti.url}>
                 <label>{idx + 1}</label>
-                <div /><PlayList playListId={ti.listId} viewType="inline" />
+                <div />
+                <PlayList playListId={ti.listId} viewType="inline" />
                 <div className="url"><a href={ti.url} target="_blank">{ti.url}</a></div>
                 <div className="error">{ti.error}</div>
               </div>
@@ -188,7 +189,7 @@ class Import extends React.Component {
     }
 
     toImport.push(importData);
-    Session.set("Import_toImport", toImport);
+    Session.set("ImportFromURL_toImport", toImport);
   }
 
 
@@ -270,7 +271,7 @@ class Import extends React.Component {
       //console.log('importData', importData);
       toImport.push(importData);
     }
-    Session.set("Import_toImport", toImport);
+    Session.set("ImportFromURL_toImport", toImport);
   }
 
 
@@ -294,7 +295,7 @@ class Import extends React.Component {
         // TODO if the list contains tracks that need review then show a symbol or similar
         // to indicate this, which perhaps when clicked on opens the list in a modal window.
       }
-      Session.set("Import_toImport", toImport);
+      Session.set("ImportFromURL_toImport", toImport);
 
       self.setState({
         importInProgress: false,
@@ -310,12 +311,12 @@ export default withTracker(({ match, roles }) => {
   const user = Meteor.user();
   const groupSelector = user && user.roles && (roles.includes('admin') ? {} : {name: {$in: Object.keys(user.roles)}});
 
-  Session.setDefault("Import_toImport", []);
+  Session.setDefault("ImportFromURL_toImport", []);
 
   return {
     loading: !subCompilers.ready(),
     compilers: CompilerCollection.find().fetch(),
     groups: user && user.roles ? Meteor.groups.find(groupSelector).fetch() : [],
-    toImport: Session.get("Import_toImport"),
+    toImport: Session.get("ImportFromURL_toImport"),
   };
-})(Import);
+})(ImportFromURL);

@@ -12,7 +12,8 @@ import Logout from './account/Logout/Logout';
 import Profile from './account/Profile/Profile';
 import NotFound from './nav/NotFound/NotFound';
 import User from './music/User/User';
-import Import from './music/Import/Import';
+import ImportFromURL from './music/Import/ImportFromURL';
+import ImportFromText from './music/Import/ImportFromText';
 import NeedsReview from './music/NeedsReview/NeedsReview';
 import SearchTracks from './music/Track/SearchTracks';
 
@@ -25,12 +26,25 @@ export default [
     routerComponent: Route,
   },
   {
-    url: "/import",
     menu: 'left',
-    title: "Import",
+    title: "Import playlist",
     access: {accessRules: PlayListCollection.access, op: 'create'},
-    renderComponent: Import,
-    routerComponent: Authenticated
+    children: [
+      {
+        title: "From URLs",
+        url: "/import/url",
+        access: {accessRules: PlayListCollection.access, op: 'create'},
+        renderComponent: ImportFromURL,
+        routerComponent: Authenticated
+      },
+      {
+        title: "From track list",
+        url: "/import/text",
+        access: {accessRules: PlayListCollection.access, op: 'create'},
+        renderComponent: ImportFromText,
+        routerComponent: Authenticated
+      },
+    ]
   },
   {
     url: "/library",
@@ -48,7 +62,6 @@ export default [
     children: [
       {
         url: "/review/tracks",
-        menu: 'left',
         title: "Tracks",
         access: {role: 'admin'},
         renderComponent: NeedsReview,
@@ -56,7 +69,6 @@ export default [
       },
       {
         url: "/review/playlists",
-        menu: 'left',
         title: "Playlists",
         access: {role: 'admin'},
         renderComponent: NeedsReview,
@@ -64,7 +76,6 @@ export default [
       },
       {
         url: "/review/artists",
-        menu: 'left',
         title: "Artists",
         access: {role: 'admin'},
         renderComponent: NeedsReview,
