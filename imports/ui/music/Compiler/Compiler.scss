@@ -1,0 +1,13 @@
+@import '../../stylesheets/variables';
+
+
+.CompilerList {
+  .compilers-header {
+    @include flex-row-wrap;
+  }
+
+  .compilers {
+    @include playlist-table;
+    margin-top: 15px;
+  }
+}

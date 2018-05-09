@@ -14,7 +14,7 @@ import Loading from '../../misc/Loading/Loading';
 import './Artist.scss';
 
 
-class ArtistArtist extends React.Component {
+class ArtistList extends React.Component {
   constructor(props) {
     super(props);
   }
@@ -52,4 +52,4 @@ export default withTracker(({loadingArtists, selector, items}) => {
     loadingArtists,
     artists: items ? items : (!loadingArtists && ArtistCollection.find(selector, {sort: sortOptions}).fetch()),
   };
-})(ArtistArtist);
+})(ArtistList);

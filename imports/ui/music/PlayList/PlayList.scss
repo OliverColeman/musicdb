@@ -2,9 +2,8 @@
 
 
 .PlayList {
-  margin: 0.5em 0;
-
   &.page-viewtype {
+    margin: 0.5em 0;
     display: flex;
     flex-flow: column;
     height: 100%;

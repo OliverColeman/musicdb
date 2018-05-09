@@ -14,10 +14,15 @@ delete(newPlaylistValidateKeys.userId);
 
 Meteor.methods({
   'PlayList.new': function PlayListNew(playList) {
-    check(playList, Object); // Real validation occurs when we try to insert.
-    playList = _.assign({name: "New playlist", compilerIds: [], trackIds: []}, playList || {});
-    console.log('val');
-    return PlayList.insert(playList);
+    try {
+      check(playList, Match.Maybe(Object)); // Real validation occurs when we try to insert.
+      if (!Access.allowed({accessRules: PlayList.access, op: 'create', user: this.userId})) throw "Not allowed.";
+      playList = _.assign({name: "New playlist", compilerIds: [], trackIds: []}, playList || {});
+      return PlayList.insert(playList);
+    }
+    catch (exception) {
+      throwMethodException(exception);
+    }
   },
 
   'PlayList.addTracks': function PlayListAddTracks(playListId, trackIds) {
@@ -40,7 +45,8 @@ Meteor.methods({
       });
 
       PlayList._handleTrackAdditions(playList, trackIds);
-    } catch (exception) {
+    }
+    catch (exception) {
       throwMethodException(exception);
     }
   },
@@ -62,7 +68,8 @@ Meteor.methods({
       if (insertIndex > currentIndex) insertIndex--;
       trackIds.splice(insertIndex, 0, movedTrackIndex[0]);
       PlayList.update(playListId, {$set: {trackIds}});
-    } catch (exception) {
+    }
+    catch (exception) {
       throwMethodException(exception);
     }
   },
@@ -86,7 +93,8 @@ Meteor.methods({
         PlayList._handleTrackRemoval(playList, trackId);
       }
 
-    } catch (exception) {
+    }
+    catch (exception) {
       throwMethodException(exception);
     }
   },
@@ -95,6 +103,7 @@ Meteor.methods({
 
 rateLimit({
   methods: [
+    'PlayList.new',
     'PlayList.addTracks',
     'PlayList.moveTrack',
     'PlayList.removeTrack',

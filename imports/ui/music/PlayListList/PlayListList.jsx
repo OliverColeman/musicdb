@@ -22,15 +22,25 @@ class PlayListList extends React.Component {
   }
 
   render() {
-    const { loadingLists, playLists } = this.props;
+    const { loadingLists, playLists, viewType, noLinks } = this.props;
 
     if (loadingLists) return ( <Loading /> );
+
+    if (viewType == 'inline') {
+      return (
+        <div className={"PlayListList inline-viewtype inline-list"}>
+          { playLists.map(playList => (
+            <PlayList playList={playList} viewType="inline" noLinks={noLinks} key={playList._id} />
+          ))}
+        </div>
+      );
+    }
 
     const hasDates = playLists && playLists.find(tl => !!tl.date);
     const headers = hasDates ? ["Name", "Date", "Compiler(s)", "Length", "Icons"] : ["Name", "Compiler(s)", "Length", "Icons"];
 
     return (
-      <div className={"PlayListList"}>
+      <div className={"PlayListList " + viewType + "-viewtype"}>
         <div className="header-row">
           { headers.map(h => (
             <div className={"header-cell header-" + h} key={h}>{h}</div>
@@ -46,7 +56,9 @@ class PlayListList extends React.Component {
 }
 
 
-export default withTracker(({loadingLists, selector, items}) => {
+export default withTracker(({loadingLists, selector, items, viewType, noLinks}) => {
+  viewType = viewType || 'page';
+
   const sortOptions = {
     number: -1,
     date: -1,
@@ -56,5 +68,7 @@ export default withTracker(({loadingLists, selector, items}) => {
   return {
     loadingLists,
     playLists: items ? items : (!loadingLists && PlayListCollection.find(selector, {sort: sortOptions}).fetch()),
+    viewType,
+    noLinks,
   };
 })(PlayListList);

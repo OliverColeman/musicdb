@@ -34,6 +34,20 @@ class Compiler extends React.Component {
       </LinkOrNot>
     );
 
+    if (viewType == 'list') {
+      return (
+        <div className={"Compiler " + viewType + "-viewtype"}>
+          <LinkOrNot link={!noLinks} to={`/compiler/${compiler._id}`} title={compiler.name} className={"Compiler inline-viewtype name"}>
+            {compiler.name}
+          </LinkOrNot>
+
+          <PlayListList loadingLists={loadingLists} selector={{compilerIds: compiler._id}} viewType='inline' />
+
+          <IconsAndLinks type='compiler' item={compiler} />
+        </div>
+      );
+    }
+
     return (
       <div className={"Compiler " + viewType + "-viewtype"}>
         <div className="item-header">
@@ -65,7 +79,7 @@ export default withTracker(({match, compiler, compilerId, viewType, noLinks}) =>
   const id = compilerId || (compiler && compiler._id) || match && match.params.compilerId;
 
   const subCompiler = compiler ? null : Meteor.subscribe('Compiler.withId', id);
-  const subLists = viewType == 'page' && Meteor.subscribe('PlayList.withCompilerId', id);
+  const subLists = (viewType == 'page' || viewType == 'list') && Meteor.subscribe('PlayList.withCompilerId', id);
 
   return {
     loading: subCompiler && !subCompiler.ready(),

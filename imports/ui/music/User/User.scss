@@ -16,12 +16,6 @@
   }
 
   .playlists-header {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    margin: -10px;
-    & > * {
-      margin: 10px;
-    }
+    @include flex-row-wrap;
   }
 }

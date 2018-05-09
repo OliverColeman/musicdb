@@ -16,6 +16,7 @@ import ImportFromURL from './music/Import/ImportFromURL';
 import ImportFromText from './music/Import/ImportFromText';
 import NeedsReview from './music/NeedsReview/NeedsReview';
 import SearchTracks from './music/Track/SearchTracks';
+import CompilerList from './music/Compiler/CompilerList';
 
 export default [
   {
@@ -46,14 +47,6 @@ export default [
       },
     ]
   },
-  {
-    url: "/library",
-    menu: 'left',
-    title: "Library",
-    access: {role: Access.AUTHENTICATED},
-    renderComponent: User,
-    routerComponent: Authenticated
-  },
 
   {
     menu: 'left',
@@ -83,6 +76,20 @@ export default [
       },
     ],
   },
+  {
+    menu: 'left',
+    title: "Manage",
+    access: {role: 'admin'},
+    children: [
+      {
+        url: "/manage/compiler",
+        title: "Compilers",
+        access: {role: 'admin'},
+        renderComponent: CompilerList,
+        routerComponent: Authenticated
+      },
+    ]
+  },
 
   {
     url: "/signup",
@@ -101,6 +108,14 @@ export default [
     routerComponent: Public
   },
 
+  {
+    url: "/library",
+    menu: 'right',
+    title: "Library",
+    access: {role: Access.AUTHENTICATED},
+    renderComponent: User,
+    routerComponent: Authenticated
+  },
   {
     url: "/profile",
     menu: 'right',
