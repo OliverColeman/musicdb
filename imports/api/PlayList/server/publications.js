@@ -8,13 +8,14 @@ import Artist from '../../Artist/Artist';
 import Compiler from '../../Compiler/Compiler';
 
 
-publishComposite('PlayList.withId', function withId(documentId, includeTracks, includeCompilers) {
-  check(documentId, String);
+publishComposite('PlayList', function PlayListSelector(selector, includeTracks, includeCompilers) {
+  check(selector, Match.OneOf(String, Object)); // TODO allows access to any PlayList, however at the moment all playlists may be public.
   check(includeTracks, Match.Maybe(Boolean));
+  check(includeCompilers, Match.Maybe(Boolean));
 
   return {
     find() {
-      return PlayList.find({_id: documentId});
+      return PlayList.find(selector);
     },
     children: [
       {

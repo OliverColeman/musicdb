@@ -24,7 +24,7 @@ import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
 import dndTypes from '../DnDTypes';
 import IconsAndLinks from '../IconsAndLinks/IconsAndLinks';
-import PlayListList from '../PlayListList/PlayListList';
+import PlayListList from '../PlayList/PlayListList';
 import TrackList from '../Track/TrackList';
 
 import './Track.scss';

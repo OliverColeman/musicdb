@@ -11,7 +11,7 @@ import PlayListCollection from '../../../api/PlayList/PlayList';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
-import PlayListList from '../PlayListList/PlayListList';
+import PlayListList from '../PlayList/PlayListList';
 
 import './User.scss';
 

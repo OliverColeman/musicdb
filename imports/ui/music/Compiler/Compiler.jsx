@@ -12,7 +12,7 @@ import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
 import IconsAndLinks from '../IconsAndLinks/IconsAndLinks';
-import PlayListList from '../PlayListList/PlayListList';
+import PlayListList from '../PlayList/PlayListList';
 
 
 class Compiler extends React.Component {
@@ -21,7 +21,7 @@ class Compiler extends React.Component {
   }
 
   render() {
-    const { loading, loadingLists, compiler, viewType, noLinks } = this.props;
+    const { loading, compiler, viewType, noLinks } = this.props;
 
     if (loading) return (<Loading />);
     if (!compiler) return (<NotFound />);
@@ -41,7 +41,7 @@ class Compiler extends React.Component {
             {compiler.name}
           </LinkOrNot>
 
-          <PlayListList loadingLists={loadingLists} selector={{compilerIds: compiler._id}} viewType='inline' />
+          <PlayListList selector={{compilerIds: compiler._id}} viewType='inline' />
 
           <IconsAndLinks type='compiler' item={compiler} />
         </div>
@@ -65,7 +65,7 @@ class Compiler extends React.Component {
         { viewType != "page" ? '' :
           <div>
             <h4>Playlists</h4>
-            <PlayListList loadingLists={loadingLists} selector={{compilerIds: compiler._id}} />
+            <PlayListList selector={{compilerIds: compiler._id, groupId: Meteor.groups.findOne({name: "JD"})._id}} />
           </div>
         }
       </div>
@@ -79,11 +79,9 @@ export default withTracker(({match, compiler, compilerId, viewType, noLinks}) =>
   const id = compilerId || (compiler && compiler._id) || match && match.params.compilerId;
 
   const subCompiler = compiler ? null : Meteor.subscribe('Compiler.withId', id);
-  const subLists = (viewType == 'page' || viewType == 'list') && Meteor.subscribe('PlayList.withCompilerId', id);
 
   return {
     loading: subCompiler && !subCompiler.ready(),
-    loadingLists: subLists && !subLists.ready(),
     compiler: compiler || CompilerCollection.findOne(id),
     viewType,
     noLinks,

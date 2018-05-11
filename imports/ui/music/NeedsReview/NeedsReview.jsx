@@ -9,7 +9,7 @@ import _ from 'lodash';
 
 import { musicCollection } from '../../../api/Music/collections';
 
-import PlayListList from '../PlayListList/PlayListList';
+import PlayListList from '../PlayList/PlayListList';
 import TrackList from '../Track/TrackList';
 import ArtistList from '../Artist/ArtistList';
 import NotFound from '../../nav/NotFound/NotFound';

@@ -210,7 +210,7 @@ export default withTracker(({match, playList, playListId, viewType, showDate, no
   const showTracks = viewType == "page";
   const showCompilers = viewType == "page" || viewType == 'list';
 
-  const subList = playList ? null : Meteor.subscribe('PlayList.withId', playListId, showTracks, showCompilers);
+  const subList = playList ? null : Meteor.subscribe('PlayList', playListId, showTracks, showCompilers);
 
   playList = playList || PlayListCollection.findOne(playListId);
 

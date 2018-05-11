@@ -10,7 +10,7 @@ import PlayListCollection from '../../../api/PlayList/PlayList';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
-import PlayListList from '../PlayListList/PlayListList';
+import PlayListList from '../PlayList/PlayListList';
 
 import './Group.scss';
 
@@ -21,7 +21,7 @@ class Group extends React.Component {
   }
 
   render() {
-    const { loading, loadingLists, group, viewType } = this.props;
+    const { loading, group, viewType } = this.props;
 
     if (loading) return (<Loading />);
     if (!group) return (<NotFound />);
@@ -39,7 +39,7 @@ class Group extends React.Component {
           <Link className="name" to={`/group/${group._id}`}>{group.name}</Link>
         </div>
 
-        { showLists && <PlayListList loadingLists={loadingLists} selector={{groupId: group._id}} /> }
+        { showLists && <PlayListList selector={{groupId: group._id}} /> }
       </div>
     );
   }
@@ -51,11 +51,9 @@ export default withTracker(({match, group, groupId, viewType}) => {
   const id = groupId || (group && group._id) || match && match.params.groupId;
 
   const sub = group ? false : Meteor.subscribe('Access.group', id);
-  const subLists = viewType == 'page' && Meteor.subscribe('PlayList.withGroupId', id);
 
   return {
     loading: sub && !sub.ready(),
-    loadingLists: subLists && !subLists.ready(),
     group: group || Meteor.groups.findOne(id),
     viewType,
   };

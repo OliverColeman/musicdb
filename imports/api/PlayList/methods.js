@@ -9,8 +9,6 @@ import PlayList from './PlayList';
 import Track from '../Track/Track';
 import { getSchemaFieldTypes, throwMethodException } from '../Utility/methodutils';
 
-const newPlaylistValidateKeys = Object.keys(PlayList.schema);
-delete(newPlaylistValidateKeys.userId);
 
 Meteor.methods({
   'PlayList.new': function PlayListNew(playList) {

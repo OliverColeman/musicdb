@@ -13,7 +13,7 @@ import Compiler from '../Compiler/Compiler';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 
-import './PlayListList.scss';
+import './PlayList.scss';
 
 
 class PlayListList extends React.Component {
@@ -56,7 +56,7 @@ class PlayListList extends React.Component {
 }
 
 
-export default withTracker(({loadingLists, selector, items, viewType, noLinks}) => {
+export default withTracker(({selector, items, viewType, noLinks}) => {
   viewType = viewType || 'page';
 
   const sortOptions = {
@@ -65,9 +65,11 @@ export default withTracker(({loadingLists, selector, items, viewType, noLinks}) 
     name: 1,
   };
 
+  const subLists = selector && Meteor.subscribe('PlayList', selector);
+
   return {
-    loadingLists,
-    playLists: items ? items : (!loadingLists && PlayListCollection.find(selector, {sort: sortOptions}).fetch()),
+    loadingLists: subLists && !subLists.ready(),
+    playLists: items ? items : PlayListCollection.find(selector, {sort: sortOptions}).fetch(),
     viewType,
     noLinks,
   };

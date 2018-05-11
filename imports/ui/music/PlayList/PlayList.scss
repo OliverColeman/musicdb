@@ -51,3 +51,9 @@
     justify-content: space-between;
   }
 }
+
+
+.PlayListList.page-viewtype, .PlayListList.list-viewtype {
+  @include playlist-table;
+  margin-top: 15px;
+}

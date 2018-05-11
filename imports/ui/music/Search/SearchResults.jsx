@@ -12,7 +12,7 @@ import { soundex, doubleMetaphone, findBySoundexOrDoubleMetaphone, levenshteinSc
 import { musicCollection } from '../../../api/Music/collections';
 import ArtistList from '../Artist/ArtistList';
 import CompilerList from '../Compiler/CompilerList';
-import PlayListList from '../PlayListList/PlayListList';
+import PlayListList from '../PlayList/PlayListList';
 import Loading from '../../misc/Loading/Loading';
 
 import './Search.scss';
