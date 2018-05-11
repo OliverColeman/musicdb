@@ -75,7 +75,7 @@ class Track extends React.Component {
 
   render() {
     const { group, loading, track, loadingPlayLists, playLists, loadingLinkedTracks, linkedTracks,
-						viewType, noLinks, showIconsAndLinks, onClick, isDragging, hoveredTop,
+						viewType, noLinks, showIconsAndLinks, showMostRecentPlayList, onClick, isDragging, hoveredTop,
 						hoveredBottom, connectDragSource, connectDropTarget} = this.props;
 
     if (loading) return (<Loading />);
@@ -126,7 +126,9 @@ class Track extends React.Component {
 
         <div className="duration" title="Duration">{convertSecondsToHHMMSS(track.duration, true)}</div>
 
-				{showIconsAndLinks ? <IconsAndLinks type='track' item={track} showPlayer={false} /> : <div />}
+				{ showMostRecentPlayList && (playLists.length > 0 ? <PlayList playList={playLists[0]} viewType='inline' showDate={true} /> : <div />) }
+
+				{ showIconsAndLinks ? <IconsAndLinks type='track' item={track} showPlayer={false} /> : <div /> }
 
 				{this.renderMenu()}
       </div>
@@ -204,7 +206,7 @@ export default flow(
   DropTarget(dndTypes.TRACK, dragTarget, connect => ({
   	connectDropTarget: connect.dropTarget(),
   })),
-  withTracker(({ match, trackId, track, viewType, noImage, noLinks, showIconsAndLinks, onClick, onDrag, onDrop, dropAllowed, hoveredTop, hoveredBottom, onRemove }) => {
+  withTracker(({ match, trackId, track, viewType, noImage, noLinks, showIconsAndLinks, onClick, onDrag, onDrop, dropAllowed, hoveredTop, hoveredBottom, onRemove, showMostRecentPlayList }) => {
 		trackId = trackId || track && track._id || match && match.params.trackId
 
     viewType = viewType || "page";
@@ -213,9 +215,9 @@ export default flow(
 
 		// TODO get group from logged in user or something.
 		const group = Meteor.groups.findOne({name: "JD"});
-    const subPlayLists = viewType == 'page' && Meteor.subscribe('Track.playLists', trackId, group._id);
+    const subPlayLists = (viewType == 'page' || showMostRecentPlayList) && Meteor.subscribe('Track.playLists', trackId, group._id);
 		const playLists = subPlayLists && subPlayLists.ready() &&
-											PlayListCollection.find({trackIds: trackId, groupId: group._id}).fetch();
+											PlayListCollection.find({trackIds: trackId, groupId: group._id}, {sort: {number: -1}}).fetch();
 
 		const subLinkedTracks = viewType == 'page' && Meteor.subscribe('LinkedTracks.forTrackId', trackId);
 		const linkedTrackRecord = subLinkedTracks && LinkedTrackCollection.findOne({ trackIds: trackId });
@@ -232,6 +234,7 @@ export default flow(
       viewType,
       noLinks,
 			showIconsAndLinks,
+			showMostRecentPlayList,
       onDrag, onDrop, dropAllowed,
       hoveredTop, hoveredBottom,
 			onRemove,

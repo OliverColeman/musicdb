@@ -79,11 +79,14 @@ class PlayList extends React.Component {
 
     const editable = Access.allowed({accessRules: PlayListCollection.access, op: 'update', item: playList, user});
 
-    if (viewType == 'inline') return (
-      <LinkOrNot link={!noLinks} to={`/list/${playList._id}`} title={playList.name} className={"PlayList inline-viewtype name"}>
-        {playList.name}
-      </LinkOrNot>);
-
+    if (viewType == 'inline') {
+      const title = playList.name + (showDate ? " (" + moment.unix(playList.date).format('YYYY-MM-DD') + ")" : '');
+      return (
+        <LinkOrNot link={!noLinks} to={`/list/${playList._id}`} title={title} className={"PlayList inline-viewtype name"}>
+          {title}
+        </LinkOrNot>
+      );
+    }
 
     if (viewType != 'page') return (
       <div className={"PlayList " + viewType + "-viewtype"}>
@@ -179,6 +182,7 @@ class PlayList extends React.Component {
               noLinks={noLinks}
               onDrop={editable && this.handleTrackDrop}
               onRemove={editable && this.handleTrackRemove}
+              showMostRecentPlayList={viewType == 'page'}
             />
           </div>
         }

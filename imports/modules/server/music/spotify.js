@@ -29,7 +29,7 @@ export default class Spotify extends MusicService {
    * @see MusicService
    */
   importFromURL(type, url, insertMetadata) {
-    const urlRE = /^.*spotify\.com\/([a-zA-Z]+)\/(\w+)(?:\/playlist\/(\w+))?\s*$/i;
+    const urlRE = /^.*spotify\.com\/([a-zA-Z]+)\/([\w.]+)(?:\/playlist\/(\w+))?\s*$/i;
     //https://open.spotify.com/track/6GElvNcpLw9RSAov7lQeGm
     //https://open.spotify.com/user/1270621250
     //https://open.spotify.com/user/1270621250/playlist/7pLbIUXjN2ttj64BSi0bwB

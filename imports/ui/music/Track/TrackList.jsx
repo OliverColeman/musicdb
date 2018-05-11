@@ -50,7 +50,7 @@ class TrackList extends React.Component {
 
 
   render() {
-    const { tracks, noLinks, noMenu, compactView, onDrop, onRemove, onClick } = this.props;
+    const { tracks, noLinks, noMenu, compactView, showMostRecentPlayList, onDrop, onRemove, onClick } = this.props;
     const { draggedTrackIndex, insertIndex } = this.state;
 
     // We keep track of when tracks are duplicated, so we can make sure to
@@ -66,13 +66,16 @@ class TrackList extends React.Component {
       }
     });
 
-    const headers = (compactView ? [] : ["Cover"]).concat(["Title", "Artist", "Album", "Length", "Icons"]);
+    const headers = (compactView ? [] : ["Cover"])
+                    .concat(["Title", "Artist", "Album", "Length"])
+                    .concat(showMostRecentPlayList ? ['Last list'] : [])
+                    .concat(["Icons"]);
 
     return (
       <div className="TrackList">
         <div className="header-row">
           { headers.map(h => (
-            <div className={"header-cell header-" + h} key={h}>{h}</div>
+            <div className={"header-cell header-" + h.replace(' ', '-')} key={h}>{h}</div>
           ))}
 
           { !noMenu && <div className={"header-cell header-Menu context-menu"}>
@@ -92,6 +95,7 @@ class TrackList extends React.Component {
             viewType={"list" + (compactView ? '-compact' : '')}
             noLinks={noLinks}
             showIconsAndLinks={true}
+            showMostRecentPlayList={showMostRecentPlayList}
             onDrag={this.handleTrackDrag}
             onDrop={this.handleTrackDrop}
             dropAllowed={!!onDrop}
@@ -107,7 +111,7 @@ class TrackList extends React.Component {
   }
 }
 
-export default withTracker(({items, noLinks, noMenu, compactView, onDrop, onRemove, onClick}) => {
+export default withTracker(({items, noLinks, noMenu, compactView, showMostRecentPlayList, onDrop, onRemove, onClick}) => {
   const user = Meteor.user();
 
   if (typeof compactView == 'undefined') {
@@ -126,6 +130,7 @@ export default withTracker(({items, noLinks, noMenu, compactView, onDrop, onRemo
     noLinks,
     noMenu,
     compactView,
+    showMostRecentPlayList,
     onDrop,
     onRemove
   };
