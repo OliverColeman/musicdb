@@ -16,7 +16,7 @@ import AlbumCollection from '../../../api/Album/Album';
 import TrackList from '../Track/TrackList';
 import Loading from '../../misc/Loading/Loading';
 
-import './Track.scss';
+import './Search.scss';
 
 
 class SearchTrackResults extends React.Component {
@@ -60,8 +60,8 @@ class SearchTrackResults extends React.Component {
 
     return (
       <div className="SearchTrackResults">
-        { (trackName && tracks.length == 0) ?
-          <div className="no-results">No tracks found.</div>
+        { ((trackName || artistName || mixedNames) && tracks.length == 0) ?
+          <div className="no-results">Nada.</div>
           :
           <div className="tracks-wrapper">
             <TrackList

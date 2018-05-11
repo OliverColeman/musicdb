@@ -13,7 +13,7 @@ import Artist from '../Artist/Artist';
 import Loading from '../../misc/Loading/Loading';
 import SearchTrackResults from './SearchTrackResults';
 
-import './Track.scss';
+import './Search.scss';
 
 
 class SearchTracks extends React.Component {

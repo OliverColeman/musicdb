@@ -1,0 +1,83 @@
+@import '../../stylesheets/variables';
+
+.Search {
+  .results {
+    @include flex-row-wrap;
+    align-items: flex-start;
+    margin: -20px 0;
+    > * {
+      width: 100%;
+      margin: 20px 0;
+      border: 1px solid $gray-lighter;
+      border-radius: 5px;
+      padding: 0 10px;
+    }
+
+    @media (min-width: 600px) and (max-width: 1199px) {
+      .artist-results {
+        width: 48%;
+      }
+      .compiler-results {
+        width: 48%;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .track-results {
+        width: 75%;
+      }
+      .artist-results {
+        width: 22%;
+      }
+      .compiler-results {
+        width: 22%;
+      }
+      .playlist-results {
+        width: 75%;
+      }
+    }
+
+    .no-results {
+      margin: 10px 0;
+      padding-top: 5px;
+      border-top: 1px solid $gray-light;
+    }
+
+    .header-row {
+      display: none;
+    }
+  }
+}
+
+.SearchTracks {
+  form {
+    .search-fields {
+      display: flex;
+      flex-wrap: wrap-reverse;
+      justify-content: space-between;
+      flex-direction: row-reverse;
+      margin: 0 -10px;
+
+      input {
+        margin: 0 10px 10px;
+        flex-grow: 1;
+        width: auto;
+        min-width: 15em;
+      }
+    }
+  }
+}
+
+.SearchTrackResults {
+  .no-results {
+    font-weight: bold;
+  }
+
+  .track-list {
+    @include track-table;
+  }
+
+  .Track {
+    cursor: pointer;
+  }
+}

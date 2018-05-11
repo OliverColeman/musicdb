@@ -2,7 +2,7 @@
 
 /* TODO Inline layout and remove some details on small screens */
 
-.PlayListList.page-viewtype {
+.PlayListList.page-viewtype, .PlayListList.list-viewtype {
   @include playlist-table;
   margin-top: 15px;
 }

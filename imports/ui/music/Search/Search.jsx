@@ -12,8 +12,9 @@ import Album from '../Album/Album';
 import Artist from '../Artist/Artist';
 import Loading from '../../misc/Loading/Loading';
 import SearchTrackResults from './SearchTrackResults';
+import SearchResults from './SearchResults';
 
-import './Track.scss';
+import './Search.scss';
 
 
 class Search extends React.Component {
@@ -54,12 +55,28 @@ class Search extends React.Component {
           </FormGroup>
         </form>
 
-        <SearchTrackResults
-          mixedNames={searchText}
-          limit={10}
-          importFromServices={false}
-          inPlayListsWithGroupId={inPlayListsWithGroupId}
-        />
+        { searchText && <div className="results">
+          <div className="track-results">
+            <h4>Tracks</h4>
+            <SearchTrackResults
+              mixedNames={searchText}
+              limit={10}
+              importFromServices={false}
+              inPlayListsWithGroupId={inPlayListsWithGroupId}
+            />
+          </div>
+
+          { ['Artist', 'Compiler', 'Playlist'].map(type => (
+            <div className={type.toLowerCase() + "-results"} key={type}>
+              <h4>{type}s</h4>
+              <SearchResults
+                type={type.toLowerCase()}
+                name={searchText}
+                limit={10}
+              />
+            </div>
+          ))}
+        </div> }
       </div>
     );
   }

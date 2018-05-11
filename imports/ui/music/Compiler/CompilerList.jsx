@@ -34,18 +34,28 @@ class CompilerList extends React.Component {
 
 
   render() {
-    const { loadingCompilers, compilers } = this.props;
+    const { loadingCompilers, compilers, viewType, noLinks } = this.props;
 
     if (loadingCompilers) return ( <Loading /> );
 
     const createNewAccess = Access.allowed({accessRules: CompilerCollection.access, op: 'create'});
 
+    if (viewType == 'inline') {
+      return (
+        <div className={"CompilerList inline-viewtype inline-list"}>
+          { compilers.map(compiler => (
+            <Compiler compiler={compiler} viewType="inline" noLinks={noLinks} key={compiler._id} />
+          ))}
+        </div>
+      );
+    }
+
     return (
       <div className={"CompilerList"}>
-        <div className="compilers-header">
+        { viewType == 'page' && <div className="compilers-header">
           <h4>Compilers</h4>
           { createNewAccess && <Button className='btn btn-success new-compiler' onClick={this.handleNew}>New Compiler</Button> }
-        </div>
+        </div> }
 
         <div className="compilers">
           <div className="header-row">
@@ -64,7 +74,9 @@ class CompilerList extends React.Component {
 }
 
 
-export default withTracker(({items}) => {
+export default withTracker(({items, viewType, noLinks}) => {
+  viewType = viewType || 'page';
+
   const sortOptions = {
     name: 1,
   };
@@ -72,7 +84,9 @@ export default withTracker(({items}) => {
   const sub = !items ? Meteor.subscribe('Compiler.all') : null;
 
   return {
-    loadingCompilers: !sub || !sub.ready(),
+    loadingCompilers: sub && !sub.ready(),
     compilers: items || CompilerCollection.find({}, {sort: { name: 1 }}).fetch(),
+    viewType,
+    noLinks,
   };
 })(CompilerList);

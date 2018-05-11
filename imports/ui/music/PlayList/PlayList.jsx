@@ -12,9 +12,10 @@ import Access from '../../../modules/access';
 import EditInline from '../../misc/EditInline/EditInline.jsx';
 import PlayListCollection from '../../../api/PlayList/PlayList';
 import TrackCollection from '../../../api/Track/Track';
+import CompilerCollection from '../../../api/Compiler/Compiler';
 import { convertSecondsToHHMMSS } from '../../../modules/util';
 import TrackList from '../Track/TrackList';
-import Compiler from '../Compiler/Compiler';
+import CompilerList from '../Compiler/CompilerList';
 import Group from '../Group/Group';
 import Tag from '../Tag/Tag';
 import NotFound from '../../nav/NotFound/NotFound';
@@ -69,7 +70,7 @@ class PlayList extends React.Component {
 
 
   render() {
-    const { loading, playList, viewType, showDate, noLinks, user, tracks } = this.props;
+    const { loading, playList, viewType, showDate, noLinks, user, tracks, compilers } = this.props;
     const { showSearchTracks } = this.state;
 
     if (loading) return (<Loading />);
@@ -98,7 +99,7 @@ class PlayList extends React.Component {
 
         <div className="compilers inline-list">
           <span className="data">
-            { playList.compilerIds.map(compilerId => (<Compiler compilerId={compilerId} viewType="inline" noLinks={noLinks} key={compilerId} />)) }
+            <CompilerList items={compilers} viewType='inline' noLinks={noLinks} />
           </span>
         </div>
 
@@ -141,7 +142,7 @@ class PlayList extends React.Component {
           <div className="compilers inline-list">
             <Label>Created by:</Label>
             <span className="data">
-              { playList.compilerIds.map(compilerId => (<Compiler compilerId={compilerId} viewType="inline" noLinks={noLinks} key={compilerId} />)) }
+              <CompilerList items={compilers} viewType='inline' noLinks={noLinks} />
             </span>
           </div>
 
@@ -207,8 +208,9 @@ export default withTracker(({match, playList, playListId, viewType, showDate, no
 
   if (typeof showDate == 'undefined') showDate = viewType == 'page';
   const showTracks = viewType == "page";
+  const showCompilers = viewType == "page" || viewType == 'list';
 
-  const subList = playList ? null : Meteor.subscribe('PlayList.withId', playListId, showTracks);
+  const subList = playList ? null : Meteor.subscribe('PlayList.withId', playListId, showTracks, showCompilers);
 
   playList = playList || PlayListCollection.findOne(playListId);
 
@@ -216,6 +218,7 @@ export default withTracker(({match, playList, playListId, viewType, showDate, no
     loading: subList && !subList.ready(),
     playList,
     tracks: (!playList || !showTracks) ? [] : TrackCollection.find({_id: {$in: playList.trackIds}}).fetch(),
+    compilers: (!playList || !showCompilers) ? [] : CompilerCollection.find({_id: {$in: playList.compilerIds}}).fetch(),
     viewType,
     showDate,
     noLinks,

@@ -5,9 +5,10 @@ import { publishComposite } from 'meteor/reywood:publish-composite';
 import PlayList from '../PlayList';
 import Track from '../../Track/Track';
 import Artist from '../../Artist/Artist';
+import Compiler from '../../Compiler/Compiler';
 
 
-publishComposite('PlayList.withId', function withId(documentId, includeTracks) {
+publishComposite('PlayList.withId', function withId(documentId, includeTracks, includeCompilers) {
   check(documentId, String);
   check(includeTracks, Match.Maybe(Boolean));
 
@@ -29,7 +30,13 @@ publishComposite('PlayList.withId', function withId(documentId, includeTracks) {
             }
           }
         ]
-      }
+      },
+      {
+        find(playList) {
+          if (includeCompilers) return Compiler.find({ _id: {$in: playList.compilerIds }});
+          return null;
+        },
+      },
     ]
   }
 });

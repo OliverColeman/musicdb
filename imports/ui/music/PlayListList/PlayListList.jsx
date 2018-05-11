@@ -41,11 +41,11 @@ class PlayListList extends React.Component {
 
     return (
       <div className={"PlayListList " + viewType + "-viewtype"}>
-        <div className="header-row">
+        { viewType == 'page' && <div className="header-row">
           { headers.map(h => (
             <div className={"header-cell header-" + h} key={h}>{h}</div>
           ))}
-        </div>
+        </div> }
 
         { playLists.map(playList => (
           <PlayList playList={playList} viewType="list" showDate={hasDates} key={playList._id} />
