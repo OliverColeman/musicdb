@@ -1,0 +1,36 @@
+@import '../../stylesheets/variables';
+
+
+.SearchTracks {
+  form {
+    .search-fields {
+      display: flex;
+      flex-wrap: wrap-reverse;
+      justify-content: space-between;
+      flex-direction: row-reverse;
+      margin: 0 -10px;
+
+      input {
+        margin: 0 10px 10px;
+        flex-grow: 1;
+        width: auto;
+        min-width: 15em;
+      }
+    }
+  }
+}
+
+
+.SearchTrackResults {
+  .no-results {
+    font-weight: bold;
+  }
+
+  .track-list {
+    @include track-table;
+  }
+
+  .Track {
+    cursor: pointer;
+  }
+}

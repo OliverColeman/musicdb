@@ -20,7 +20,7 @@ import Tag from '../Tag/Tag';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
-import SearchTracks from '../Track/SearchTracks';
+import SearchTracks from '../Search/SearchTracks';
 import IconsAndLinks from '../IconsAndLinks/IconsAndLinks';
 
 import './PlayList.scss';

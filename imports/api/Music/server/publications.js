@@ -6,6 +6,7 @@ import _ from 'lodash';
 import { musicCollection } from '../collections';
 import { soundex, doubleMetaphone, findBySoundexOrDoubleMetaphone } from '../../../modules/util';
 import { importFromSearch } from '../../../modules/server/music/music_service';
+import { trackSearch } from '../search';
 import Track from '../../Track/Track';
 import Artist from '../../Artist/Artist';
 import Album from '../../Album/Album';
@@ -24,54 +25,37 @@ Meteor.publish('search', function search(type, name, limit) {
 
 publishComposite('search.track', function search(args) {
   check(args, {
-    artistName: String,
-    albumName: String,
-    trackName: String,
+    mixedNames: Match.Maybe(String),
+    artistName: Match.Maybe(String),
+    albumName: Match.Maybe(String),
+    trackName: Match.Maybe(String),
     limit: Number,
     importFromServices: Match.Maybe(Boolean),
     inPlayListsWithGroupId: Match.Maybe(String),
   });
 
-  let {artistName, albumName, trackName, limit, importFromServices, inPlayListsWithGroupId} = args;
+  let {mixedNames, artistName, albumName, trackName, limit, importFromServices, inPlayListsWithGroupId} = args;
 
   limit = Math.floor(limit);
   if (limit > 100) limit = 100;
   else if (limit <= 0) limit = 50;
 
-  // Filter by artist and album.
-  let additionalSelectors = {};
-  let artistIds = artistName ? findBySoundexOrDoubleMetaphone(Artist, soundex(artistName), doubleMetaphone(artistName)).map(a => a._id) : null;
-  let albumIds = albumName ? findBySoundexOrDoubleMetaphone(Album, soundex(albumName), doubleMetaphone(albumName)).map(a => a._id) : null;
-  if (artistIds && artistIds.length) additionalSelectors.artistIds = {$in: artistIds};
-  if (albumIds && albumIds.length) additionalSelectors.albumId = {$in: albumIds};
-  if (inPlayListsWithGroupId) {
-    additionalSelectors.appearsInPlayListGroups = inPlayListsWithGroupId;
-  }
-
   return {
     find() {
-      // If this is a search by track name.
-      if (trackName) {
-        const results = findBySoundexOrDoubleMetaphone(Track, soundex(trackName), doubleMetaphone(trackName), additionalSelectors, limit);
+      const tracks = trackSearch({mixedNames, artistName, albumName, trackName, limit, inPlayListsWithGroupId});
 
-        if (importFromServices && results.count() < limit) {
-          Meteor.defer(() => {
-            // Note 1: importFromSearch is called asynchronously here, but the spotify and
-            // MB searches are actually run serially because it contains an internal locking
-            // mechanism to prevent parallel execution with itself (to avoid duplicate records).
-            // Note 2: Spotify search is run first because it's web service returns more quickly.
-            importFromSearch('spotify', 'track', { trackName, albumName, artistNames: [artistName] });
-            importFromSearch('musicbrainz', 'track', { trackName, albumName, artistNames: [artistName] });
-          }, 300);
-        }
+      if (importFromServices && trackName && tracks.count() < limit) {
+        Meteor.defer(() => {
+          // Note 1: importFromSearch is called asynchronously here, but the spotify and
+          // MB searches are actually run serially because it contains an internal locking
+          // mechanism to prevent parallel execution with itself (to avoid duplicate records).
+          // Note 2: Spotify search is run first because it's web service returns more quickly.
+          importFromSearch('spotify', 'track', { trackName, albumName, artistNames: [artistName] });
+          importFromSearch('musicbrainz', 'track', { trackName, albumName, artistNames: [artistName] });
+        }, 300);
+      }
 
-        return results;
-      }
-      // This is a search by artist name.
-      else {
-        if (!artistIds || !artistIds.length) return null;
-        return Track.find(additionalSelectors, {limit});
-      }
+      return tracks;
     },
     children: [
       {
@@ -84,7 +68,6 @@ publishComposite('search.track', function search(args) {
           return Album.find({_id: track.albumId});
         }
       },
-
     ]
   }
 });

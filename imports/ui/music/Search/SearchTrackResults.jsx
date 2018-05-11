@@ -9,10 +9,11 @@ import { Bert } from 'meteor/themeteorchef:bert';
 import _ from 'lodash';
 
 import { soundex, doubleMetaphone, findBySoundexOrDoubleMetaphone, levenshteinScore } from '../../../modules/util';
+import { trackSearch } from '../../../api/Music/search';
 import TrackCollection from '../../../api/Track/Track';
 import ArtistCollection from '../../../api/Artist/Artist';
 import AlbumCollection from '../../../api/Album/Album';
-import TrackList from './TrackList';
+import TrackList from '../Track/TrackList';
 import Loading from '../../misc/Loading/Loading';
 
 import './Track.scss';
@@ -26,17 +27,35 @@ class SearchTrackResults extends React.Component {
 
 
   render() {
-    const { loading, artistName, albumName, trackName, tracks, limit, onSelect } = this.props;
+    const { loading, mixedNames, artistName, albumName, trackName, tracks, limit, onSelect } = this.props;
 
     if (loading) return (<div className="SearchTrackResults"><Loading /></div>);
 
-    const tracksScored = tracks.map(t => {
-      let scores = [levenshteinScore(trackName, t.name)];
-      if (albumName && t.albumId) scores.push(levenshteinScore(albumName, AlbumCollection.findOne({_id: t.albumId}).name));
-      // Use best scoring artist for the track.
-      if (artistName) scores.push(Math.min(ArtistCollection.find({_id: {$in: t.artistIds}}).map(a => levenshteinScore(artistName, a.name))));
-      return { ...t, score: _.mean(scores)};
-    });
+    let tracksScored;
+    if (mixedNames) {
+      tracksScored = tracks.map(t => {
+        // Get Levenshtein scores for track name alone, artist names alone, and
+        // track name followed and preceded by each artist, then use the lowest score.
+        let scores = [levenshteinScore(mixedNames, t.name)];
+        const artistNames = ArtistCollection.find({_id: {$in: t.artistIds}}).map(a => a.name);
+        for (let artist of artistNames) {
+          scores.push(levenshteinScore(mixedNames, artist));
+          scores.push(levenshteinScore(mixedNames, t.name + " " + artist));
+          scores.push(levenshteinScore(mixedNames,  artist + " " + t.name));
+        }
+        return { ...t, score: _.min(scores)};
+      });
+    }
+    else {
+      tracksScored = tracks.map(t => {
+        let scores = [levenshteinScore(trackName, t.name)];
+        if (albumName && t.albumId) scores.push(levenshteinScore(albumName, AlbumCollection.findOne({_id: t.albumId}).name));
+        // Use best scoring artist for the track.
+        if (artistName) scores.push(Math.min(ArtistCollection.find({_id: {$in: t.artistIds}}).map(a => levenshteinScore(artistName, a.name))));
+        return { ...t, score: _.mean(scores)};
+      });
+    }
+
     const tracksSorted = _.sortBy(tracksScored, ['score']).slice(0, Math.min(tracksScored.length, limit));
 
     return (
@@ -60,11 +79,11 @@ class SearchTrackResults extends React.Component {
 }
 
 
-export default withTracker(({ artistName, albumName, trackName, onSelect, limit, importFromServices, inPlayListsWithGroupId }) => {
+export default withTracker(({ mixedNames, artistName, albumName, trackName, onSelect, limit, importFromServices, inPlayListsWithGroupId }) => {
+  mixedNames = mixedNames ? mixedNames.trim() : '';
   artistName = artistName ? artistName.trim() : '';
   albumName = albumName ? albumName.trim() : '';
   trackName = trackName ? trackName.trim() : '';
-  importFromServices = !!importFromServices;
 
   if (typeof inPlayListsWithGroupId == 'undefined') {
   	// TODO get group from logged in user or something.
@@ -79,26 +98,23 @@ export default withTracker(({ artistName, albumName, trackName, onSelect, limit,
   // We can't use Levenshtein score to order the search server-side, so collect more
   // than we'll show and then sort by Levenshtein and then truncate to desired limit.
   const searchLimit = 100;
-  const subscription = (!trackName && !artistName) ? null : Meteor.subscribe('search.track', {artistName, albumName, trackName, limit: searchLimit, importFromServices, inPlayListsWithGroupId});
+  importFromServices = !!importFromServices;
 
-  let additionalSelectors = {};
-  let artistIds = artistName ? findBySoundexOrDoubleMetaphone(ArtistCollection, soundex(artistName), doubleMetaphone(artistName)).map(a => a._id) : null;
-  let albumIds = albumName ? findBySoundexOrDoubleMetaphone(AlbumCollection, soundex(albumName), doubleMetaphone(albumName)).map(a => a._id) : null;
-  if (artistIds && artistIds.length) additionalSelectors.artistIds = {$in: artistIds};
-  if (albumIds && albumIds.length) additionalSelectors.albumId = {$in: albumIds};
-  if (inPlayListsWithGroupId) {
-    additionalSelectors.appearsInPlayListGroups = inPlayListsWithGroupId;
+  let subscription, tracks;
+  if (mixedNames) {
+    subscription = Meteor.subscribe('search.track', {mixedNames, limit: searchLimit, importFromServices, inPlayListsWithGroupId});
+    tracks = trackSearch({mixedNames, limit: searchLimit, inPlayListsWithGroupId});
   }
-
-  let tracks = [];
-  if (subscription) {
-    if (trackName) tracks = findBySoundexOrDoubleMetaphone(TrackCollection, soundex(trackName), doubleMetaphone(trackName), additionalSelectors, searchLimit).fetch();
-    else if (artistName) tracks = TrackCollection.find(additionalSelectors, {searchLimit}).fetch();
+  else if (trackName || artistName) {
+    subscription = Meteor.subscribe('search.track', {artistName, albumName, trackName, limit: searchLimit, importFromServices, inPlayListsWithGroupId});
+    tracks = trackSearch({artistName, albumName, trackName, limit: searchLimit, inPlayListsWithGroupId});
   }
+  tracks = tracks ? tracks.fetch() : [];
 
   return {
     loading: subscription && !subscription.ready(),
-    artistName, albumName, trackName, limit,
+    mixedNames, artistName, albumName, trackName,
+    limit,
     tracks,
     onSelect,
   };

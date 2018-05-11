@@ -15,15 +15,15 @@ import User from './music/User/User';
 import ImportFromURL from './music/Import/ImportFromURL';
 import ImportFromText from './music/Import/ImportFromText';
 import NeedsReview from './music/NeedsReview/NeedsReview';
-import SearchTracks from './music/Track/SearchTracks';
+import Search from './music/Search/Search';
 import CompilerList from './music/Compiler/CompilerList';
 
 export default [
   {
-    url: "/search/tracks",
+    url: "/search",
     menu: 'left',
-    title: "Search tracks",
-    renderComponent: SearchTracks,
+    title: "Search",
+    renderComponent: Search,
     routerComponent: Route,
   },
   {
