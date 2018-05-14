@@ -74,18 +74,21 @@ class CompilerList extends React.Component {
 }
 
 
-export default withTracker(({items, viewType, noLinks}) => {
+export default withTracker(({items, selector, viewType, noLinks}) => {
   viewType = viewType || 'page';
 
   const sortOptions = {
     name: 1,
   };
 
-  const sub = !items ? Meteor.subscribe('Compiler.all') : null;
+  // Show all compilers if none specified.
+  if (!items && !selector) selector = {};
+
+  const sub = !items ? Meteor.subscribe('Compiler', selector) : null;
 
   return {
     loadingCompilers: sub && !sub.ready(),
-    compilers: items || CompilerCollection.find({}, {sort: { name: 1 }}).fetch(),
+    compilers: items || CompilerCollection.find(selector, {sort: { name: 1 }}).fetch(),
     viewType,
     noLinks,
   };

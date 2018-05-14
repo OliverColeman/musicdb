@@ -102,7 +102,7 @@ class PlayList extends React.Component {
 
         <div className="compilers inline-list">
           <span className="data">
-            <CompilerList items={compilers} viewType='inline' noLinks={noLinks} />
+            <CompilerList selector={{_id: {$in: playList.compilerIds}}} viewType='inline' noLinks={noLinks} />
           </span>
         </div>
 
@@ -145,7 +145,7 @@ class PlayList extends React.Component {
           <div className="compilers inline-list">
             <Label>Created by:</Label>
             <span className="data">
-              <CompilerList items={compilers} viewType='inline' noLinks={noLinks} />
+              <CompilerList selector={{_id: {$in: playList.compilerIds}}} viewType='inline' noLinks={noLinks} />
             </span>
           </div>
 
@@ -212,17 +212,14 @@ export default withTracker(({match, playList, playListId, viewType, showDate, no
 
   if (typeof showDate == 'undefined') showDate = viewType == 'page';
   const showTracks = viewType == "page";
-  const showCompilers = viewType == "page" || viewType == 'list';
 
-  const subList = playList ? null : Meteor.subscribe('PlayList', playListId, showTracks, showCompilers);
-
+  const subList = playList ? null : Meteor.subscribe('PlayList', playListId, showTracks);
   playList = playList || PlayListCollection.findOne(playListId);
 
   return {
     loading: subList && !subList.ready(),
     playList,
     tracks: (!playList || !showTracks) ? [] : TrackCollection.find({_id: {$in: playList.trackIds}}).fetch(),
-    compilers: (!playList || !showCompilers) ? [] : CompilerCollection.find({_id: {$in: playList.compilerIds}}).fetch(),
     viewType,
     showDate,
     noLinks,
