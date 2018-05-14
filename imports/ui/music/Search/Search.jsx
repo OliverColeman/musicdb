@@ -20,13 +20,27 @@ import './Search.scss';
 class Search extends React.Component {
   constructor(props) {
     super(props);
-
-    this.state = {
-      formText: '',
-      searchText: '',
-    }
-
     autoBind(this);
+
+    const search = this.extractSearchText(this.props);
+    this.state = {
+      formText: search,
+      searchText: search,
+    }
+  }
+
+
+  extractSearchText(props) {
+    return !props.location.hash ? '' : props.location.hash.replace(/(#|%20)/g, ' ').trim();
+  }
+
+
+  componentWillReceiveProps(props) {
+    const search = this.extractSearchText(props);
+    this.setState({
+      formText: search,
+      searchText: search,
+    })
   }
 
 
@@ -34,12 +48,16 @@ class Search extends React.Component {
     this.setState({formText: event.target.value});
 
     if (this.updateSearchTimeoutHandle) Meteor.clearTimeout(this.updateSearchTimeoutHandle);
-    this.updateSearchTimeoutHandle = Meteor.setTimeout(this.updateSearch, 500);
+    this.updateSearchTimeoutHandle = Meteor.setTimeout(this.updateSearchFromForm, 500);
   }
 
 
-  updateSearch() {
-    this.setState({searchText: this.state.formText});
+  updateSearchFromForm() {
+    const { history, location } = this.props;
+    history.push({
+      pathname: location.pathName,
+      hash: this.state.formText,
+    });
   }
 
 
@@ -83,8 +101,10 @@ class Search extends React.Component {
 }
 
 
-export default withTracker(({ importFromServices, inPlayListsWithGroupId, onSelect }) => {
+export default withTracker(({ history, location, importFromServices, inPlayListsWithGroupId, onSelect }) => {
   return {
+    history,
+    location,
     importFromServices,
     inPlayListsWithGroupId,
     onSelect,
