@@ -221,7 +221,7 @@ class ImportFromURL extends React.Component {
 
 
   massImport(rows) {
-    const { toImport, compilers } = this.props;
+    const { toImport, compilers, groups } = this.props;
     const { groupId } = this.state;
 
     rows = rows.filter(row => row.join('').trim().length > 0);
@@ -264,6 +264,16 @@ class ImportFromURL extends React.Component {
           .filter(c => !!c)
           .map(c => c._id);
       }
+
+      if (!insertMetadata.name) {
+        insertMetadata.name = '';
+        if (insertMetadata.groupId) insertMetadata.name += groups.find(g => g._id == insertMetadata.groupId).name;
+        if (insertMetadata.number) insertMetadata.name += ' ' + insertMetadata.number;
+        else if (insertMetadata.date) insertMetadata.name += ' ' + moment.unix(insertMetadata.date).format('YYYY-MM-DD');
+        else insertMetadata.name += ' import ' +  moment().format('YYYY-MM-DD') + ' ' + ri;
+        insertMetadata.name = insertMetadata.name.trim();
+      }
+
       const importData = {
         insertMetadata,
         url: urlNoQuery,
@@ -307,7 +317,7 @@ class ImportFromURL extends React.Component {
 
 
 export default withTracker(({ match, roles }) => {
-  const subCompilers = Meteor.subscribe('Compiler.all');
+  const subCompilers = Meteor.subscribe('Compiler', {});
   const user = Meteor.user();
   const groupSelector = user && user.roles && (roles.includes('admin') ? {} : {name: {$in: Object.keys(user.roles)}});
 
