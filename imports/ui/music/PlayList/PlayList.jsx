@@ -21,7 +21,6 @@ import Tag from '../Tag/Tag';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
-import SearchTracks from '../Search/SearchTracks';
 import IconsAndLinks from '../IconsAndLinks/IconsAndLinks';
 
 import './PlayList.scss';
@@ -115,6 +114,8 @@ class PlayList extends React.Component {
     );
 
 
+    import Search from '../Search/Search';
+
     const showTracks = tracks.length > 0;
     // Get Tracks in order (when/if available and applicable).
     const tracksMod = showTracks && playList.trackIds
@@ -193,7 +194,8 @@ class PlayList extends React.Component {
             <Button className='btn btn-default' onClick={() => this.setState({showSearchTracks: false})}>Cancel</Button>
           </Modal.Title></Modal.Header>
           <Modal.Body>
-            <SearchTracks
+            <Search
+              types={['track']}
               importFromServices={true}
               inPlayListsWithGroupId={false}
               onSelect={this.handleTrackAdd}

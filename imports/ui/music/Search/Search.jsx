@@ -6,15 +6,23 @@ import { ButtonToolbar, ButtonGroup, Button, FormControl, FormGroup } from 'reac
 import { withTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
+import classNames from 'classnames';
 
 import TrackCollection from '../../../api/Track/Track';
 import Album from '../Album/Album';
 import Artist from '../Artist/Artist';
 import Loading from '../../misc/Loading/Loading';
-import SearchTrackResults from './SearchTrackResults';
 import SearchResults from './SearchResults';
 
 import './Search.scss';
+
+
+const typeLabel = {
+  track: 'Track',
+  artist: 'Artist',
+  compiler: 'Compiler',
+  playlist: 'Playlist'
+}
 
 
 class Search extends React.Component {
@@ -31,42 +39,53 @@ class Search extends React.Component {
 
 
   extractSearchText(props) {
+    if (!props.location) return '';
     return !props.location.hash ? '' : props.location.hash.replace(/(#|%20)/g, ' ').trim();
   }
 
 
   componentWillReceiveProps(props) {
-    const search = this.extractSearchText(props);
-    this.setState({
-      formText: search,
-      searchText: search,
-    })
+    if (props.location) {
+      const search = this.extractSearchText(props);
+      this.setState({
+        formText: search,
+        searchText: search,
+      });
+    }
   }
 
 
   handleChange(event) {
-    this.setState({formText: event.target.value});
+    const terms = event.target.value;
+    this.setState({formText: terms});
 
     if (this.updateSearchTimeoutHandle) Meteor.clearTimeout(this.updateSearchTimeoutHandle);
-    this.updateSearchTimeoutHandle = Meteor.setTimeout(this.updateSearchFromForm, 500);
+    this.updateSearchTimeoutHandle = Meteor.setTimeout(this.updateSearchFromForm, terms.length < 5 ? 1000 : 500);
   }
 
 
   updateSearchFromForm() {
     const { history, location } = this.props;
-    history.push({
-      pathname: location.pathName,
-      hash: this.state.formText,
-    });
+    if (location) {
+      history.push({
+        pathname: location.pathName,
+        hash: this.state.formText,
+      });
+    }
+    else {
+      this.setState({
+        searchText: this.state.formText
+      });
+    }
   }
 
 
   render() {
-    const { inPlayListsWithGroupId } = this.props;
+    const { types, limit, inPlayListsWithGroupId, importFromServices, onSelect } = this.props;
     const { formText, searchText } = this.state;
 
     return (
-      <div className="Search">
+      <div className={classNames("Search", ...types)}>
         <form>
           <FormGroup className="search-fields">
             <FormControl type="text" value={formText} placeholder="Search" onChange={e => this.handleChange(e)} />
@@ -74,23 +93,16 @@ class Search extends React.Component {
         </form>
 
         { searchText && <div className="results">
-          <div className="track-results">
-            <h4>Tracks</h4>
-            <SearchTrackResults
-              mixedNames={searchText}
-              limit={10}
-              importFromServices={false}
-              inPlayListsWithGroupId={inPlayListsWithGroupId}
-            />
-          </div>
-
-          { ['Artist', 'Compiler', 'Playlist'].map(type => (
-            <div className={type.toLowerCase() + "-results"} key={type}>
-              <h4>{type}s</h4>
+          { types.map(type => (
+            <div className={type + "-results"} key={type}>
+              <h4>{typeLabel[type]}s</h4>
               <SearchResults
-                type={type.toLowerCase()}
-                name={searchText}
-                limit={10}
+                type={type}
+                terms={searchText}
+                limit={limit || (type == 'track' ? 9 : 10)}
+                inPlayListsWithGroupId={inPlayListsWithGroupId}
+                importFromServices={importFromServices}
+                onSelect={onSelect}
               />
             </div>
           ))}
@@ -101,12 +113,16 @@ class Search extends React.Component {
 }
 
 
-export default withTracker(({ history, location, importFromServices, inPlayListsWithGroupId, onSelect }) => {
+export default withTracker(({ history, location, types, limit, importFromServices, inPlayListsWithGroupId, onSelect }) => {
+  types = types || Object.keys(typeLabel);
+
   return {
     history,
     location,
+    limit,
     importFromServices,
     inPlayListsWithGroupId,
     onSelect,
+    types,
   };
 })(Search);

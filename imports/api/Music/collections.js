@@ -12,4 +12,13 @@ const musicCollection = {
   track: Track,
 }
 
-export { musicCollection };
+let musicSearchCollection;
+if (Meteor.isClient) {
+  musicSearchCollection = ['album', 'artist', 'compiler', 'playlist', 'track']
+    .reduce((acc, type) => {
+      acc[type] = new Mongo.Collection('search_' + type);
+      return acc;
+    }, {});
+}
+
+export { musicCollection, musicSearchCollection };

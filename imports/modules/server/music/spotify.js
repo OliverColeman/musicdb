@@ -68,19 +68,23 @@ export default class Spotify extends MusicService {
       case 'album': return getAlbum(null, names);
 
       case 'track':
-        //console.log(" s search");
-        let query = `track:"${normaliseString(names.trackName)}"`;
-        if (names.artistNames && names.artistNames.length) {
-          query += ` artist:"${normaliseString(names.artistNames[0])}"`;
-        }
-        if (names.albumName) {
-          query += ` album:"${normaliseString(names.albumName)}"`;
-        }
         const spotifyAPI = await getSpotifyAPI();
-        //console.log("s" + query);
+        let query;
+        if (typeof names == 'string') {
+          query = normaliseString(names);
+        }
+        else {
+          query = `track:"${normaliseString(names.trackName)}"`;
+          if (names.artistNames && names.artistNames.length) {
+            query += ` artist:"${normaliseString(names.artistNames[0])}"`;
+          }
+          if (names.albumName) {
+            query += ` album:"${normaliseString(names.albumName)}"`;
+          }
+        }
         const response = await spotifyAPI.search(query, ['track'], {market: 'AU', limit: 25});
 
-        //console.log("s found " + response.body.tracks.items.length);
+        //console.log(response.body.tracks);
 
         const tracks = [];
         for (let spotifyTrack of response.body.tracks.items) {

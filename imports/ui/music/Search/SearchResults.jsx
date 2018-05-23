@@ -8,11 +8,13 @@ import { Meteor } from 'meteor/meteor';
 import { Bert } from 'meteor/themeteorchef:bert';
 import _ from 'lodash';
 
-import { soundex, doubleMetaphone, findBySoundexOrDoubleMetaphone, levenshteinScore } from '../../../modules/util';
-import { musicCollection } from '../../../api/Music/collections';
+import { normaliseString } from '../../../modules/util';
+import { searchScore, searchQuery } from '../../../api/Music/search';
+import { musicSearchCollection } from '../../../api/Music/collections';
 import ArtistList from '../Artist/ArtistList';
 import CompilerList from '../Compiler/CompilerList';
 import PlayListList from '../PlayList/PlayListList';
+import TrackList from '../Track/TrackList';
 import Loading from '../../misc/Loading/Loading';
 
 import './Search.scss';
@@ -22,6 +24,7 @@ const typeComponent = {
   artist: ArtistList,
   compiler: CompilerList,
   playlist: PlayListList,
+  track: TrackList,
 }
 
 
@@ -33,27 +36,29 @@ class SearchResults extends React.Component {
 
 
   render() {
-    const { loading, type, name, items, limit } = this.props;
+    const { loading, type, terms, items, limit, onSelect } = this.props;
 
     if (loading) return (<div className="SearchResults"><Loading /></div>);
 
-    const itemsScored = items.map(i => {
-      const score = levenshteinScore(name, i.name);
-      return { ...i, score};
-    });
-    const itemsSorted = _.sortBy(itemsScored, ['score']).slice(0, Math.min(itemsScored.length, limit));
+    // The items will already have a score, but if multiple searches are open
+    // the scores may be for different search terms.
+    const searchScoreKey = 'searchscore_' + normaliseString(terms);
+    const itemsSorted = _.sortBy(items, [searchScoreKey]).slice(0, Math.min(items.length, limit));
 
     return (
       <div className="SearchResults">
-        { (name && items.length == 0) ?
+        { (terms && items.length == 0) ?
           <div className="no-results">Nada.</div>
           :
-          <div className="items-wrapper">
+          <div className={"items-wrapper" + (!!onSelect && ' selectable')}>
             { React.createElement(typeComponent[type], {
               items: itemsSorted,
               noMenu: true,
               compactView: true,
               viewType: "list",
+              showMostRecentPlayList: true,
+              noLinks: !!onSelect,
+              onClick: onSelect,
             })}
           </div>
         }
@@ -63,19 +68,29 @@ class SearchResults extends React.Component {
 }
 
 
-export default withTracker(({ type, name, limit }) => {
-  name = name ? name.trim() : '';
+export default withTracker(({ type, terms, limit, inPlayListsWithGroupId, importFromServices, onSelect }) => {
+  terms = terms ? terms.trim() : '';
 
-  // We can't use Levenshtein score to order the search server-side, so collect more
-  // than we'll show and then sort by Levenshtein and then truncate to desired limit.
-  const searchLimit = 100;
+  if (type == 'track') {
+    if (typeof inPlayListsWithGroupId == 'undefined') {
+    	// TODO get group from logged in user or something.
+    	const group = Meteor.groups.findOne({name: "JD"});
+      inPlayListsWithGroupId = group._id;
+    }
+    else {
+      // publication function only accepts strings or undefined, but allow passing truthy values to this component.
+      inPlayListsWithGroupId = inPlayListsWithGroupId ? inPlayListsWithGroupId : undefined;
+    }
+  }
 
-  subscription = name && Meteor.subscribe('search', type, name, limit: searchLimit);
+  const subscription = terms && Meteor.subscribe('search', {type, terms, limit, inPlayListsWithGroupId, importFromServices});
 
   return {
     loading: subscription && !subscription.ready(),
-    name,
+    terms,
     limit,
-    items: subscription ? findBySoundexOrDoubleMetaphone(musicCollection[type], soundex(name), doubleMetaphone(name), null, limit: searchLimit).fetch() : [],
+    items: subscription ? searchQuery({type, terms, inPlayListsWithGroupId}).fetch() : [],
+    onSelect,
+    //items: subscription ? musicSearchCollection[type].find().fetch() : [],
   };
 })(SearchResults);

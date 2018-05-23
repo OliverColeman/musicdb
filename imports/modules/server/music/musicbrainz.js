@@ -77,16 +77,20 @@ class MusicBrainz extends MusicService {
       case 'album': return [await getAlbum(null, names)];
 
       case 'track':
-        const query = {
-          recording: normaliseString(names.trackName),
-          limit: 25,
-        };
-        if (names.artistNames && names.artistNames.length) {
-          query.artist = normaliseString(names.artistNames[0]);
+        const query = { limit: 25 };
+        if (typeof names == 'string') {
+          query.query = normaliseString(names);
         }
-        if (names.albumName) {
-          query.release = normaliseString(names.albumName);
+        else {
+          query.recording = normaliseString(names.trackName);
+          if (names.artistNames && names.artistNames.length) {
+            query.artist = normaliseString(names.artistNames[0]);
+          }
+          if (names.albumName) {
+            query.release = normaliseString(names.albumName);
+          }
         }
+
         const results = await mbAPI.searchAsync('recording', query);
         if (!results.recordings) return [];
 

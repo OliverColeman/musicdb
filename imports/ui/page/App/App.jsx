@@ -28,7 +28,6 @@ import Tag from '../../music/Tag/Tag';
 import Artist from '../../music/Artist/Artist';
 import Album from '../../music/Album/Album';
 import Compiler from '../../music/Compiler/Compiler';
-import SearchTracks from '../../music/Search/SearchTracks';
 import Access from '../../../modules/access';
 import routes from '../../routes';
 

@@ -1,7 +1,7 @@
 import dblmp from 'double-metaphone';
 import sdx from 'soundex-code';
 import stemmer from 'lancaster-stemmer';
-import levenshtein from 'levenshtein-edit-distance';
+import damerauLevenshtein from 'damerau-levenshtein';
 import _ from 'lodash';
 
 const padTime = x => x.toString().padStart(2, '0');
@@ -44,28 +44,27 @@ const soundex = (str) => _.uniqBy(str.split(/\s+/).map(w => sdx(stemmer(w))));
 const doubleMetaphone = (str) => _.uniqBy(_.flatten(str.split(/\s+/).map(w => dblmp(stemmer(w)))));
 
 /**
- * Returns a Levenshtein "score": the Levenshtein edit distance (case insensitive) divided by the length of the longest string.
+ * Returns a Damerau-Levenshtein "score": the Damerau-Levenshtein edit distance
+ * (case insensitive) divided by the length of the longest string.
  */
-const levenshteinScore = (str1, str2) => levenshtein(str1, str2, true) / Math.max(str1.length, str2.length);
+const levenshteinScore = (str1, str2) => damerauLevenshtein(str1.toLowerCase(), str2.toLowerCase()).relative;
 
 /**
  * Used by fuzzy matching/search. Query the specified collection for the given soundex and double metaphone codes.
- * Optionally provide additional selectors. Default limit is 25.
+ * Optionally provide additional selectors.
  */
-const findBySoundexOrDoubleMetaphone = (collection, soundexCodes, doubleMetaphoneCodes, additionalSelectors, limit) => {
-  additionalSelectors = additionalSelectors || {};
-  limit = limit || 50;
+const findBySoundexOrDoubleMetaphone = (collection, name, andSelectors, orSelectors, options) => {
+  andSelectors = andSelectors || {};
+  orSelectors = orSelectors ? (Array.isArray(orSelectors) ? orSelectors : [orSelectors]) : [];
 
   return collection.find({
     $or: [
-      { soundex: { $in: soundexCodes } },
-      { doubleMetaphone: {$in: doubleMetaphoneCodes } },
+      { soundex: { $in: soundex(name) } },
+      { doubleMetaphone: {$in: doubleMetaphone(name) } },
+      ...orSelectors,
     ],
-    ...additionalSelectors
-  },
-  {
-    limit
-  });
+    ...andSelectors
+  }, options);
 }
 
 

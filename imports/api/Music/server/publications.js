@@ -4,73 +4,151 @@ import { publishComposite } from 'meteor/reywood:publish-composite';
 import _ from 'lodash';
 
 import { musicCollection } from '../collections';
-import { soundex, doubleMetaphone, findBySoundexOrDoubleMetaphone } from '../../../modules/util';
+import { findBySoundexOrDoubleMetaphone, normaliseString } from '../../../modules/util';
 import { importFromSearch } from '../../../modules/server/music/music_service';
-import { trackSearch } from '../search';
+import { searchQuery, searchScore } from '../search';
 import Track from '../../Track/Track';
 import Artist from '../../Artist/Artist';
 import Album from '../../Album/Album';
 
+const searchScoreThreshold = 0.3;
 
-Meteor.publish('search', function search(type, name, limit) {
-  check(type, String);
-  check(name, String);
-  check(limit, Number);
-  limit = Math.floor(limit);
-  if (limit > 100) limit = 100;
-  else if (limit <= 0) limit = 50;
-  return findBySoundexOrDoubleMetaphone(musicCollection[type.toLowerCase()], soundex(name), doubleMetaphone(name), null, limit);
-});
-
-
-publishComposite('search.track', function search(args) {
+Meteor.publish('search', function search(args) {
   check(args, {
-    mixedNames: Match.Maybe(String),
-    artistName: Match.Maybe(String),
-    albumName: Match.Maybe(String),
-    trackName: Match.Maybe(String),
+    type: String,
+    terms: String,
     limit: Number,
     importFromServices: Match.Maybe(Boolean),
     inPlayListsWithGroupId: Match.Maybe(String),
   });
 
-  let {mixedNames, artistName, albumName, trackName, limit, importFromServices, inPlayListsWithGroupId} = args;
+  let { type, terms, limit, importFromServices, inPlayListsWithGroupId } = args;
 
   limit = Math.floor(limit);
-  if (limit > 100) limit = 100;
-  else if (limit <= 0) limit = 50;
+  if (limit > 25) limit = 25;
+  else if (limit <= 0) limit = 10;
 
-  return {
-    find() {
-      const tracks = trackSearch({mixedNames, artistName, albumName, trackName, limit, inPlayListsWithGroupId});
+  const self = this;
+  const collectionName = 'search_' + type;
+  const searchScoreKey = 'searchscore_' + normaliseString(terms);
+  let initializing = true;
 
-      if (importFromServices && trackName && tracks.count() < limit) {
-        Meteor.defer(() => {
-          // Note 1: importFromSearch is called asynchronously here, but the spotify and
-          // MB searches are actually run serially because it contains an internal locking
-          // mechanism to prevent parallel execution with itself (to avoid duplicate records).
-          // Note 2: Spotify search is run first because it's web service returns more quickly.
-          importFromSearch('spotify', 'track', { trackName, albumName, artistNames: [artistName] });
-          importFromSearch('musicbrainz', 'track', { trackName, albumName, artistNames: [artistName] });
-        }, 300);
-      }
+  const logType = '';
 
-      return tracks;
-    },
-    children: [
-      {
-        find(track) {
-          return Artist.find({_id: {$in: track.artistIds}});
-        }
-      },
-      {
-        find(track) {
-          return Album.find({_id: track.albumId});
-        }
-      },
-    ]
+  const cursor = searchQuery({type, terms, inPlayListsWithGroupId});
+
+  // Get initial set of results.
+  const allDocs = _.sortBy(cursor.fetch(), [searchScoreKey]);
+
+  if (type == logType) console.log(allDocs.slice(0, 5));
+
+  // Add initial set of results within limit.
+  for (let i = 0; i < Math.min(limit, allDocs.length) ; i++) {
+    let doc = allDocs[i];
+    if (type == logType) console.log('add', doc);
+    self.added(collectionName, doc._id, doc);
   }
+
+  // Trigger import if specified and initial best result doesn't look like a good match.
+  if (importFromServices && type == 'track' && allDocs[0][searchScoreKey] > searchScoreThreshold) {
+    Meteor.defer(async () => {
+      // Spotify search is run first because it's web service returns way more quickly.
+      const foundDocs = await importFromSearch('spotify', 'track', terms);
+      const bestScore = foundDocs.length > 0 ? Math.min(...foundDocs.map(fd => searchScore(type, terms, fd))) : 1;
+      if (bestScore > searchScoreThreshold) {
+        // Only do slow MB search if we couldn't find much on Spotify.
+        importFromSearch('musicbrainz', 'track', terms);
+      }
+    }, 300);
+  }
+
+  const observer = cursor.observeChanges({
+    added: (id, fields) => {
+      if (!initializing) {
+        const doc = {
+          _id: id,
+          ...fields,
+          [searchScoreKey]: searchScore(type, terms, fields),
+        };
+        const insertIndex = _.sortedIndexBy(allDocs, doc, searchScoreKey);
+        allDocs.splice(insertIndex, 0, doc);
+
+        // If this affects the top N results.
+        if (insertIndex < limit) {
+          // Add new document to results.
+          self.added(collectionName, doc._id, doc);
+
+          // If we already had N documents in the results, remove the one that
+          // has been bumped to position N+1.
+          if (allDocs.length > limit) {
+            self.removed(collectionName, allDocs[limit]._id);
+          }
+        }
+      }
+    },
+
+    removed: (id) => {
+      if (!initializing) {
+        const removeIndex = _.sortedIndexof(allDocs, {_id: id}, '_id');
+        allDocs.splice(removeIndex, 1);
+
+        // If this affects the top N results.
+        if (removeIndex < limit) {
+          self.removed(collectionName, id);
+
+          // If we (still) have at least N matching documents.
+          if (allDocs.length >= limit) {
+            // Add new Nth document to results.
+            const doc = allDocs[limit-1];
+            self.added(collectionName, doc._id, doc);
+          }
+        }
+      }
+    },
+
+    changed: (id, fields) => {
+      if (!initializing) {
+        const currentIndex = allDocs.findIndex(doc => doc._id == id);
+        const newDoc = {
+          ...allDocs[currentIndex],
+          ...fields,
+        };
+        newDoc.searchScoreKey = searchScore(type, terms, newDoc);
+        const newIndex = _.sortedIndexBy(allDocs, newDoc, searchScoreKey);
+
+        if (currentIndex == newIndex) {
+          allDocs[currentIndex] = newDoc;
+          if (currentIndex < limit) {
+            self.changed(collectionName, newDoc._id, newDoc)
+          }
+        }
+        else {
+          allDocs.splice(currentIndex, 1);
+          allDocs.splice(newIndex - (newIndex > currentIndex ? 1 : 0), 0, newDoc);
+
+          // If the document has moved outside of the limit.
+          if (currentIndex < limit && newIndex >= limit) {
+            self.removed(collectionName, id);
+            const doc = allDocs[limit-1];
+            self.added(collectionName, doc._id, doc);
+          }
+          // If the document has moved inside of the limit.
+          else if (currentIndex >= limit && newIndex < limit) {
+            self.added(collectionName, newDoc._id, newDoc);
+            self.removed(collectionName, allDocs[limit]._id);
+          }
+        }
+      }
+    }
+  });
+
+  initializing = false;
+
+  self.ready();
+
+  self.onStop(() => observer.stop());
 });
+
 
 
 Meteor.publish('NeedsReview', function needsReview(type) {

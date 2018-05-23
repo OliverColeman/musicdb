@@ -79,8 +79,9 @@ let importFromSearchInProgress = false;
  * no matching document exists, otherwise the existing document is updated.
  * @param {string} service - The service to import from, eg 'spotify', 'musicbrainz'.
  * @param {string} type - The item type, supported types are 'album' and 'track'.
- * @param {Object} names - The name of the item and other associated info to
- * use for disambiguation. For albums: { albumName, artistNames }. For tracks:
+ * @param {Object|String} names - The name of the item and other associated info to
+ * use for disambiguation. This may be a single string containing the search terms
+ * or an object: for albums { albumName, artistNames }; for tracks
  * { trackName, albumName, artistNames, duration }.
  * @return {Object} A Promise, resolving to an array of documents for the
  *   appropriate collection.
