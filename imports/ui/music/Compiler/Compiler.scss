@@ -6,6 +6,10 @@
     @include flex-row-wrap;
   }
 
+  .header-Icons, .IconsAndLinks {
+    width: 25px;
+  }
+
   .compilers {
     @include playlist-table;
     margin-top: 15px;

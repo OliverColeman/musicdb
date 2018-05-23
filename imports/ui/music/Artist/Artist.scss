@@ -13,4 +13,8 @@
 
 .ArtistList {
   @include playlist-table;
+
+  .header-Icons, .IconsAndLinks {
+    width: 55px;
+  }
 }

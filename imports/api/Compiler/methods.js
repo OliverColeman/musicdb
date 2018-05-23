@@ -22,6 +22,12 @@ Meteor.methods({
       throwMethodException(exception);
     }
   },
+
+  'Compiler.update': function CompilerUpdate(compiler) {
+    check(compiler, getSchemaFieldTypes(Compiler.schema, compiler, true));
+    if (!Access.allowed({accessRules: Compiler.access, op: 'update', item: compiler, user: this.userId})) throw "Not allowed.";
+    Compiler.update(compiler._id, compiler);
+  }
 });
 
 

@@ -21,12 +21,10 @@ class Compiler extends React.Component {
   }
 
   render() {
-    const { loading, compiler, viewType, noLinks } = this.props;
+    const { loading, compiler, viewType, noLinks, editable } = this.props;
 
     if (loading) return (<Loading />);
     if (!compiler) return (<NotFound />);
-
-    const editable = !compiler.spotifyId && !compiler.mbId;
 
     if (viewType == 'inline') return (
       <LinkOrNot link={!noLinks} to={`/compiler/${compiler._id}`} title={compiler.name} className={"Compiler inline-viewtype name"}>
@@ -80,10 +78,13 @@ export default withTracker(({match, compiler, compilerId, viewType, noLinks}) =>
 
   const subCompiler = compiler ? null : Meteor.subscribe('Compiler', id);
 
+  compiler = compiler || CompilerCollection.findOne(id);
+
   return {
     loading: subCompiler && !subCompiler.ready(),
-    compiler: compiler || CompilerCollection.findOne(id),
+    compiler,
     viewType,
     noLinks,
+    editable: compiler && Access.allowed({accessRules: CompilerCollection.access, op: 'update', item: compiler, user: Meteor.userId()})
   };
 })(Compiler);

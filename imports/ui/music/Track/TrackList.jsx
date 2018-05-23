@@ -73,7 +73,7 @@ class TrackList extends React.Component {
 
     return (
       <div className="TrackList">
-        <div className="header-row">
+        <div className={"header-row list" + (compactView ? '-compact' : '') + "-viewtype"} >
           { headers.map(h => (
             <div className={"header-cell header-" + h.replace(' ', '-')} key={h}>{h}</div>
           ))}
