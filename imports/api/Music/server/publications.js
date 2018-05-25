@@ -11,7 +11,7 @@ import Track from '../../Track/Track';
 import Artist from '../../Artist/Artist';
 import Album from '../../Album/Album';
 
-const searchScoreThreshold = 0.3;
+const searchScoreThreshold = 0.7;
 
 Meteor.publish('search', function search(args) {
   check(args, {
@@ -33,31 +33,27 @@ Meteor.publish('search', function search(args) {
   const searchScoreKey = 'searchscore_' + normaliseString(terms);
   let initializing = true;
 
-  const logType = '';
-
   const cursor = searchQuery({type, terms, inPlayListsWithGroupId});
 
   // Get initial set of results.
-  const allDocs = _.sortBy(cursor.fetch(), [searchScoreKey]);
-
-  if (type == logType) console.log(allDocs.slice(0, 5));
+  const allDocs = _.sortBy(cursor.fetch(), [doc => -doc[searchScoreKey]]);
 
   // Add initial set of results within limit.
   for (let i = 0; i < Math.min(limit, allDocs.length) ; i++) {
     let doc = allDocs[i];
-    if (type == logType) console.log('add', doc);
     self.added(collectionName, doc._id, doc);
   }
 
   // Trigger import if specified and initial best result doesn't look like a good match.
-  if (importFromServices && type == 'track' && allDocs[0][searchScoreKey] > searchScoreThreshold) {
+  if (importFromServices && type == 'track' && allDocs[0][searchScoreKey] < searchScoreThreshold) {
     Meteor.defer(async () => {
       // Spotify search is run first because it's web service returns way more quickly.
-      const foundDocs = await importFromSearch('spotify', 'track', terms);
-      const bestScore = foundDocs.length > 0 ? Math.min(...foundDocs.map(fd => searchScore(type, terms, fd))) : 1;
-      if (bestScore > searchScoreThreshold) {
+      let foundDocs = await importFromSearch('spotify', 'track', terms);
+      let bestScore = foundDocs.length > 0 ? Math.max(...foundDocs.map(fd => searchScore(type, terms, fd))) : 0;
+      if (bestScore < searchScoreThreshold) {
         // Only do slow MB search if we couldn't find much on Spotify.
-        importFromSearch('musicbrainz', 'track', terms);
+        foundDocs = await importFromSearch('musicbrainz', 'track', terms);
+        bestScore = foundDocs.length > 0 ? Math.max(...foundDocs.map(fd => searchScore(type, terms, fd))) : 0;
       }
     }, 300);
   }
@@ -70,7 +66,7 @@ Meteor.publish('search', function search(args) {
           ...fields,
           [searchScoreKey]: searchScore(type, terms, fields),
         };
-        const insertIndex = _.sortedIndexBy(allDocs, doc, searchScoreKey);
+        const insertIndex = _.sortedIndexBy(allDocs, doc, doc => -doc[searchScoreKey]);
         allDocs.splice(insertIndex, 0, doc);
 
         // If this affects the top N results.
@@ -89,7 +85,7 @@ Meteor.publish('search', function search(args) {
 
     removed: (id) => {
       if (!initializing) {
-        const removeIndex = _.sortedIndexof(allDocs, {_id: id}, '_id');
+        const removeIndex = allDocs.findIndex(doc => doc._id == id);
         allDocs.splice(removeIndex, 1);
 
         // If this affects the top N results.
@@ -114,7 +110,7 @@ Meteor.publish('search', function search(args) {
           ...fields,
         };
         newDoc.searchScoreKey = searchScore(type, terms, newDoc);
-        const newIndex = _.sortedIndexBy(allDocs, newDoc, searchScoreKey);
+        const newIndex = _.sortedIndexBy(allDocs, newDoc, doc => -doc[searchScoreKey]);
 
         if (currentIndex == newIndex) {
           allDocs[currentIndex] = newDoc;

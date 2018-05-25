@@ -43,7 +43,7 @@ class SearchResults extends React.Component {
     // The items will already have a score, but if multiple searches are open
     // the scores may be for different search terms.
     const searchScoreKey = 'searchscore_' + normaliseString(terms);
-    const itemsSorted = _.sortBy(items, [searchScoreKey]).slice(0, Math.min(items.length, limit));
+    const itemsSorted = _.sortBy(items, doc => -doc[searchScoreKey]).slice(0, Math.min(items.length, limit));
 
     return (
       <div className="SearchResults">

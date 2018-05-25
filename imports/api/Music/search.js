@@ -24,18 +24,26 @@ const searchScore = (type, terms, doc) => {
   }
 
   names = _.uniq(_.flatten(names.map(n => n.split(' '))));
-  terms = terms.split(' ');
+  terms = _.uniq(terms.split(/\s+/));
 
   // Find score for best matching name for each search term.
-  const scores = terms.map(term => Math.min(...names.map(name => levenshteinScore(name, term))));
+  const scores = terms.map(term => 1 - Math.min(...names.map(name => levenshteinScore(name, term))));
 
-  // Score is average of term scores plus a small penalty for extraneous names.
-  return (_.sum(scores) + Math.max(0, names.length - terms.length) * 0.0001) / terms.length;
+  // Components of score are: product of scores as this gives a good indication
+  // of whether all terms have matched well; mean of term scores as this is not
+  // overly-sensitive to any one term; and a penalty for extraneous terms (for
+  // sorting purposes).
+  const product = scores.reduce((a,b) => a*b);
+  const average = _.mean(scores);
+  const extraneousPenalty = Math.max(0, names.length - terms.length) * 0.00001;
+  return (product + average) / 2 - extraneousPenalty;
 }
 
 
 const searchQuery = (args) => {
   const { type, terms, inPlayListsWithGroupId } = args;
+
+  searchScoreKey = 'searchscore_' + normaliseString(terms);
 
   const andSelectors = {};
   if (type == 'track' && inPlayListsWithGroupId) {
@@ -62,7 +70,6 @@ const searchQuery = (args) => {
     if (artistIds.length) orSelectors.push({ artistIds: { $in: artistIds } });
   }
 
-  searchScoreKey = 'searchscore_' + normaliseString(terms);
   const transform = (doc) => {
     doc[searchScoreKey] = searchScore(type, terms, doc);
     return doc;
