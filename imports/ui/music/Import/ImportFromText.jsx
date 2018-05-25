@@ -246,7 +246,7 @@ class ImportFromText extends React.Component {
 
 
 export default withTracker(({ match, roles }) => {
-  const subCompilers = Meteor.subscribe('Compiler.all');
+  const subCompilers = Meteor.subscribe('Compiler', {});
   const user = Meteor.user();
   const groupSelector = user && user.roles && (roles.includes('admin') ? {} : {name: {$in: Object.keys(user.roles)}});
 
@@ -255,8 +255,8 @@ export default withTracker(({ match, roles }) => {
 
   return {
     loading: !subCompilers.ready(),
-    compilers: CompilerCollection.find().fetch(),
-    groups: user && user.roles ? Meteor.groups.find(groupSelector).fetch() : [],
+    compilers: CompilerCollection.find({}, {sort: {name: 1}}).fetch(),
+    groups: user && user.roles ? Meteor.groups.find(groupSelector, {sort: {name: 1}}).fetch() : [],
     toImport: Session.get("ImportFromText_toImport"),
     playListId: Session.get("ImportFromText_playListId"),
   };

@@ -15,7 +15,7 @@ Meteor.methods({
     try {
       check(compiler, Match.Maybe(Object)); // Real validation occurs when we try to insert.
       if (!Access.allowed({accessRules: Compiler.access, op: 'create', user: this.userId})) throw "Not allowed.";
-      compiler = _.assign({name: "New compiler"}, compiler || {});
+      compiler = _.assign({name: "Aaa new compiler"}, compiler || {});
       return Compiler.insert(compiler);
     }
     catch (exception) {
