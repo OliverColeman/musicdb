@@ -13,8 +13,8 @@ Meteor.publish('Track.withId', function withId(trackId) {
   return Track.find({ _id: trackId });
 });
 
-Meteor.publish('Track.playLists', function playLists(trackId, groupId) {
-  check(trackId, Match.Maybe(String));
-  check(groupId,  Match.Maybe(String));
-  return PlayList.find({ trackIds: trackId, groupId });
+Meteor.publish('Track.playLists', function playLists(trackIds, groupId) {
+  check(trackIds, [String]);
+  check(groupId,  String);
+  return PlayList.find({ trackIds: {$in: trackIds}, groupId });
 });

@@ -213,15 +213,16 @@ export default flow(
 		if (typeof showIconsAndLinks == 'undefined') showIconsAndLinks = viewType == "page";
     const subscription = track ? null : Meteor.subscribe('Track.withId', trackId);
 
-		// TODO get group from logged in user or something.
-		const group = Meteor.groups.findOne({name: "JD"});
-    const subPlayLists = (viewType == 'page' || showMostRecentPlayList) && Meteor.subscribe('Track.playLists', trackId, group._id);
-		const playLists = subPlayLists && subPlayLists.ready() &&
-											PlayListCollection.find({trackIds: trackId, groupId: group._id}, {sort: {number: -1}}).fetch();
-
-		const subLinkedTracks = viewType == 'page' && Meteor.subscribe('LinkedTracks.forTrackId', trackId);
+		const subLinkedTracks = (viewType == 'page' || showMostRecentPlayList) && Meteor.subscribe('LinkedTracks.forTrackId', trackId);
 		const linkedTrackRecord = subLinkedTracks && LinkedTrackCollection.findOne({ trackIds: trackId });
 		const linkedTrackIds = linkedTrackRecord && linkedTrackRecord.trackIds.filter(id => id != trackId);
+
+		// TODO get group from logged in user or something.
+		const group = Meteor.groups.findOne({name: "JD"});
+		const playListsTrackIds = [trackId, ...(linkedTrackIds || [])];
+    const subPlayLists = (viewType == 'page' || showMostRecentPlayList) && Meteor.subscribe('Track.playLists', playListsTrackIds, group._id);
+		const playLists = subPlayLists && subPlayLists.ready() &&
+											PlayListCollection.find({trackIds: {$in: playListsTrackIds}, groupId: group._id}, {sort: {number: -1}}).fetch();
 
     return {
 			group,
