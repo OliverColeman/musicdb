@@ -79,4 +79,7 @@ const searchQuery = (args) => {
 }
 
 
-export { searchScore, searchQuery };
+const searchScoreThreshold = 0.7;
+
+
+export { searchScore, searchQuery, searchScoreThreshold };

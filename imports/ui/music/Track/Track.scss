@@ -42,16 +42,4 @@
 
 .TrackList {
   @include track-table;
-
-  .list-compact-viewtype {
-    .header-Icons, .IconsAndLinks {
-      width: 105px;
-    }
-  }
-
-  .list-viewtype { // not compact view
-    .header-Icons, .IconsAndLinks {
-      width: 55px;
-    }
-  }
 }

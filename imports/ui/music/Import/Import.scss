@@ -60,22 +60,49 @@
     }
   }
 
-  .PlayList .tracks-wrapper {
-    overflow-y: visible;
+  .import-header {
+    @include flex-row-wrap;
+
+    .buttons > * {
+      margin-left: 10px;
+    }
   }
 
   .to-import {
-    @include table;
+    margin-top: 10px;
+  }
 
-    .duration {
-      width: 4.5em
+  .ImportTrack {
+    .search-match, .search-result {
+      @include track-table;
+
+      & > * {
+        padding-left: 8px;
+      }
+      & > *:first-child {
+        padding-left: 3px;
+      }
     }
-    .status {
-      width: 7.25em;
+
+    .search-match {
+      background-color: rgba(127, 255, 127, 0.1);
     }
-    .error {
-      color: $danger;
-      font-weight: bold;
+    .search-result {
+      background-color: rgba(255, 127, 127, 0.1);
+    }
+
+    .IconsAndLinks {
+      width: 105px
+    }
+
+    .status, .control {
+      width: 40px;
+      border: none;
+
+      .btn {
+        padding: 6px;
+        width: 30px;
+      }
     }
   }
 }

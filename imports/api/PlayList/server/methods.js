@@ -9,8 +9,9 @@ import PlayList from '../PlayList';
 import Track from '../../Track/Track';
 import { importFromURL, importFromSearch } from '../../../modules/server/music/music_service';
 import { getSchemaFieldTypes, throwMethodException } from '../../Utility/methodutils';
-import { normaliseString, normaliseStringMatch } from '../../../modules/util';
+import { normaliseString, normaliseStringMatch, convertHHMMSSToSeconds } from '../../../modules/util';
 import MusicService from '../../../modules/server/music/music_service_class';
+import { searchQuery } from '../../Music/search';
 
 
 Meteor.methods({
@@ -48,71 +49,73 @@ Meteor.methods({
   },
 
 
-  'PlayList.addTrackFromSearch': async function PlayListAddTracks(playListId, trackData) {
-    check(playListId, String);
-    check(trackData, {
-      track: String,
-      artist: String,
-      album: Match.Maybe(String),
-      duration: Match.Maybe(Number),
-    });
-
-    const trackNameNorm = normaliseString(trackData.track);
-    const artistNameNorm = normaliseString(trackData.artist);
-    const albumNameNorm = trackData.album ? normaliseString(trackData.album) : null;
-    const duration = trackData.duration;
-
+  'PlayList.trackImportSearch': async function PlayListAddTracks(trackData) {
     try {
-      const playList = PlayList.findOne(playListId);
-      if (!playList) throw "Play list does not exist.";
-      if (!Access.allowed({accessRules: PlayList.access, op: 'update', item: playList, user: this.userId})) throw "Not allowed.";
+      check(trackData, {
+        track: String,
+        artist: String,
+        album: Match.Maybe(String),
+        duration: Match.Maybe(String),
+      });
 
-      const limit = 25;
+      trackData.duration = trackData.duration ? convertHHMMSSToSeconds(trackData.duration) : null;
 
-      let track;
-      let tracks = [];
-      // Two passes, one search over existing records, another after querying
-      // music service(s) if the track couldn't be found in existing records.
-      for (let i = 0; i < 2; i++) {
+      const findTrack = ({track, artist, album, duration}) => {
         // Filter by artist and album if given (we redo this after service search
         // if necessary because the available artists and albums may change).
-        tracks = Track.findByName(trackData.track, trackData.artist, trackData.album);
+        const tracks = Track.findByName(track, artist, album);
         if (tracks.length) {
           // Get first match (filtered by duration if given).
-          if (duration) track = tracks.find(t => Math.abs(t.duration - duration) < MusicService.durationMatchMargin);
-          else track = tracks[0];
+          if (duration) return tracks.find(t => Math.abs(t.duration - duration) < MusicService.durationMatchMargin);
+          return tracks[0];
+        }
+      }
+
+      let track, tracks;
+      // Three passes, one search over existing records, two over search services.
+      for (let i = 0; i < 2; i++) {
+        track = findTrack(trackData);
+
+        // If we didn't find a match and the artist text contains a comma it
+        // might be the case that multiple artists have been specified.
+        if (!track && trackData.artist.includes(',')) {
+          track = findTrack({
+            ... trackData,
+            artist: trackData.artist.split(',')[0]
+          });
         }
 
-        if (i == 1) {
-          console.log("don't do search again", trackData.track);
+        if (i == 2 || track) {
           break;
         }
-
-        if (track) {
-          console.log("found enough/exact", trackData.track);
-          break;
-        }
-        console.log("do search", trackData.track);
-        await importFromSearch('spotify', 'track', {
+        // Search a service for it. Spotify first because it's faster.
+        await importFromSearch(i == 0 ? 'spotify' : 'musicbrainz', 'track', {
           trackName: trackData.track,
           artistNames: [trackData.artist],
           albumName: trackData.album,
         });
-        console.log("search done", trackData.track);
       }
 
-      // If we didn't find an exact match.
-      if (!track) {
-        console.log('not found', trackData.track);
-        throw "Not found."
+      if (track) {
+        return {
+          matchTrackId: track._id,
+        }
       }
 
-      PlayList.update(playListId, {
-        $push: { trackIds: track._id },
-        $inc: { duration: track.duration },
-      });
+      const searchTerms = trackData.track + trackData.artist + (trackData.album ? trackData.album : '');
+      tracks = searchQuery({
+        type: 'track',
+        terms: searchTerms,
+      }).fetch();
+      if (tracks.length) {
+        const searchScoreKey = 'searchscore_' + normaliseString(searchTerms);
+        tracks = _.sortBy(tracks, t => -t[searchScoreKey]);
+        return {
+          closestTrackIds: tracks.slice(0, 3).map(t => t._id)
+        }
+      }
 
-      PlayList._handleTrackAdditions(playList, [track._id]);
+      return {};
     } catch (exception) {
       throwMethodException(exception);
     }
@@ -123,6 +126,7 @@ Meteor.methods({
 rateLimit({
   methods: [
     'PlayList.import',
+    'PlayList.trackImportSearch',
   ],
   limit: 5,
   timeRange: 1000,

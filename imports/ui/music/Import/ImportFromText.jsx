@@ -13,13 +13,12 @@ import moment from 'moment';
 import Papa from 'papaparse';
 import autoBind from 'react-autobind';
 
-import CompilerCollection from '../../../api/Compiler/Compiler'; import PlayList
-from '../PlayList/PlayList'; import Group from '../Group/Group'; import NotFound
-from '../../nav/NotFound/NotFound'; import Loading from
-'../../misc/Loading/Loading'; import LoadingSmall from
-'../../misc/Loading/LoadingSmall'; import ProgressMonitor from
-'../../misc/ProgressMonitor/ProgressMonitor'; import { convertHHMMSSToSeconds,
-convertSecondsToHHMMSS } from '../../../modules/util';
+import CompilerCollection from '../../../api/Compiler/Compiler';
+import PlayList from '../PlayList/PlayList';
+import Group from '../Group/Group';
+import NotFound from '../../nav/NotFound/NotFound';
+import Loading from '../../misc/Loading/Loading';
+import ImportTrack from './ImportTrack';
 
 import './Import.scss';
 
@@ -50,40 +49,31 @@ class ImportFromText extends React.Component {
 
     this.state = {
       groupId: group._id,
-      name: '',
+      name: 'New playlist',
       number: 1,
       date: moment().format('YYYY-MM-DD'),
       selectedCompilers: [],
       tracksText: '',
-      importInProgress: false,
-      trackInProgress: false,
-      lastImportIndex: -1,
+      toImport: null,
+      playListId: null,
     };
 
     autoBind(this);
   }
 
 
-  componentDidMount() {
-    this.doImportIntervalId = Meteor.setInterval(this.doImport, 500);
-  }
-
-  componentWillUnmount() {
-    Meteor.clearInterval(this.doImportIntervalId);
-  }
-
-
   render() {
-    const { loading, compilers, groups, toImport, playListId } = this.props;
+    const { loading, compilers, groups } = this.props;
 
     if (loading) return ( <div className="ImportFromText"><Loading /></div> );
 
-    const { groupId, importInProgress, tracksText,
-      lastImportIndex, name, number, date, selectedCompilers } = this.state;
+    const { groupId, tracksText, name, number, date, selectedCompilers, toImport, playListId } = this.state;
+
+    const trackFoundCount = toImport ? toImport.filter(ti => !!ti.trackId).length : 0;
 
     return (
       <div className="ImportFromText">
-        <div className="import-spec-single">
+        { !toImport && !playListId && <div className="import-spec-single">
           <Select className="group"
             value={groupId} onChange={ value => this.setState({groupId: value ? value._id : null}) }
             options={groups} valueKey={"_id"} labelKey={"name"} />
@@ -111,35 +101,57 @@ class ImportFromText extends React.Component {
             wrap="off"
           />
 
-          { !importInProgress && <Button className='import' disabled={!name} onClick={this.startImport}>Import!</Button> }
-        </div>
+          <Button className='import' disabled={!name} onClick={this.startImport}>Import!</Button>
+        </div> }
 
-        { playListId && <PlayList playListId={playListId} /> }
-
-        { !!toImport.length &&
+        { toImport &&
           <div>
-            <h4>Importing</h4>
+            <div className="import-header">
+              <h4>Importing</h4>
+
+              <div className="buttons">
+                <Button onClick={this.finalise} disabled={!trackFoundCount} className="btn-success">
+                  Create list{ trackFoundCount < toImport.length ? " (minus unmatched tracks)" : ''}
+                </Button>
+                <Button onClick={() => this.setState({toImport: null})}>Restart</Button>
+              </div>
+            </div>
 
             <div className='to-import'>
-            {toImport.filter(ti => !ti.done || ti.error).map((ti, idx) => (
-              <div className="import-item" key={ti.track + ti.artist}>
-                <div className="track">{ti.track}</div>
-                <div className="artist">{ti.artist}</div>
-                <div className="album">{ti.album}</div>
-                <div className="duration">{ti.duration && convertSecondsToHHMMSS(ti.duration, true)}</div>
-                <div className={"status" + (ti.error && ' error')}>{ti.done ? ti.error : (ti.inProgress ? <LoadingSmall /> : "⌛")}</div>
-              </div>
+            {toImport.map((ti, idx) => (
+              <ImportTrack key={idx}
+                initialSearch={ti.initialSearch}
+                matchTrackId={ti.trackId}
+                onMatch={trackId =>
+                  this.setState({
+                    toImport: update(toImport, {
+                      [idx]: {trackId: {$set: trackId}}
+                    })
+                  })
+                }
+              />
             ))}
             </div>
           </div>
         }
+
+        { playListId && <div>
+          <div className="import-header">
+            <h4>Playlist imported</h4>
+            <div>
+              <Button onClick={() => this.setState({playListId: null})}>Restart</Button>
+            </div>
+          </div>
+
+          <PlayList playListId={playListId} />
+        </div> }
       </div>
     );
   }
 
 
   startImport() {
-    const { groupId, name, number, date, selectedCompilers, tracksText } = this.state;
+    const { tracksText } = this.state;
 
     const rows = tracksText
                   .split(/[\r\n]/)
@@ -175,23 +187,22 @@ class ImportFromText extends React.Component {
       trackData.track = row[headingIndices.track];
       trackData.artist = row[headingIndices.artist];
       if (headingIndices.album != -1 && row[headingIndices.album]) trackData.album = row[headingIndices.album];
-      if (headingIndices.duration != -1 && row[headingIndices.duration]) trackData.duration = convertHHMMSSToSeconds(row[headingIndices.duration]);
-      toImport.push(trackData);
+      if (headingIndices.duration != -1 && row[headingIndices.duration]) trackData.duration = row[headingIndices.duration];
+      toImport.push({initialSearch: trackData});
     }
 
-    console.log('ti', toImport);
+    this.setState({toImport});
+  }
 
-    // Data looks valid, no going back now.
-    this.setState({
-      importInProgress: true,
-      lastImportIndex: -1,
-    });
-    Session.set("ImportFromText_toImport", toImport);
-    Session.set("ImportFromText_playListId", null);
 
-    const insertMetadata = {};
+  finalise() {
+    const { groupId, name, number, date, selectedCompilers, toImport } = this.state;
+
+    const insertMetadata = {
+      name,
+      trackIds: toImport.filter(ti => !!ti.trackId).map(ti => ti.trackId)
+    };
     if (groupId) insertMetadata.groupId = groupId;
-    if (name) insertMetadata.name = name;
     if (number) insertMetadata.number = number;
     if (date) insertMetadata.date = moment(date).unix();
     if (selectedCompilers) insertMetadata.compilerIds = selectedCompilers.map(c => c._id);
@@ -200,48 +211,51 @@ class ImportFromText extends React.Component {
       if (error) {
         Bert.alert(error.reason ? error.reason : error.message, 'danger');
       } else {
-        Session.set("ImportFromText_playListId", playListId);
+        this.setState({
+          toImport: null,
+          playListId
+        });
       }
     });
   }
-
-  doImport() {
-    const { importInProgress, lastImportIndex, trackInProgress } = this.state;
-    let { toImport, playListId } = this.props;
-    const self = this;
-
-    // If no play list to import into, or a track import is in progress, or we're all done.
-    if (!playListId || trackInProgress || !importInProgress) return;
-
-    this.setState({trackInProgress: true});
-
-    const index = lastImportIndex + 1;
-
-    Session.set("ImportFromText_toImport", update(toImport,
-      { [index]: { inProgress: { $set: true }}}
-    ));
-
-    console.log(index, toImport[index].track);
-
-    Meteor.call('PlayList.addTrackFromSearch', playListId, toImport[index], (error, message) => {
-      error = error && (error.reason || error.message) || message;
-      toImport = update(toImport, { [index]: {
-        inProgress: { $set: false },
-        error: { $set: error },
-        done: { $set: true }
-      }});
-
-      Session.set("ImportFromText_toImport", toImport);
-
-      console.log('a', index, toImport.length, index < toImport.length-1);
-
-      self.setState({
-        importInProgress: index < toImport.length-1,
-        lastImportIndex: index,
-        trackInProgress: false,
-      });
-    });
-  }
+  //
+  // doImport() {
+  //   const { importInProgress, lastImportIndex, trackInProgress } = this.state;
+  //   let { toImport, playListId } = this.props;
+  //   const self = this;
+  //
+  //   // If no play list to import into, or a track import is in progress, or we're all done.
+  //   if (!playListId || trackInProgress || !importInProgress) return;
+  //
+  //   this.setState({trackInProgress: true});
+  //
+  //   const index = lastImportIndex + 1;
+  //
+  //   Session.set("ImportFromText_toImport", update(toImport,
+  //     { [index]: { inProgress: { $set: true }}}
+  //   ));
+  //
+  //   console.log(index, toImport[index].track);
+  //
+  //   Meteor.call('PlayList.addTrackFromSearch', playListId, toImport[index], (error, message) => {
+  //     error = error && (error.reason || error.message) || message;
+  //     toImport = update(toImport, { [index]: {
+  //       inProgress: { $set: false },
+  //       error: { $set: error },
+  //       done: { $set: true }
+  //     }});
+  //
+  //     Session.set("ImportFromText_toImport", toImport);
+  //
+  //     console.log('a', index, toImport.length, index < toImport.length-1);
+  //
+  //     self.setState({
+  //       importInProgress: index < toImport.length-1,
+  //       lastImportIndex: index,
+  //       trackInProgress: false,
+  //     });
+  //   });
+  // }
 }
 
 
@@ -250,14 +264,9 @@ export default withTracker(({ match, roles }) => {
   const user = Meteor.user();
   const groupSelector = user && user.roles && (roles.includes('admin') ? {} : {name: {$in: Object.keys(user.roles)}});
 
-  Session.setDefault("ImportFromText_toImport", []);
-  Session.setDefault("ImportFromText_playListId", null);
-
   return {
     loading: !subCompilers.ready(),
     compilers: CompilerCollection.find({}, {sort: {name: 1}}).fetch(),
     groups: user && user.roles ? Meteor.groups.find(groupSelector, {sort: {name: 1}}).fetch() : [],
-    toImport: Session.get("ImportFromText_toImport"),
-    playListId: Session.get("ImportFromText_playListId"),
   };
 })(ImportFromText);

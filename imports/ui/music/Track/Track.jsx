@@ -76,7 +76,7 @@ class Track extends React.Component {
   render() {
     const { group, loading, track, loadingPlayLists, playLists, loadingLinkedTracks, linkedTracks,
 						viewType, noLinks, showIconsAndLinks, showMostRecentPlayList, onClick, isDragging, hoveredTop,
-						hoveredBottom, connectDragSource, connectDropTarget} = this.props;
+						hoveredBottom, connectDragSource, connectDropTarget, children} = this.props;
 
     if (loading) return (<Loading />);
     if (!track) return (<NotFound />);
@@ -128,7 +128,9 @@ class Track extends React.Component {
 
 				{ showMostRecentPlayList && (playLists.length > 0 ? <PlayList playList={playLists[0]} viewType='inline' showDate={true} /> : <div />) }
 
-				{ showIconsAndLinks ? <IconsAndLinks type='track' item={track} showPlayer={false} /> : <div /> }
+				{ showIconsAndLinks && <IconsAndLinks type='track' item={track} showPlayer={false} /> }
+
+				{ children }
 
 				{this.renderMenu()}
       </div>

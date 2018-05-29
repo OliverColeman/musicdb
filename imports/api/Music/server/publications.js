@@ -6,12 +6,10 @@ import _ from 'lodash';
 import { musicCollection } from '../collections';
 import { findBySoundexOrDoubleMetaphone, normaliseString } from '../../../modules/util';
 import { importFromSearch } from '../../../modules/server/music/music_service';
-import { searchQuery, searchScore } from '../search';
+import { searchQuery, searchScore, searchScoreThreshold } from '../search';
 import Track from '../../Track/Track';
 import Artist from '../../Artist/Artist';
 import Album from '../../Album/Album';
-
-const searchScoreThreshold = 0.7;
 
 Meteor.publish('search', function search(args) {
   check(args, {

@@ -149,6 +149,18 @@ $small-music-image: 5.5em;
   .header-Last-list {
     width: 10%;
   }
+
+  .list-compact-viewtype {
+    .header-Icons, .IconsAndLinks {
+      width: 105px;
+    }
+  }
+
+  .list-viewtype { // not compact view
+    .header-Icons, .IconsAndLinks {
+      width: 55px;
+    }
+  }
 }
 
 

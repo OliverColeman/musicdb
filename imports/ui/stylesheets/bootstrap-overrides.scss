@@ -53,6 +53,10 @@ input, textarea, .form-control {
   background-color: rgba(255, 255, 255, 0.2);
   border: 1px solid #aaa;
   border-radius: $default-border-radius;
+  padding: 5px;
+}
+input.form-control {
+  padding: 0px 5px;
 }
 
 .label.label-default {
