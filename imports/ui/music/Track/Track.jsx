@@ -119,7 +119,7 @@ class Track extends React.Component {
         </LinkOrNot>
 
         <div className="artists inline-list">
-          { track.artistIds && track.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" noLinks={noLinks} />)) }
+          { track.artistIds && track.artistIds.map(artistId => (<Artist artistId={artistId} key={track._id + artistId} viewType="inline" noLinks={noLinks} />)) }
         </div>
 
         { track.albumId ? <Album albumId={track.albumId} viewType="inline" noLinks={noLinks} /> : <div /> }
@@ -156,7 +156,7 @@ class Track extends React.Component {
         </div>
 
         <div className="artists inline-list">
-          { track.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" noLinks={noLinks} />)) }
+          { track.artistIds.map(artistId => (<Artist artistId={artistId} key={track._id + artistId} viewType="inline" noLinks={noLinks} />)) }
         </div>
 
         { track.albumId ? <Album albumId={track.albumId} viewType="inline" noLinks={noLinks} /> : <div /> }

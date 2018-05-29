@@ -77,7 +77,7 @@ class Album extends React.Component {
             </div>
 
             <div className="artists inline-list">
-              { album.artistIds.map(artistId => (<Artist artistId={artistId} key={artistId} viewType="inline" noLinks={noLinks} />)) }
+              { album.artistIds.map(artistId => (<Artist artistId={artistId} key={album._id + artistId} viewType="inline" noLinks={noLinks} />)) }
             </div>
           </div>
         }

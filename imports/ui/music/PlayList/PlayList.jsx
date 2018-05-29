@@ -167,7 +167,7 @@ class PlayList extends React.Component {
           <div className="tags inline-list">
             <Label>Tags:</Label>
             <span className="data">
-              { playList.tagIds && playList.tagIds.map(tagId => (<Tag tagId={tagId} viewType="inline" key={tagId} />)) }
+              { playList.tagIds && playList.tagIds.map(tagId => (<Tag tagId={tagId} viewType="inline" key={playList._id + tagId} />)) }
             </span>
           </div>
 
