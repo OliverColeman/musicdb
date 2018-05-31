@@ -78,8 +78,10 @@ class MusicBrainz extends MusicService {
 
       case 'track':
         const query = { limit: 25 };
+        let results;
         if (typeof names == 'string') {
           query.query = normaliseString(names);
+          results = await mbAPI.luceneSearchAsync('recording', query);
         }
         else {
           query.recording = normaliseString(names.trackName);
@@ -89,9 +91,9 @@ class MusicBrainz extends MusicService {
           if (names.albumName) {
             query.release = normaliseString(names.albumName);
           }
+          results = await mbAPI.searchAsync('recording', query);
         }
 
-        const results = await mbAPI.searchAsync('recording', query);
         if (!results.recordings) return [];
 
         const tracks = [];

@@ -46,14 +46,14 @@ class ImportTrack extends React.Component {
 
   componentDidMount() {
     if (this.hasEnoughDataForSearch()) {
-      this.updateSearch();
+      Meteor.setTimeout(this.updateSearch, this.props.index * 1000);
     }
   }
 
 
   hasEnoughDataForSearch() {
-    const { track, artist, album, duration } = this.state;
-    return track && artist && (album || duration && duration.match(/\s*\d+:\d\d\s*/));
+    const { track, artist } = this.state;
+    return !!(track && artist);
   }
 
 

@@ -44,6 +44,10 @@
     margin-top: 20px;
   }
 
+  .btn {
+    font-weight: bold;
+  }
+  
   &> * {
     @include seperator-bottom;
     border-bottom: 1px solid #fff;

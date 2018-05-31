@@ -120,6 +120,7 @@ class ImportFromText extends React.Component {
             <div className='to-import'>
             {toImport.map((ti, idx) => (
               <ImportTrack key={idx}
+                index={idx}
                 initialSearch={ti.initialSearch}
                 matchTrackId={ti.trackId}
                 onMatch={trackId =>

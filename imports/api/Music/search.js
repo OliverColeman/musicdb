@@ -6,44 +6,57 @@ import Album from '../Album/Album';
 import Compiler from '../Compiler/Compiler';
 import { musicCollection, musicSearchCollection } from './collections';
 
+
+const searchScore = (search, name) => {
+  name = _.uniq(name.split(/\s+/)).filter(t => t != '');
+  search = _.uniq(search.split(/\s+/)).filter(t => t != '');
+  const totalSearchChars = _.sum(search.map(t => t.length));
+
+  // Find score for best matching name element for each search term, weight by term length.
+  const scores = search.map(term => (1 - Math.min(...name.map(n => levenshteinScore(n, term)))) * term.length);
+
+  // Components of score are: mean of term scores and a penalty for extraneous
+  // terms (for sorting purposes). Note: in the past there was a product term
+  // but this doesn't work well when terms are very short and have, say, a single
+  // different character.
+  //const product = scores.reduce((a,b) => a*b);
+  const average = _.mean(scores) / totalSearchChars;
+  const extraneousPenalty = Math.max(0, name.length - search.length) * 0.00001;
+  //return (product + average) / 2 - extraneousPenalty;
+  return average - extraneousPenalty;
+}
+
+
 // Get Levenshtein scores for document name and possibly other
 // associated names or combinations thereof, return the lowest score.
-const searchScore = (type, terms, doc) => {
+const searchScoreDoc = (type, terms, doc, skipFieldsInScoring) => {
   let names = [doc.name];
+  skipFieldsInScoring = skipFieldsInScoring || [];
 
   if (type == 'playlist') {
-    Compiler.find({_id: {$in: doc.compilerIds}})
-      .forEach(compiler => names.push(compiler.name));
+    if (!skipFieldsInScoring.includes('compiler')) {
+      Compiler.find({_id: {$in: doc.compilerIds}})
+        .forEach(compiler => names.push(compiler.name));
+    }
   }
   else if (type == 'track') {
-    Artist.find({_id: {$in: doc.artistIds}})
-      .forEach(artist => names.push(artist.name));
-    if (doc.albumId) {
+    if (!skipFieldsInScoring.includes('artist')) {
+      Artist.find({_id: {$in: doc.artistIds}})
+        .forEach(artist => names.push(artist.name));
+    }
+    if (doc.albumId && !skipFieldsInScoring.includes('album')) {
       names.push(Album.findOne(doc.albumId).name);
     }
   }
 
-  names = _.uniq(_.flatten(names.map(n => n.split(' '))));
-  terms = _.uniq(terms.split(/\s+/));
-
-  // Find score for best matching name for each search term.
-  const scores = terms.map(term => 1 - Math.min(...names.map(name => levenshteinScore(name, term))));
-
-  // Components of score are: product of scores as this gives a good indication
-  // of whether all terms have matched well; mean of term scores as this is not
-  // overly-sensitive to any one term; and a penalty for extraneous terms (for
-  // sorting purposes).
-  const product = scores.reduce((a,b) => a*b);
-  const average = _.mean(scores);
-  const extraneousPenalty = Math.max(0, names.length - terms.length) * 0.00001;
-  return (product + average) / 2 - extraneousPenalty;
+  return searchScore(terms, names.join(' '));
 }
 
 
 const searchQuery = (args) => {
-  const { type, terms, inPlayListsWithGroupId } = args;
+  const { type, terms, inPlayListsWithGroupId, skipFieldsInScoring } = args;
 
-  searchScoreKey = 'searchscore_' + normaliseString(terms);
+  const searchScoreKey = 'searchscore_' + normaliseString(terms);
 
   const andSelectors = {};
   if (type == 'track' && inPlayListsWithGroupId) {
@@ -71,7 +84,7 @@ const searchQuery = (args) => {
   }
 
   const transform = (doc) => {
-    doc[searchScoreKey] = searchScore(type, terms, doc);
+    doc[searchScoreKey] = searchScoreDoc(type, terms, doc, skipFieldsInScoring);
     return doc;
   }
 
@@ -82,4 +95,4 @@ const searchQuery = (args) => {
 const searchScoreThreshold = 0.7;
 
 
-export { searchScore, searchQuery, searchScoreThreshold };
+export { searchScore, searchScoreDoc, searchQuery, searchScoreThreshold };

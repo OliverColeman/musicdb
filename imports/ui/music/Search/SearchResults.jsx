@@ -9,7 +9,7 @@ import { Bert } from 'meteor/themeteorchef:bert';
 import _ from 'lodash';
 
 import { normaliseString } from '../../../modules/util';
-import { searchScore, searchQuery } from '../../../api/Music/search';
+import { searchScoreDoc, searchQuery } from '../../../api/Music/search';
 import { musicSearchCollection } from '../../../api/Music/collections';
 import ArtistList from '../Artist/ArtistList';
 import CompilerList from '../Compiler/CompilerList';

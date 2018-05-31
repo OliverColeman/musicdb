@@ -6,7 +6,7 @@ import _ from 'lodash';
 import { musicCollection } from '../collections';
 import { findBySoundexOrDoubleMetaphone, normaliseString } from '../../../modules/util';
 import { importFromSearch } from '../../../modules/server/music/music_service';
-import { searchQuery, searchScore, searchScoreThreshold } from '../search';
+import { searchQuery, searchScoreDoc, searchScoreThreshold } from '../search';
 import Track from '../../Track/Track';
 import Artist from '../../Artist/Artist';
 import Album from '../../Album/Album';
@@ -47,11 +47,11 @@ Meteor.publish('search', function search(args) {
     Meteor.defer(async () => {
       // Spotify search is run first because it's web service returns way more quickly.
       let foundDocs = await importFromSearch('spotify', 'track', terms);
-      let bestScore = foundDocs.length > 0 ? Math.max(...foundDocs.map(fd => searchScore(type, terms, fd))) : 0;
+      let bestScore = foundDocs.length > 0 ? Math.max(...foundDocs.map(fd => searchScoreDoc(type, terms, fd))) : 0;
       if (bestScore < searchScoreThreshold) {
         // Only do slow MB search if we couldn't find much on Spotify.
         foundDocs = await importFromSearch('musicbrainz', 'track', terms);
-        bestScore = foundDocs.length > 0 ? Math.max(...foundDocs.map(fd => searchScore(type, terms, fd))) : 0;
+        bestScore = foundDocs.length > 0 ? Math.max(...foundDocs.map(fd => searchScoreDoc(type, terms, fd))) : 0;
       }
     }, 300);
   }
@@ -62,7 +62,7 @@ Meteor.publish('search', function search(args) {
         const doc = {
           _id: id,
           ...fields,
-          [searchScoreKey]: searchScore(type, terms, fields),
+          [searchScoreKey]: searchScoreDoc(type, terms, fields),
         };
         const insertIndex = _.sortedIndexBy(allDocs, doc, doc => -doc[searchScoreKey]);
         allDocs.splice(insertIndex, 0, doc);
@@ -107,7 +107,7 @@ Meteor.publish('search', function search(args) {
           ...allDocs[currentIndex],
           ...fields,
         };
-        newDoc.searchScoreKey = searchScore(type, terms, newDoc);
+        newDoc.searchScoreKey = searchScoreDoc(type, terms, newDoc);
         const newIndex = _.sortedIndexBy(allDocs, newDoc, doc => -doc[searchScoreKey]);
 
         if (currentIndex == newIndex) {

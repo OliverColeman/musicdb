@@ -119,7 +119,7 @@ export default withTracker(({items, noLinks, noMenu, compactView, showMostRecent
       compactView = user.profile.settings.ui.compactView;
     }
     else {
-      Session.setDefault('TrackList-compactView', false);
+      Session.setDefault('TrackList-compactView', true);
       compactView = Session.get('TrackList-compactView');
     }
   }
