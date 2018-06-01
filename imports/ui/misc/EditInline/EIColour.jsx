@@ -31,7 +31,6 @@ export default class EIColour extends EIBase {
     return (<div className="edit-inline-color-container">
       <input disabled={disabled}
         type="color"
-        className={this.makeClassString()}
         defaultValue={value}
         onChange={this.handleChangeEvent}
         ref="input"

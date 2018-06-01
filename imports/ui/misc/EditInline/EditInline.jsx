@@ -51,12 +51,11 @@ class EditInline extends React.Component {
       emptyValue,
       change: this.updateDoc,
       propName: field,
-      className: this.state.highlight ? "riek editable" : "riek",
-      classLoading: "loading",
-      classInvalid: "invalid",
+      className: "EditInline",
       disabled,
       validate: this.validate,
       children,
+      inputType,
     }
 
     if (inputType=='color') return <EIColour {...rieProps} />;

@@ -8,7 +8,6 @@ export default class EITextField extends EIBase {
   renderEditingComponent = () => {
     return <input
       disabled={this.state.loading || this.props.disabled}
-      className={this.makeClassString()}
       defaultValue={this.props.value}
       onInput={this.textChanged}
       onBlur={this.elementBlur}
@@ -20,10 +19,7 @@ export default class EITextField extends EIBase {
   }
 
   renderNormalComponent = () => {
-    return <span
-      className={this.makeClassString()}
-      {...this.props.defaultProps}
-    >
+    return <span {...this.props.defaultProps} >
       {this.state.newValue || this.props.value || this.props.emptyValue || "Set me."}
     </span>;
   };
