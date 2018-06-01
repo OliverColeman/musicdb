@@ -26,6 +26,10 @@
         width: 100%;
         display: flex;
         margin: 5px 10px 10px 10px;
+
+        .data {
+          flex-grow: 1;
+        }
       }
     }
   }

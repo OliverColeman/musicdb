@@ -123,6 +123,8 @@ class PlayList extends React.Component {
       .map(trackId => tracks.find(t => t._id == trackId))
       .filter(t => !!t);
 
+    const notesAreMultiline = playList.notes && (playList.notes.match(/\n/g) || []).length > 0;
+
     return (
       <div className={"PlayList " + viewType + "-viewtype"}>
         <div className="item-details">
@@ -184,7 +186,7 @@ class PlayList extends React.Component {
                 inputType={EditInline.types.textarea}
                 disabled={!editable}
               >
-                <Expandable collapsedHeight="1.5em" showEllipsis={playList.notes && (playList.notes.match(/\n/g) || []).length > 0}>
+                <Expandable disabled={!notesAreMultiline} collapsedHeight="1.5em" showEllipsis={notesAreMultiline} defaultExpanded={!notesAreMultiline}>
                   <pre>{playList.notes || "[No notes set]"}</pre>
                 </Expandable>
               </EditInline>
