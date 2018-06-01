@@ -24,18 +24,9 @@ export default class EITextArea extends EITextField {
     };
 
     renderNormalComponent = () => {
-        const value = this.state.newValue || this.props.value
-        const spans_and_brs = []
-        let i = 0
-        value.split("\n").map(line => {
-          spans_and_brs.push(<span key={i}>{line}</span>)
-          spans_and_brs.push(<br key={i+1} />)
-          i += 2
-        })
-        spans_and_brs.pop() // remove last br tag
-
-        return <span
-            className={this.makeClassString()}
-            {...this.props.defaultProps}>{spans_and_brs}</span>;
+        const value = this.state.newValue || this.props.value || this.props.emptyValue || "Set me.";
+        return <span className={this.makeClassString()}{...this.props.defaultProps}>
+          <pre>value</pre>
+        </span>;
     };
 }

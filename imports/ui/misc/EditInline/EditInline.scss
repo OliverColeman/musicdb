@@ -43,4 +43,24 @@ input.riek[type=color] {
     font-size: 18px;
     line-height: 18px;
   }
+
+  .validation-message {
+    font-size: 14px;
+    color: #e44;
+    font-weight: normal;
+    font-family: sans-serif;
+  }
+
+  pre {
+    color: inherit;
+    background: inherit;
+    font-size: inherit;
+    font-family: inherit;
+    padding: 0;
+    margin: 0;
+    border: none;
+    white-space:pre-line;
+    word-break: normal;
+    word-wrap: normal;
+  }
 }

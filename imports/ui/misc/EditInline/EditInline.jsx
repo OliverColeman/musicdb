@@ -21,7 +21,15 @@ class EditInline extends React.Component {
     this.state[props.field] = _.get(props.doc, props.field);
   }
 
-  isStringAcceptable = (string) => !this.props.required || string.length >= 1
+  validate = (value) => {
+    if (this.props.required && !value) return "Required."
+    for (let func of this.props.validationFuncs) {
+      validationResult = func(value);
+      let isValid = typeof validationResult == 'string' ? validationResult.length == 0 : !!validationResult;
+      if (!isValid) return validationResult;
+    }
+    return true;
+  }
 
   updateDoc = (newState) => {
   	const { updateMethod, doc, field } = this.props;
@@ -36,22 +44,22 @@ class EditInline extends React.Component {
   }
 
   render = () => {
-  	const { doc, field, inputType, required, disabled } = this.props;
+  	const { doc, field, inputType, required, disabled, emptyValue, validationFuncs, children } = this.props;
 
     const rieProps = {
       value: _.get(doc, field),
+      emptyValue,
       change: this.updateDoc,
       propName: field,
       className: this.state.highlight ? "riek editable" : "riek",
       classLoading: "loading",
       classInvalid: "invalid",
-      disabled: disabled,
+      disabled,
+      validate: this.validate,
+      children,
     }
 
     if (inputType=='color') return <EIColour {...rieProps} />;
-
-    rieProps.validate=this.isStringAcceptable;
-
     if (inputType=='textfield') return <EITextField {...rieProps} />;
 		if (inputType=='textarea') return <EITextArea {...rieProps} />;
   }
@@ -65,11 +73,13 @@ EditInline.propTypes = {
   inputType: PropTypes.string.isRequired,
   required: PropTypes.bool,
   disabled: PropTypes.bool,
+  validationFuncs: PropTypes.arrayOf(PropTypes.func),
 };
 
 EditInline.defaultProps = {
-  required: true,
+  required: false,
   disabled: false,
+  validationFuncs: [],
 };
 
 EditInline.types = {

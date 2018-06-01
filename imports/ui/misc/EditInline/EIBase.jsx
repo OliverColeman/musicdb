@@ -9,7 +9,7 @@ class EIBase extends React.Component {
 
     if (!this.props.propName) throw "RTFM: missing 'propName' prop";
     if (!this.props.change) throw "RTFM: missing 'change' prop";
-    if (typeof this.props.value == 'undefined') throw "RTFM: missing 'value' prop";
+    //if (typeof this.props.value == 'undefined') throw "RTFM: missing 'value' prop";
 
     this.state = {
       editing: false,
@@ -31,8 +31,8 @@ class EIBase extends React.Component {
 
   startEditing = (event) => {
     if (event && event.stopPropagation) event.stopPropagation();
-    this.props.beforeStart ? this.props.beforeStart() : null;
-    if (this.props.isDisabled) return;
+    this.props.beforeStart && this.props.beforeStart();
+    if (this.props.disabled) return;
     this.setState({editing: true});
     this.props.afterStart ? this.props.afterStart() : null;
   };
@@ -46,9 +46,10 @@ class EIBase extends React.Component {
     }
     if (!result && this.props.handleValidationFail) {
       this.props.handleValidationFail(result, newValue, () => this.cancelEditing());
-    } else {
-      this.cancelEditing();
     }
+    // else {
+    //   this.cancelEditing();
+    // }
     this.props.afterFinish ? this.props.afterFinish() : null;
     preventClickEvent = false;
   };
@@ -67,17 +68,18 @@ class EIBase extends React.Component {
   };
 
   doValidations = (value) => {
-    let isValid;
+    let validationResult;
     if (this.props.validate) {
-      isValid = this.props.validate(value);
+      validationResult = this.props.validate(value);
     }
     else if (this.validate) {
-      isValid = this.validate(value);
+      validationResult = this.validate(value);
     }
-    else {
-      return true;
-    }
-    this.setState({invalid: !isValid});
+    isValid = typeof validationResult == 'string' ? validationResult.length == 0 : !!validationResult;
+    this.setState({
+      invalid: !isValid,
+      validationMessage: typeof validationResult == 'string' ? validationResult : null,
+    });
     return isValid;
   }
 
@@ -112,18 +114,21 @@ class EIBase extends React.Component {
 
 
   render = () => {
-    if (this.state.editing) {
+    const { editing, validationMessage } = this.state;
+
+    if (editing) {
       return (
         <span onClick={ e => e.stopPropagation() }>
           { this.renderEditingComponent() }
+          { validationMessage && <div className="validation-message">{validationMessage}</div> }
         </span>
       )
     }
     else {
       return (
         <span className='EditInline'>
-          {this.renderNormalComponent() }
-          <span className='edit-icon' onClick={ e => this.startEditing(e) }  tabIndex="0">🖉</span>
+          { this.props.children || this.renderNormalComponent() }
+          { !this.props.disabled && <span className='edit-icon' onClick={ e => this.startEditing(e) }  tabIndex="0">🖉</span> }
         </span>
       );
     }
@@ -131,7 +136,7 @@ class EIBase extends React.Component {
 }
 
 EIBase.propTypes = {
-  value: PropTypes.any.isRequired,
+  value: PropTypes.any,
   change: PropTypes.func.isRequired,
   propName: PropTypes.string.isRequired,
   editProps: PropTypes.object,

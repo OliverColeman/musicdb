@@ -24,7 +24,7 @@ export default class EITextField extends EIBase {
       className={this.makeClassString()}
       {...this.props.defaultProps}
     >
-      {this.state.newValue || this.props.value}
+      {this.state.newValue || this.props.value || this.props.emptyValue || "Set me."}
     </span>;
   };
 
