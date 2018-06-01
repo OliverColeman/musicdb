@@ -22,6 +22,7 @@ import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
 import LinkOrNot from '../../misc/LinkOrNot/LinkOrNot';
 import IconsAndLinks from '../IconsAndLinks/IconsAndLinks';
+import Expandable from '../../misc/Expand/Expandable';
 
 import './PlayList.scss';
 
@@ -128,7 +129,7 @@ class PlayList extends React.Component {
           <div className="item-header">
             <LinkOrNot link={!noLinks && viewType != 'page'} className="name" to={`/list/${playList._id}`}>
               {viewType == 'page' && editable ?
-                <EditInline doc={playList} field="name" updateMethod="playlist.update" inputType={EditInline.types.textfield} />
+                <EditInline doc={playList} field="name" updateMethod="playlist.update" inputType={EditInline.types.textfield} required={true} />
                 :
                 playList.name
               }
@@ -173,6 +174,22 @@ class PlayList extends React.Component {
 
           { editable &&
             <Button className='btn btn-success' onClick={() => this.setState({showSearchTracks: true})}>Add track</Button>
+          }
+
+          { viewType == 'page' && (playList.notes || editable) &&
+            <div className="notes">
+              <Label>Notes:</Label>
+              <span className="data">
+              <EditInline doc={playList} field="notes" updateMethod="playlist.update"
+                inputType={EditInline.types.textarea}
+                disabled={!editable}
+              >
+                <Expandable collapsedHeight="1.5em" showEllipsis={playList.notes && (playList.notes.match(/\n/g) || []).length > 0}>
+                  <pre>{playList.notes || "[No notes set]"}</pre>
+                </Expandable>
+              </EditInline>
+            </span>
+            </div>
           }
         </div>
 

@@ -25,6 +25,11 @@ const getCommonMusicItemFields = () => {
       optional: true,
     },
 
+    notes: {
+      type: String,
+      optional: true,
+    },
+
     dataMaybeMissing: {
       type: Array,
       optional: true,
