@@ -1,6 +1,6 @@
 import React from 'react';
 
-import './ExpandControl.scss';
+import './Expand.scss';
 
 const ExpandControl = ({expanded, onToggle}) => {
   return (
