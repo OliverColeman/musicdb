@@ -60,11 +60,11 @@ Meteor.methods({
         duration: Match.Maybe(String),
       });
 
-      trackData = _.mapValues(trackData, value => value ? value.trim() : false);
+      trackData = _.mapValues(trackData, value => value ? value.trim().toLowerCase() : false);
 
       trackData.duration = trackData.duration ? convertHHMMSSToSeconds(trackData.duration) : null;
       // Sometimes multiple artists are listed, separated by comma, in this case get first for some searches.
-      const artistSplit = trackData.artist.split(',')[0];
+      const artistSplit = trackData.artist.split(/(,|\s&\s|\sfeat\.?\s|\sft\.?\s)/)[0];
 
       const findTracks = ({track, artist, album, duration}) => {
         // Filter by artist, and album if given.
@@ -86,6 +86,7 @@ Meteor.methods({
         }
         return {
           ...track,
+          scores,
           score: Math.min(...scores),
         }
       }
@@ -102,8 +103,8 @@ Meteor.methods({
         // Search for an exact match (after searching a service if this isn't the first pass).
         tracks = findTracks(trackData);
 
-        // If we didn't find a match and the artist text contains a comma it
-        // might be the case that multiple artists have been specified.
+        // If we didn't find a match and the artist text contains a comma or
+        // ampersand it might be the case that multiple artists have been specified.
         if (!tracks.length && trackData.artist.includes(',')) {
           tracks = findTracks({
             ... trackData,
@@ -137,7 +138,7 @@ Meteor.methods({
           // If this looks like a very close match, return results as close matches.
           if (tracks[0].score > 0.9) {
             return {
-              closestTrackIds: tracks.slice(0, 3).map(t => t._id)
+              closestTrackIds: tracks.slice(0, 5).map(t => t._id)
             }
           }
         }
@@ -160,7 +161,7 @@ Meteor.methods({
       // If we found any tracks at all (from generic search).
       if (tracks.length) {
         return {
-          closestTrackIds: tracks.slice(0, 3).map(t => t._id)
+          closestTrackIds: tracks.slice(0, 5).map(t => t._id)
         }
       }
 

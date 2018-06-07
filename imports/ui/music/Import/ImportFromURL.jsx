@@ -17,7 +17,6 @@ import PlayList from '../PlayList/PlayList';
 import Group from '../Group/Group';
 import NotFound from '../../nav/NotFound/NotFound';
 import Loading from '../../misc/Loading/Loading';
-import LoadingSmall from '../../misc/Loading/LoadingSmall';
 import ProgressMonitor from '../../misc/ProgressMonitor/ProgressMonitor';
 
 import './Import.scss';
@@ -155,7 +154,7 @@ class ImportFromURL extends React.Component {
               :
               <div className="import-item" key={ti.url}>
                 <label>{idx + 1}</label>
-                {idx == (lastImportIndex+1) ? <LoadingSmall /> : <div className="waiting">{ti.error ? "" : "⌛"}</div>}
+                {idx == (lastImportIndex+1) ? <Loading /> : <div className="waiting">{ti.error ? "" : "⌛"}</div>}
                 <div className="name">{ti.insertMetadata.name}</div>
                 <div className="url"><a href={ti.url} target="_blank">{ti.url}</a></div>
                 <div className="error">{ti.error}</div>

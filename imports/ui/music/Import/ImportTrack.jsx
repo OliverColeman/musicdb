@@ -15,7 +15,6 @@ import autoBind from 'react-autobind';
 import _ from 'lodash';
 
 import Loading from '../../misc/Loading/Loading';
-import LoadingSmall from '../../misc/Loading/LoadingSmall';
 import Track from '../Track/Track';
 import { convertHHMMSSToSeconds, convertSecondsToHHMMSS } from '../../../modules/util';
 
@@ -46,7 +45,7 @@ class ImportTrack extends React.Component {
 
   componentDidMount() {
     if (this.hasEnoughDataForSearch()) {
-      Meteor.setTimeout(this.updateSearch, this.props.index * 1000);
+      Meteor.setTimeout(this.updateSearch, this.props.index * 3000);
     }
   }
 
@@ -95,10 +94,14 @@ class ImportTrack extends React.Component {
             <div className="IconsAndLinks" />
 
             <div className="status">
-              { loading && <LoadingSmall /> }
+              { loading && <Loading /> }
 
               { !loading &&
-                <Button title="Search" onClick={this.updateSearch} className="btn btn-success fa fa-search" disabled={!this.hasEnoughDataForSearch()} />
+                <Button className="btn btn-success fa fa-search"
+                  title="Search"
+                  onClick={this.updateSearch}
+                  disabled={!this.hasEnoughDataForSearch()}
+                />
               }
             </div>
           </div>
@@ -107,6 +110,7 @@ class ImportTrack extends React.Component {
             <Track key={trackId} trackId={trackId} viewType="list-compact" noLinks={true} showIconsAndLinks={true}>
               <div className="control">
                 <Button className="btn btn-success fa fa-check"
+                  title="Select this track."
                   onClick={() => onMatch(trackId)}
                 />
               </div>
@@ -117,7 +121,8 @@ class ImportTrack extends React.Component {
         { matchTrackId && <div className="search-match">
           <Track trackId={matchTrackId} viewType="list-compact" noLinks={true} showIconsAndLinks={true}>
             <div className="control">
-              <Button className="btn btn-danger fa fa-times"
+              <Button className="btn btn-primary fa fa-search"
+                title="Search again."
                 onClick={() => onMatch(null)}
               />
               </div>

@@ -17,11 +17,11 @@ class Expandable extends React.Component {
     const { expanded } = this.state;
     return (
       <div className={"Expandable " + (expanded ? 'expanded' : 'collapsed')} style={{height: expanded ? 'auto' : (collapsedHeight || '1.5em')}}>
-        { children }
-        { showEllipsis && <span className="ellipsis">…</span> }
         { !disabled && <ExpandControl expanded={expanded}
           onToggle={expanded => { this.setState({expanded}); onToggle && onToggle(expanded); }}
         /> }
+        { children }
+        { showEllipsis && <span className="ellipsis">…</span> }
       </div>
     )
   }

@@ -53,7 +53,7 @@ class ImportFromText extends React.Component {
       number: 1,
       date: moment().format('YYYY-MM-DD'),
       selectedCompilers: [],
-      tracksText: '',
+      tracksText: 'Track; Artist; Album\n',
       toImport: null,
       playListId: null,
     };

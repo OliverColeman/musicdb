@@ -43,7 +43,7 @@ Meteor.publish('search', function search(args) {
   }
 
   // Trigger import if specified and initial best result doesn't look like a good match.
-  if (importFromServices && type == 'track' && allDocs[0][searchScoreKey] < searchScoreThreshold) {
+  if (importFromServices && type == 'track' && (!allDocs.length || allDocs[0][searchScoreKey] < searchScoreThreshold)) {
     Meteor.defer(async () => {
       // Spotify search is run first because it's web service returns way more quickly.
       let foundDocs = await importFromSearch('spotify', 'track', terms);
