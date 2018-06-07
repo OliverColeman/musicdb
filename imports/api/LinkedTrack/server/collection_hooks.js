@@ -18,7 +18,7 @@ Track.after.remove(function(userId, doc) {
 
 const updateLinks = (previousTrack, currentTrack) => {
   if (previousTrack && currentTrack) {
-    if (previousTrack.nameNormalised == currentTrack.nameNormalised
+    if (previousTrack.nameNormalisedStrong == currentTrack.nameNormalisedStrong
         && previousTrack.artistIds.length == currentTrack.artistIds.length
           && _.difference(previousTrack.artistIds, currentTrack.artistIds).length == 0) {
       // Nothing to do if name and artists have not changed.
@@ -29,12 +29,12 @@ const updateLinks = (previousTrack, currentTrack) => {
   const trackId = previousTrack && previousTrack._id || currentTrack._id;
 
   const previousTrackLTRecord = previousTrack && LinkedTrack.findOne({
-    trackNameNormalised: previousTrack.nameNormalised,
+    trackNameNormalised: previousTrack.nameNormalisedStrong,
     artistIds: {$in: previousTrack.artistIds},
   });
 
   const currentTrackLTRecord = currentTrack && LinkedTrack.findOne({
-    trackNameNormalised: currentTrack.nameNormalised,
+    trackNameNormalised: currentTrack.nameNormalisedStrong,
     artistIds: {$in: currentTrack.artistIds},
   });
 
@@ -73,12 +73,12 @@ const updateLinks = (previousTrack, currentTrack) => {
     else {
       // Only add if there is more than one matching track.
       const matchingTracks = Track.find({
-        nameNormalised: currentTrack.nameNormalised,
+        nameNormalisedStrong: currentTrack.nameNormalisedStrong,
         artistIds: {$in: currentTrack.artistIds},
       }).fetch();
       if (matchingTracks.length > 1) {
         LinkedTrack.insert({
-          trackNameNormalised: currentTrack.nameNormalised,
+          trackNameNormalisedStrong: currentTrack.nameNormalisedStrong,
           trackIds: matchingTracks.map(t => t._id),
           artistIds: _.uniq(_.flatten(matchingTracks.map(t => t.artistIds))),
         });

@@ -1,7 +1,84 @@
 import moment from 'moment';
 
-import { importFromURL } from '../../modules/server/music/music_service';
+import { normaliseString, normaliseStringStrong, doubleMetaphone } from '../../modules/util';
+import Artist from '../../api/Artist/Artist';
+import Album from '../../api/Album/Album';
 import PlayList from '../../api/PlayList/PlayList';
+import Track from '../../api/Track/Track';
+import LinkedTrack from '../../api/LinkedTrack/LinkedTrack';
+
+//
+// LinkedTrack.remove({});
+//
+// console.log("removed linked tracks.");
+//
+// let offset = 0
+// const updateTracks = () => {
+//   const tracks = Track.find({}, {limit: 25, skip: offset, sort: {'_id': 1}}).fetch();
+//   for (let track of tracks) {
+//     // Unset and then set so that LinkedTrack records are recreated properly.
+//     Track.update(track._id, {$unset: {
+//       nameNormalised: "",
+//       nameNormalisedStrong: "",
+//     }});
+//     Track.update(track._id, {$set: {
+//       nameNormalised: normaliseString(track.name),
+//       nameNormalisedStrong: normaliseStringStrong(track.name),
+//       doubleMetaphone: doubleMetaphone(track.name),
+//     } });
+//   }
+//   if (!!tracks.length) {
+//     offset += 25;
+//     Meteor.setTimeout(updateTracks, 1000);
+//   }
+//   else {
+//     console.log('finished updating tracks');
+//   }
+// }
+// updateTracks();
+
+
+// const artists = Artist.find({}, { fields: {name: 1}}).fetch();
+// console.log("got artists ", artists.length);
+// let artistIndex = 0;
+// const updateArtists = () => {
+//   for (let i = 0; artistIndex < artists.length && i < 50; i++, artistIndex++) {
+//     let artist = artists[artistIndex];
+//     Artist.update(artist._id, {$set: {
+//       nameNormalisedStrong: normaliseStringStrong(artist.name)
+//     } });
+//   }
+//   console.log('updated artists ', artistIndex);
+//   if (artistIndex < artists.length) {
+//     Meteor.setTimeout(updateArtists, 1000);
+//   }
+//   else {
+//     console.log('finished updated artists');
+//   }
+// }
+// updateArtists();
+//
+//
+// const albums = Album.find({}, { fields: {name: 1}}).fetch();
+// console.log("got albums ", albums.length);
+// let albumIndex = 0;
+// const updateAlbums = () => {
+//   for (let i = 0; albumIndex < albums.length && i < 50; i++, albumIndex++) {
+//     let album = albums[albumIndex];
+//     Album.update(album._id, {$set: {
+//       nameNormalisedStrong: normaliseStringStrong(album.name)
+//     } });
+//   }
+//   console.log('updated albums ', albumIndex);
+//   if (albumIndex < albums.length) {
+//     Meteor.setTimeout(updateAlbums, 837);
+//   }
+//   else {
+//     console.log('finished updated albums');
+//   }
+// }
+// updateAlbums();
+
 
 // Add an admin user if no users defined.
 if (Meteor.users.find().count() == 0) {
@@ -22,6 +99,7 @@ if (!jdGroup) {
 }
 
 
+//import { importFromURL } from '../../modules/server/music/music_service';
 // if (Meteor.isDevelopment && PlayList.find().count() == 0) {
 //   // Get some example lists.
 //   try {

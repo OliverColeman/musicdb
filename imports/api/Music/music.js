@@ -1,4 +1,4 @@
-import { normaliseString, normaliseStringMatch, soundex, doubleMetaphone } from '../../modules/util';
+import { normaliseString, normaliseStringStrong, normaliseStringMatch, soundex, doubleMetaphone } from '../../modules/util';
 import Access from '../../modules/access';
 
 
@@ -14,8 +14,16 @@ const getCommonMusicItemFields = () => {
         var name = this.field("name");
         if (name.isSet) {
           return normaliseString(name.value);
-        } else {
-          this.unset();
+        }
+      },
+    },
+    nameNormalisedStrong: {
+      // Used for LinkedTrack matching.
+      type: String,
+      autoValue() {
+        var name = this.field("name");
+        if (name.isSet) {
+          return normaliseStringStrong(name.value);
         }
       },
     },

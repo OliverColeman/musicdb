@@ -24,7 +24,7 @@ LinkedTrack.deny({
 });
 
 LinkedTrack.schema = {
-  trackNameNormalised: String,
+  trackNameNormalisedStrong: String,
   trackIds: [String],
   artistIds: [String],
 };
