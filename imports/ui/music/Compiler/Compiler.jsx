@@ -76,7 +76,8 @@ export default withTracker(({match, compiler, compilerId, viewType, noLinks}) =>
   viewType = viewType || "page";
   const id = compilerId || (compiler && compiler._id) || match && match.params.compilerId;
 
-  const subCompiler = compiler ? null : Meteor.subscribe('Compiler', id);
+  // Currently we subscribe to all compilers in App.jsx
+  const subCompiler = false; //compiler ? null : Meteor.subscribe('Compiler', id);
 
   compiler = compiler || CompilerCollection.findOne(id);
 

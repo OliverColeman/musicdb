@@ -84,7 +84,8 @@ export default withTracker(({items, selector, viewType, noLinks}) => {
   // Show all compilers if none specified.
   if (!items && !selector) selector = {};
 
-  const sub = !items ? Meteor.subscribe('Compiler', selector) : null;
+  // Currently we subscribe to all compilers in App.jsx
+  const sub = false; //!items ? Meteor.subscribe('Compiler', selector) : null;
 
   return {
     loadingCompilers: sub && !sub.ready(),

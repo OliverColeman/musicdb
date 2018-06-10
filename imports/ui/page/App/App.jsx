@@ -115,9 +115,11 @@ export default flow(
     const emailAddress = user && user.emails && user.emails[0].address;
     const groupSub = Meteor.subscribe('Access.groups');
     const tagSub = Meteor.subscribe('Tag.all');
+    // TODO just subscribe to compilers in group? Only get _id and name fields?
+    const subCompilers = Meteor.subscribe('Compiler', {});
 
     return {
-      loading: loadingRoles || !tagSub.ready() || !groupSub.ready(),
+      loading: loadingRoles || !tagSub.ready() || !groupSub.ready() || !subCompilers.ready(),
       loggingIn,
       authenticated: !loggingIn && !!userId,
       name: name || emailAddress,
