@@ -4,7 +4,7 @@
   text-align: center;
   cursor: pointer;
   font-family: FontAwesome;
-  margin-left: 8px;
+  margin-right: 8px;
 
   &.expanded:before {
     content: "\f0d7";
@@ -17,6 +17,12 @@
 .Expandable {
   display: flex;
   overflow-y: hidden;
+
+  &.collapsed  {
+    pre {
+      overflow: hidden;
+    }
+  }
 
   &.expanded .ellipsis {
     color: transparent;
