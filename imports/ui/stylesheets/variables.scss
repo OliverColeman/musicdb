@@ -79,7 +79,7 @@ $default-border-radius: 4px;
 
 
 @mixin table {
-  display: table;
+  display: table !important;
   table-layout:fixed;
   width: 100%;
   border-collapse: collapse;
@@ -87,7 +87,7 @@ $default-border-radius: 4px;
   text-align: left;
 
   & > * {
-    display: table-row;
+    display: table-row !important;
 
     &.header-row {
       color: $gray-light;
@@ -95,7 +95,7 @@ $default-border-radius: 4px;
     }
 
     & > * {
-      display: table-cell;
+      display: table-cell !important;
       @include seperator-bottom-light;
       margin: 0;
       padding: 5px;

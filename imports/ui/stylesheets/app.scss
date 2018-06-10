@@ -31,8 +31,10 @@ a, a:hover, a:visited, a:active, a:focus {
 }
 
 .inline-list {
+  display: flex;
+  align-items: center;
+
   > *, > .data > * {
-    display: inline-block;
     white-space: nowrap;
     padding: 0;
     margin-right: 0.3em;
