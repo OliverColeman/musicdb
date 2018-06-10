@@ -70,14 +70,12 @@ class PlayList extends React.Component {
 
 
   render() {
-    const { loading, playList, viewType, showDate, noLinks, user, tracks, compilers } = this.props;
+    const { loading, playList, viewType, showDate, noLinks, user, tracks, compilers, editable, allCompilers, allGroups } = this.props;
     const { showSearchTracks } = this.state;
 
     if (loading) return (<Loading />);
     if (!playList && viewType == 'page') return (  <NotFound /> );
     if (!playList) return ( <div className="PlayList not-found" /> );
-
-    const editable = Access.allowed({accessRules: PlayListCollection.access, op: 'update', item: playList, user});
 
     if (viewType == 'inline') {
       const title = playList.name + (showDate ? " (" + moment.unix(playList.date).format('YYYY-MM-DD') + ")" : '');
@@ -100,7 +98,7 @@ class PlayList extends React.Component {
           </div>
         }
 
-        <div className="compilers inline-list">
+        <div className="compilers">
           <span className="data">
             <CompilerList selector={{_id: {$in: playList.compilerIds}}} viewType='inline' noLinks={noLinks} />
           </span>
@@ -114,7 +112,6 @@ class PlayList extends React.Component {
       </div>
     );
 
-
     import Search from '../Search/Search';
 
     const showTracks = tracks.length > 0;
@@ -124,6 +121,7 @@ class PlayList extends React.Component {
       .filter(t => !!t);
 
     const notesAreMultiline = playList.notes && (playList.notes.match(/\n/g) || []).length > 0;
+    const notesFirstLineLength = notesAreMultiline && playList.notes.split(/\n/, 2)[0].length;
 
     return (
       <div className={"PlayList " + viewType + "-viewtype"}>
@@ -146,10 +144,14 @@ class PlayList extends React.Component {
             </div>
           }
 
-          <div className="compilers inline-list">
+          <div className="compilers">
             <Label>Created by:</Label>
             <span className="data">
-              <CompilerList selector={{_id: {$in: playList.compilerIds}}} viewType='inline' noLinks={noLinks} />
+              <EditInline disabled={!editable} doc={playList} field="compilerIds" updateMethod="playlist.update"
+                inputType={EditInline.types.select} options={allCompilers} valueKey={"_id"} labelKey={"name"}
+              >
+                { !playList.compilerIds.length ? "[No compilers set]" : <CompilerList selector={{_id: {$in: playList.compilerIds}}} viewType='inline' noLinks={noLinks} /> }
+              </EditInline>
             </span>
           </div>
 
@@ -158,14 +160,18 @@ class PlayList extends React.Component {
             <span className="data">{convertSecondsToHHMMSS(playList.duration)}, {playList.trackIds.length}&nbsp;tracks</span>
           </div>
 
-          { playList.groupId &&
-            <div className="group">
-              <Label>Group:</Label>
-              <span className="data">
-                <Group groupId={playList.groupId} viewType="inline" />
-              </span>
-            </div>
-          }
+          <div className="group">
+            <Label>Group:</Label>
+            <span className="data">
+              <EditInline disabled={!editable} doc={playList} field="groupId" updateMethod="playlist.update"
+                inputType={EditInline.types.select} options={allGroups} valueKey={"_id"} labelKey={"name"}
+              >
+                { !playList.groupId ? "[No group set]" : <Group groupId={playList.groupId} viewType="inline" /> }
+              </EditInline>
+
+
+            </span>
+          </div>
 
           <div className="tags inline-list">
             <Label>Tags:</Label>
@@ -186,7 +192,9 @@ class PlayList extends React.Component {
                 inputType={EditInline.types.textarea}
                 disabled={!editable}
               >
-                <Expandable disabled={!notesAreMultiline} collapsedHeight="1.5em" showEllipsis={notesAreMultiline} defaultExpanded={!notesAreMultiline}>
+                <Expandable disabled={!notesAreMultiline} showEllipsis={notesAreMultiline} defaultExpanded={!notesAreMultiline}
+                  collapsedHeight="1.5em" collapsedWidth={(notesFirstLineLength / 2) + "em"}
+                >
                   <pre>{playList.notes || "[No notes set]"}</pre>
                 </Expandable>
               </EditInline>
@@ -237,6 +245,8 @@ export default withTracker(({match, playList, playListId, viewType, showDate, no
   const subList = playList ? null : Meteor.subscribe('PlayList', playListId, showTracks);
   playList = playList || PlayListCollection.findOne(playListId);
 
+  const editable = Access.allowed({accessRules: PlayListCollection.access, op: 'update', item: playList, user: Meteor.user()});
+
   return {
     loading: subList && !subList.ready(),
     playList,
@@ -244,6 +254,8 @@ export default withTracker(({match, playList, playListId, viewType, showDate, no
     viewType,
     showDate,
     noLinks,
-    user: Meteor.user(),
+    editable,
+    allCompilers: editable ? CompilerCollection.find({}).fetch() : [],
+    allGroups: editable ? Meteor.groups.find({}).fetch() : [],
   };
 }) (PlayList);

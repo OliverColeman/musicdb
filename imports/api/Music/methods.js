@@ -15,13 +15,15 @@ _.forOwn(musicCollection, (collection, collectionName) => {
 
   Meteor.methods({
     [methodName]: function update(item) {
-      const itemId = item._id;
-      delete(item._id);
-      collection.schemaInstance.validate(item);
-
       try {
+        const itemId = item._id;
+        delete(item._id);
+        // Input validation comes first so as to not trigger "Did not check() all arguments" error.
+        collection.schemaInstance.validate(item, {modifier: false, keys: Object.keys(item)});
+
         const user = this.userId, op = 'update';
         if (!Access.allowed({accessRules: collection.access, op, item, user})) throw "Not allowed.";
+
         item = Access.filterDocumentFields({op, item, user, schema: collection.schema, defaultAccessRules});
 
         collection.update(itemId, {
