@@ -13,8 +13,25 @@
   margin-right: 0.5em;
 }
 
-.EditInline {
-  display: flex;
+.editinline-inner {
+  display: flex !important;
+
+  &.editing {
+    flex-direction: column;
+    align-items: stretch;
+
+    > * {
+      display: flex !important;
+      flex-wrap: wrap;
+      align-items: center;
+      > * {
+        margin-left: 8px;
+        &:first-child {
+          margin-left: 0;
+        }
+      }
+    }
+  }
 
   .edit-icon {
     margin: 0 0 0 5px;
@@ -36,11 +53,21 @@
     line-height: 18px;
   }
 
-  .validation-message {
-    font-size: 14px;
-    color: #e44;
-    font-weight: normal;
-    font-family: sans-serif;
+  > * > button {
+    font-size: 16px;
+    padding: 8px 10px;
+  }
+
+  .validation-wrap {
+    margin-top: 8px;
+
+    .validation-message {
+      flex-grow: 1;
+      font-size: 14px;
+      color: #e44;
+      font-weight: normal;
+      font-family: sans-serif;
+    }
   }
 
   pre {
@@ -67,5 +94,9 @@
 
   &.color input {
     display: none;
+  }
+
+  .Select {
+    min-width: 10em;
   }
 }

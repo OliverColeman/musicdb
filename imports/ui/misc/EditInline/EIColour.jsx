@@ -10,10 +10,10 @@ export default class EIColour extends EIBase {
 		this.timeoutId = false;
   }
 
-  handleChangeEvent = () => {
+  handleChangeEvent = (event) => {
     // According to the spec the "input event is fired at the input element
     // every time the color changes. The change event is fired when the user
-    // dismisses the color picker" but Chrome fires both the 'change' event
+    // dismisses the color picker" but Chrome fires both events
     // every time the colour changes. This function prevents too many
     // requests being sent to the server.
     window.clearTimeout(this.timeoutId);
@@ -32,6 +32,7 @@ export default class EIColour extends EIBase {
       <input disabled={disabled}
         type="color"
         defaultValue={value}
+        onInput={e => this.valueChanged(e.target.value)}
         onChange={this.handleChangeEvent}
         ref="input"
         {...editProps} />

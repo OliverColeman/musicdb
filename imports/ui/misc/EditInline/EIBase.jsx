@@ -7,27 +7,14 @@ import classNames from 'classnames';
 class EIBase extends React.Component {
   constructor(props) {
     super(props);
-
-    if (!this.props.propName) throw "RTFM: missing 'propName' prop";
-    if (!this.props.change) throw "RTFM: missing 'change' prop";
-
     this.state = {
       editing: false,
       loading: false,
       invalid: false,
+      newValue: this.props.value,
     };
   }
 
-
-  componentDidUpdate = (prevProps, prevState) => {
-    var inputElem = ReactDOM.findDOMNode(this.refs.input);
-    if (this.state.editing && !prevState.editing) {
-      inputElem.focus();
-      this.selectInputText(inputElem);
-    } else if (this.state.editing && prevProps.text != this.props.text) {
-      this.finishEditing();
-    }
-  };
 
   startEditing = (event) => {
     if (event && event.stopPropagation) event.stopPropagation();
@@ -38,7 +25,7 @@ class EIBase extends React.Component {
   };
 
   finishEditing = () => {
-    let newValue = ReactDOM.findDOMNode(this.refs.input).value;
+    let newValue = this.state.newValue;
     if (!this.props.value && !newValue || this.props.value == newValue) {
       this.props.beforeFinish ? this.props.beforeFinish(newValue) : null;
       this.cancelEditing();
@@ -46,7 +33,7 @@ class EIBase extends React.Component {
     else {
       const isValid = this.doValidations(newValue);
       if (isValid) {
-        this.commit(newValue);
+        this.commit();
       }
       else if (this.props.handleValidationFail) {
         this.props.handleValidationFail(newValue, () => this.cancelEditing());
@@ -56,16 +43,12 @@ class EIBase extends React.Component {
   };
 
   cancelEditing = () => {
-    this.setState({editing: false, invalid: false, validationMessage: null});
+    this.setState({editing: false, invalid: false, validationMessage: null, newValue: this.props.value});
   };
 
-  keyDown = (event) => {
-    if(event.keyCode === 13) { this.finishEditing() }           // Enter
-    else if (event.keyCode === 27) { this.cancelEditing() }     // Escape
-  };
-
-  textChanged = (event) => {
-    this.doValidations(event.target.value.trim());
+  valueChanged = (value) => {
+    this.setState({newValue: value});
+    this.doValidations(value);
   };
 
   doValidations = (value) => {
@@ -84,22 +67,16 @@ class EIBase extends React.Component {
     return isValid;
   }
 
-  selectInputText = (element) => {
-    if (element.setSelectionRange) element.setSelectionRange(0, element.value.length);
-  }
-
   componentWillReceiveProps = (nextProps) => {
     if ('value' in nextProps && !(nextProps.shouldRemainWhileInvalid && this.state.invalid)) {
-      this.setState({loading: false, editing: false, invalid: false, newValue: null});
+      this.setState({loading: false, editing: false, invalid: false, newValue: this.props.value});
     }
   }
 
-  commit = (value) => {
+  commit = () => {
     if (!this.state.invalid) {
-      let newProp = {};
-      newProp[this.props.propName] = value;
-      this.setState({loading: true, newValue: value});
-      this.props.change(newProp);
+      this.setState({loading: true});
+      this.props.change(this.state.newValue);
     }
   };
 
@@ -115,30 +92,49 @@ class EIBase extends React.Component {
 
 
   render = () => {
-    const { editing, validationMessage } = this.state;
+    const { loading, editing, invalid, validationMessage } = this.state;
+    const { disabled, className, inputType, classEditing, classLoading, classDisabled, classInvalid, children } = this.props;
+
+    const buttonsBelow = inputType == 'textarea';
 
     const classes = classNames(
-      this.props.className,
-      this.props.inputType,
-      this.state.editing && (this.props.classEditing || "editing"),
-      this.state.loading && (this.props.classLoading || "loading"),
-      this.props.disabled && (this.props.classDisabled || "disabled"),
-      this.state.invalid && (this.props.classInvalid || "invalid")
+      "editinline-inner",
+      buttonsBelow && "buttonsbelow",
+      inputType,
+      editing && (classEditing || "editing"),
+      loading && (classLoading || "loading"),
+      disabled && (classDisabled || "disabled"),
+      invalid && (classInvalid || "invalid")
     );
+
+    const buttonCommit = <button className="btn btn-success fa fa-check" title="Commit changes."
+        onClick={this.finishEditing}  tabIndex="1"/>;
+    const buttonCancel = <button className="btn btn-danger fa fa-times" title="Abandon changes."
+        onClick={this.cancelEditing} tabIndex="2" />;
 
     if (editing) {
       return (
-        <span className={classes} onClick={ e => e.stopPropagation() }>
-          { this.renderEditingComponent() }
-          { validationMessage && <div className="validation-message">{validationMessage}</div> }
-        </span>
+        <div className={className}>
+          <div className={classes} onClick={ e => e.stopPropagation() }>
+            <div className="input-wrap">
+              { this.renderEditingComponent() }
+              { !buttonsBelow && !invalid && buttonCommit }
+              { !buttonsBelow && buttonCancel }
+            </div>
+            { (!!validationMessage || buttonsBelow) && <div className="validation-wrap">
+              <div className="validation-message">{validationMessage}</div>
+              { buttonsBelow && !invalid && buttonCommit }
+              { buttonsBelow && buttonCancel }
+            </div> }
+          </div>
+        </div>
       )
     }
     else {
       return (
         <span className={classes}>
-          { this.props.children || this.renderNormalComponent() }
-          { !this.props.disabled && <span className='edit-icon' onClick={ e => this.startEditing(e) }  tabIndex="0">🖉</span> }
+          { children || this.renderNormalComponent() }
+          { !disabled && <span className='edit-icon' onClick={this.startEditing} tabIndex="0">🖉</span> }
         </span>
       );
     }
@@ -165,6 +161,10 @@ EIBase.propTypes = {
   afterStart: PropTypes.func,
   beforeFinish: PropTypes.func,
   afterFinish: PropTypes.func,
+  // For select.
+  options: PropTypes.arrayOf(PropTypes.object),
+  valueKey: PropTypes.string,
+  labelKey: PropTypes.string,
 };
 
 export default EIBase;

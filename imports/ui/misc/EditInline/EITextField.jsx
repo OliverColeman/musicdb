@@ -9,8 +9,7 @@ export default class EITextField extends EIBase {
     return <input
       disabled={this.state.loading || this.props.disabled}
       defaultValue={this.props.value}
-      onInput={this.textChanged}
-      onBlur={this.elementBlur}
+      onInput={e => this.valueChanged(e.target.value)}
       ref="input"
       onKeyDown={this.keyDown}
       style={{ width: Math.max(5, Math.min(20, (""+this.props.value).length)) + "em" }}
@@ -24,7 +23,17 @@ export default class EITextField extends EIBase {
     </span>;
   };
 
-  elementBlur = (event) => {
-    this.finishEditing();
+  componentDidUpdate = (prevProps, prevState) => {
+    if (this.state.editing && !prevState.editing) {
+      ReactDOM.findDOMNode(this.refs.input).focus();
+    }
+    // else if (this.state.editing && prevProps.text != this.props.text) {
+    //   this.finishEditing();
+    // }
+  };
+
+  keyDown = (event) => {
+    if(event.keyCode === 13) { this.finishEditing() } // Enter
+    else if (event.keyCode === 27) { this.cancelEditing() }     // Escape
   };
 }

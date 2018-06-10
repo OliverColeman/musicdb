@@ -6,9 +6,10 @@ import { ReactiveVar } from 'meteor/reactive-var';
 import { Bert } from 'meteor/themeteorchef:bert';
 import _ from 'lodash';
 
-import EITextField from './EITextField.jsx';
-import EITextArea from './EITextArea.jsx';
+import EITextField from './EITextField';
+import EITextArea from './EITextArea';
 import EIColour from './EIColour'
+import EISelect from './EISelect';
 
 import './EditInline.scss';
 
@@ -31,10 +32,11 @@ class EditInline extends React.Component {
     return true;
   }
 
-  updateDoc = (newState) => {
+  updateDoc = (newValue) => {
   	const { updateMethod, doc, field } = this.props;
 
-  	_.set(doc, field, newState[field].trim());
+    if (typeof newValue == 'string') newValue = newValue.trim();
+  	_.set(doc, field, newValue);
 
     Meteor.call(updateMethod, doc, (error, result) => {
       if (error) {
@@ -61,6 +63,10 @@ class EditInline extends React.Component {
     if (inputType=='color') return <EIColour {...rieProps} />;
     if (inputType=='textfield') return <EITextField {...rieProps} />;
 		if (inputType=='textarea') return <EITextArea {...rieProps} />;
+    rieProps.options = this.props.options;
+    rieProps.valueKey = this.props.valueKey;
+    rieProps.labelKey = this.props.labelKey;
+    if (inputType=='select') return <EISelect {...rieProps} />;
   }
 }
 
@@ -73,6 +79,10 @@ EditInline.propTypes = {
   required: PropTypes.bool,
   disabled: PropTypes.bool,
   validationFuncs: PropTypes.arrayOf(PropTypes.func),
+  // For select.
+  options: PropTypes.arrayOf(PropTypes.object),
+  valueKey: PropTypes.string,
+  labelKey: PropTypes.string,
 };
 
 EditInline.defaultProps = {
@@ -85,6 +95,7 @@ EditInline.types = {
 	textfield: 'textfield',
 	textarea: 'textarea',
 	color: 'color',
+  select: 'select',
 }
 
 export default EditInline;
